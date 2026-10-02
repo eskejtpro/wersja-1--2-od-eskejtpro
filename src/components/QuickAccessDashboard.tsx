@@ -446,15 +446,14 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
         })
       });
 
-      if (response.ok) {
-        const json = await response.json();
-        setAiResponse(json.reply || 'Zalecenie: Utrzymuj stałe mikro-przeładowanie (+1.25-2.5 kg), kontroluj RPE i dbaj o periodyzację objętości.');
-        if (json.model) setAiModelUsed(json.model);
-      } else {
-        setAiResponse('Wskazówka Gemini: Skup się na stabilnej trajektorii sztangi, 2-3 minutach przerwy w bojach wielostawowych i optymalnej retencji sodu.');
-      }
+      if (!response.ok) throw new Error(`AI service HTTP ${response.status}`);
+      const json = await response.json();
+      if (typeof json.reply !== 'string' || !json.reply.trim()) throw new Error('AI service returned no answer');
+      setAiResponse(json.reply);
+      setAiModelUsed(json.model || 'unknown');
     } catch {
-      setAiResponse('Wskazówka Gemini: Zwiększaj ciężar tylko przy zachowaniu poprawnej techniki i zapasie RIR 1-2. Dbaj o 2g białka na kg masy ciała.');
+      setAiModelUsed('unavailable');
+      setAiResponse('Usługa AI jest niedostępna albo nie zwróciła odpowiedzi. Nie wygenerowano zastępczej analizy.');
     } finally {
       setIsAiLoading(false);
     }

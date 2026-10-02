@@ -1,4 +1,4 @@
-# GymTracker Pro 3.0.6 — kontrakt lokalnego serwera
+# GymTracker Pro 3.0.7 — kontrakt lokalnego serwera
 
 `server.ts` jest jedynym serwerem Node/Express projektu. Domyślnie nasłuchuje wyłącznie na `127.0.0.1:3000`; LAN można włączyć ręcznie przez `GYMTRACKER_BIND`, np. po świadomym ustawieniu adresu interfejsu. Serwer przechowuje własny magazyn poza repozytorium i nigdy nie dotyka `workout_data.json` aplikacji desktopowej.
 
@@ -24,6 +24,8 @@ Hash hasła można wygenerować przez eksport `createPasswordHash` z `server.ts`
 - `GET /api/sync/status` — revision, updatedAt, contentHash, deviceId oraz online/offline. To status serwera, nie pełna synchronizacja Androida.
 - `GET /api/update/check` i `GET /api/update/history` — metadane z opcjonalnego manifestu wskazanego przez `GYMTRACKER_UPDATE_MANIFEST`; wpis musi zawierać `version`, `packageUrl` (`https`/`file`), `sha256` (64 znaki hex), `sizeBytes` i `minSupportedVersion`; bez zgodnego manifestu zwracają `unavailable_not_configured`.
 - `POST /api/agent/analyze` — autoryzowana, lokalna heurystyka na przekazanym wycinku danych. Nie pobiera automatycznie całego `GymData` i nie wykonuje połączeń zewnętrznych.
+- `POST /api/ai/coach/chat` (alias `/api/ai/chat`) — czat; lokalny fallback jest jawnie oznaczony, wyjątek AI zwraca `503 ai_unavailable`. Rutynowy request nie dołącza automatycznie badań, notatek, nazwiska, masy ciała ani pamięci AI.
+- `POST /api/ai/coach/generate-plan`, `/nutrition-plan`, `/swap-exercise`, `/tts`, `/analyze`, `/api/ai/agent/parse-command` — endpointy AI; ich fallbacki i kody błędów są odrębne i nie należy z opisu czatu wnioskować o ich zachowaniu.
 - `POST /api/ai/coach/audit-health` — wejście ograniczone do badań i masy ciała; bez klucza AI zwraca `503 ai_unavailable` i nie wystawia oceny wyników. Odpowiedź Gemini ma charakter edukacyjny, nie diagnostyczny.
 
 Pozostawione historyczne `/api/update/download/:version`, `/api/update/apply` i `/api/update/rollback` zwracają jawne `503 unavailable_not_configured`; serwer nie udaje pobierania, instalacji ani rollbacku i nie uruchamia instalatora. Manifest stanowi miejsce pod późniejszą weryfikację podpisu, ale podpis nie jest jeszcze weryfikowany.
@@ -34,4 +36,4 @@ Panel UI może wykonać jawny health check oraz push danych do `/api/data`, jeś
 
 Tokeny sesji są przechowywane wyłącznie jako skróty SHA-256 w pamięci, hasła są sprawdzane jako hash scrypt, a Google login wymaga zweryfikowanego ID tokenu i limituje próby. CORS używa dokładnej allowlisty, body ma limit, błędny JSON nie zamyka procesu, a logi nie zawierają haseł, tokenów ani `GymData`. Klient nie zapisuje Bearer tokenu w GymData/localStorage.
 
-Zapis danych jest atomowy: serwer zapisuje tymczasowy plik obok docelowego i zmienia nazwę dopiero po pełnym zapisie. Uszkodzony plik powoduje kontrolowany status `503 data_store_unavailable`; serwer nie usuwa ani nie nadpisuje go automatycznie. Helmet ustawia bezpieczne nagłówki; CSP i HSTS są aktywne w produkcji TLS. Aktualizacje nie mają automatycznego instalatora i nie serwują niezweryfikowanych plików. Serwer nie używa Firebase, Redis ani Dockera. Endpointy AI korzystają z zewnętrznego Gemini wyłącznie po skonfigurowaniu klucza; bez niego AI zwraca jawne `503` zamiast symulowanej analizy.
+Zapis danych jest atomowy: serwer zapisuje tymczasowy plik obok docelowego i zmienia nazwę dopiero po pełnym zapisie. Uszkodzony plik powoduje kontrolowany status `503 data_store_unavailable`; serwer nie usuwa ani nie nadpisuje go automatycznie. Helmet ustawia bezpieczne nagłówki; CSP i HSTS są aktywne w produkcji TLS. Aktualizacje nie mają automatycznego instalatora i nie serwują niezweryfikowanych plików. Serwer nie używa Firebase, Redis ani Dockera. Zachowanie AI offline jest zależne od endpointu; fallbacki lokalne są odrębne od Gemini i powinny być jawnie oznaczone.

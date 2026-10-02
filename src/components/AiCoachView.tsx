@@ -270,7 +270,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
     }
   }, [messages, activeTab]);
 
-  // Context builder from current gym data & long-term memories
+  // Minimal training-only context; sensitive health, calendar, profile and AI-memory data stays out of routine chat requests.
   const buildAthleteContext = () => {
     const sortedWeeks = [...(gymData.weeks || [])].sort((a, b) => (a.number || 0) - (b.number || 0));
     const currentWeek = sortedWeeks[sortedWeeks.length - 1];
@@ -292,23 +292,9 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
       });
     }
 
-    const latestWeight = bodyWeights.length > 0 ? bodyWeights[bodyWeights.length - 1]?.weight : undefined;
-    const recentNotes = (calendarNotes || []).slice(-5).map(n => ({
-      date: n.date,
-      title: n.title,
-      content: n.content,
-      category: n.category
-    }));
-
     return {
-      athleteName: profile?.name || 'Zawodnik',
       currentWeekName: currentWeek?.name || `Tydzień ${currentWeek?.number || 1}`,
-      latestWeight,
-      weightTrendEMA: settings.emaAlpha ? latestWeight : undefined,
       recentExercises: recentExercises.slice(0, 12),
-      recentNotes,
-      recentBloodTests: (bloodTests || []).slice(0, 10),
-      memories: agentMemories.map(m => `[${m.category}] ${m.content}`)
     };
   };
 
@@ -657,7 +643,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
           message: messageText,
           persona: selectedPersona,
           context,
-          history: newMessagesList.map(m => ({ role: m.role, content: m.content }))
+          history: newMessagesList.slice(-9, -1).map(m => ({ role: m.role, content: m.content }))
         })
       });
 
@@ -685,19 +671,15 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
       }
       soundService.triggerHaptic('light');
     } catch (err: any) {
-      console.error('Chat error, using offline intelligence:', err);
-      const athleteName = profile?.name || 'Zawodniku';
-      const { cleanContent, action, actions } = parseAiResponseAction(`Przeanalizowałem Twoje zapytanie w trybie lokalnym. Wszystkie dane treningowe są bezpiecznie synchronizowane.`, messageText);
+      console.error('Chat service unavailable:', err);
       
       const botMessage: AiChatMessage = {
         id: `msg-bot-${Date.now()}`,
         role: 'assistant',
-        content: `**Komunikat Trenera dla ${athleteName} (Silnik Lokalny):**\n\nPrzetworzyłem Twoje polecenie: *„${messageText}”*.\n\nKliknij poniższy przycisk akcji, aby natychmiast zastosować zmiany w aplikacji lub kontynuuj trening.`,
+        content: 'Usługa AI jest niedostępna. Nie otrzymano odpowiedzi i nie wygenerowano lokalnej analizy. Spróbuj ponownie po przywróceniu połączenia.',
         timestamp: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
-        model: 'local_heuristic_engine',
-        persona: selectedPersona,
-        action,
-        actions
+        model: 'unavailable',
+        persona: selectedPersona
       };
 
       const finalMessagesList = [...newMessagesList, botMessage];

@@ -1,16 +1,16 @@
-# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.6)
+# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.7)
 
-Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.6. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
+Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.7. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
 
 ---
 
-## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.6)
-- **Łączna liczba testów aplikacji**: 102 / 102 (**PASS - 100%**)
+## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.7)
+- **Łączna liczba testów aplikacji**: 107 / 107 (**PASS - 100%**)
 - **Testy serwera/OIDC**: 16 / 16 (**PASS - 100%**)
 - **Testy UI Google i konfiguracji Androida**: 3 / 3 (**PASS - 100%**)
 - **Testy serwisu aktualizacji**: 4 / 4 (**PASS**, `npm run test:update`)
 - **Kompilacja TypeScript i Linter**: `tsc --noEmit` (**PASS - 0 błędów**)
-- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug 3.0.6 zweryfikowany; instalacja na urządzeniu **UNVERIFIED** (brak podłączonego telefonu, emulator nieuruchomiony przy 1.63 GB wolnej RAM).
+- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug 3.0.7 zweryfikowany; instalacja na urządzeniu **UNVERIFIED** (brak podłączonego telefonu, emulator nieuruchomiony przy 1.63 GB wolnej RAM).
 - **Błędy krytyczne**: 0 (**FAIL: 0**)
 
 ---
@@ -20,7 +20,8 @@ Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.6. Tes
 | Pakiet Testowy | Plik Testu | Liczba Testów | Sposób Uruchomienia | Status | Zakres Pokrycia |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Magazyn Danych & Atomowość** | `tests/storage.test.cjs` | 13 | `npm test` | **PASS** | Atomowość zapisu, rotacja kopii zapasowych `/backups`, odrzucanie uszkodzonego JSON, fail-closed |
-| **Logiczne partycje danych TypeScript** | `tests/room-database.test.cjs` | 1 | `npm test` | **PASS** | DAO-shape i partycje JSON w mockowanym localStorage; brak natywnego SQLite testu |
+| **Logiczne partycje danych TypeScript** | `tests/room-database.test.cjs` | 2 | `npm test` | **PASS** | DAO-shape, partycje JSON i fail-closed przy QuotaExceededError w mockowanym localStorage; brak natywnego SQLite testu |
+| **Prywatność i jawny stan AI** | `tests/ai-privacy-fail-closed.test.cjs` | 4 | `npm test` | **PASS** | Rutynowy kontekst AI bez wrażliwych pól, ograniczona historia, brak zmyślonego wyniku przy błędach |
 | **Migracja partycji lokalnych** | `tests/room-initialization-flow.test.cjs` | 1 | `npm test` | **PASS** | Mapowanie JSON do partycji logicznych, test w środowisku Node/mock |
 | **Odzyskiwanie danych przy starcie** | `tests/startup-data-recovery.test.cjs` | 3 | `npm test` | **PASS** | Zachowanie istniejącej bazy przy braku partycji, priorytet partycji, brak fałszywych deklaracji SQL |
 | **Procedura Migracyjna** | `tests/database-migration.test.cjs` | 4 | `npm test` | **PASS** | Walidacja sumy SHA256, nienaruszalność pierwotnego pliku przed migracją |

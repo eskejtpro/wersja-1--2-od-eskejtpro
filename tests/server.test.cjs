@@ -81,7 +81,7 @@ test.after(async () => {
 test('health and version expose persistent-server capabilities', async () => {
   const health = await request('/api/health');
   assert.equal(health.response.status, 200);
-  assert.equal(health.body.version, '3.0.6');
+  assert.equal(health.body.version, '3.0.7');
   assert.equal(health.body.apiVersion, '1');
   assert.equal(health.body.capabilities.includes('google_oidc_login'), false);
   assert.equal(health.response.headers.get('x-content-type-options'), 'nosniff');

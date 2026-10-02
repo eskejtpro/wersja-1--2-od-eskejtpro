@@ -12,7 +12,7 @@ import { GoogleIdentityError, type GoogleIdTokenVerifier, verifyGoogleIdToken } 
 
 dotenv.config();
 
-export const APP_VERSION = '3.0.6';
+export const APP_VERSION = '3.0.7';
 export const API_VERSION = '1';
 export const SCHEMA_VERSION = 1;
 
@@ -898,15 +898,8 @@ ZASADY ODPOWIEDZI:
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
-      console.error('[server] Błąd Gemini AI Coach, fallback do trybu offline:', err?.message || err);
-      const fallbackReply = `Przeanalizowałem Twoje zapytanie. Utrzymuj żelazną dyscyplinę techniczną, kontroluj tempo ruchu i wykonuj zaplanowane serie robocze w zadanym RIR. Dane sesji zostały bezpiecznie zachowane w aplikacji.`;
-      return res.json({
-        reply: fallbackReply,
-        model: 'offline_emergency_fallback',
-        persona: req.body?.persona || 'head_coach',
-        fallback: true,
-        timestamp: new Date().toISOString()
-      });
+      console.error('[server] AI Coach service failed:', err?.message || err);
+      return res.status(503).json({ error: 'ai_unavailable', model: 'unavailable' });
     }
   });
 

@@ -1,6 +1,6 @@
-# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.6)
+# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.7)
 > **DOKUMENTACJA ARCHITEKTONICZNA, SYSTEMOWA I PROCEDURA TESTOWA DLA AGENTÓW AI**
-> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.6 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
+> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.7 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
 >
 > **Ważne:** starsze opisy architektury poniżej zawierają deklaracje odziedziczone z wcześniejszych wersji. Zweryfikowany stan wykonawczy i jawne ograniczenia są zapisane w sekcji „Aktualizacja stanu 3.0.2” na końcu; w szczególności aktywny Android data store nie jest Room SQLite.
 
@@ -179,7 +179,7 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
    - Wszelkie operacje zapisu do bazy Room SQL muszą być atomowe. W razie błędu parsowania lub niezgodności schematu aplikacja nie może nadpisać poprawnego pliku pustym szablonem.
 
 3. **Zasada podwójnego silnika Online/Offline**:
-   - Wszystkie kluczowe moduły (Trener AI, obliczanie tonażu, stoper, kalkulatory, synchronizacja) muszą posiadać mechanizm fallback do trybu offline. Aplikacja na siłowni bez zasięgu sieci musi działać w 100%.
+   - Kluczowe funkcje treningowe (zapis serii, plan, stoper i kalkulatory) mają działać offline. Fallback AI może odpowiedzieć tylko jako jawnie oznaczona heurystyka lokalna; przy braku odpowiedzi aplikacja nie może udawać analizy ani synchronizacji.
 
 4. **Stylistyka i Design 3D**:
    - Aplikacja używa nowoczesnego designu 3D Neumorphism 2.0. Nowe kafelki powinny korzystać z klas `.card-3d` (lub `.amoled-card-3d`), a nowe przyciski akcji z `.btn-3d-emerald` lub `.btn-3d-secondary`.
@@ -231,3 +231,9 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - Autosave może teraz zgłosić awarię trwałego zapisu zamiast fałszywego „Zapis lokalny OK”. Test regresyjny wymusza `QuotaExceededError`.
 - Zapis nadal obejmuje wiele partycji bez ACID/rollbacku; to ograniczenie jest jawne.
 - Weryfikacja 3.0.6: app 103/103, server 16/16, Google UI 3/3, updater 4/4, lint/build/Cap sync/Android assembleDebug PASS. APK 3.0.6 zbudowany i podpis debug zweryfikowany; brak podłączonego telefonu, runtime UNVERIFIED. Szczegóły: `CHANGELOG-V3.0.6.md`.
+
+## Aktualizacja stanu 3.0.7 (2026-10-02)
+
+- Rutynowy czat AI przestał dołączać badania krwi, notatki kalendarza, profil użytkownika i trwałe pamięci AI; historia czatu ograniczona do ostatnich 8 wiadomości.
+- Awaria transportu nie jest już prezentowana jako wygenerowana odpowiedź lub synchronizacja zakończona sukcesem; AI Coach i Quick Access pokazują niedostępność.
+- Weryfikacja 3.0.7: app 107/107, server 16/16, Google UI 3/3, updater 4/4, lint/build/Cap sync/Android assembleDebug PASS. APK debug zweryfikowany; urządzenie fizyczne niepodłączone, runtime UNVERIFIED. Szczegóły: `CHANGELOG-V3.0.7.md`.
