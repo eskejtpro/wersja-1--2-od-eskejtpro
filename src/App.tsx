@@ -29,6 +29,7 @@ import { persistence } from './utils/persistence';
 import { appDatabase } from './data/db/AppDatabase';
 import { roomDatabase } from './data/db/RoomDatabase';
 import { normalizeGymDataToRelational } from './domain/mappers';
+import { getGoogleAuthStatus, loginWithGoogleAccount, logoutGoogleAccount } from './utils/serverApi';
 
 const STORAGE_KEY = 'gymtracker_windows_data_v1';
 const BACKUPS_STORAGE_KEY = 'gymtracker_autobackups_v1';
@@ -253,6 +254,35 @@ export default function App() {
 
     initializeRoomDatabaseFlow();
 
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  // Synchronizacja statusu sesji i konta Google Cloud na starcie aplikacji
+  useEffect(() => {
+    let isCancelled = false;
+    async function checkGoogleAuthSession() {
+      try {
+        const auth = await getGoogleAuthStatus();
+        if (!isCancelled && auth.authenticated && auth.user) {
+          setData(prev => {
+            if (prev.settings.googleUser?.email === auth.user.email) return prev;
+            return {
+              ...prev,
+              settings: {
+                ...prev.settings,
+                googleUser: auth.user,
+                googleServerPreferred: true
+              }
+            };
+          });
+        }
+      } catch {
+        // Tryb offline lub serwer bez połączenia
+      }
+    }
+    checkGoogleAuthSession();
     return () => {
       isCancelled = true;
     };
