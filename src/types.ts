@@ -443,6 +443,36 @@ export interface CatalogExercise {
   isCustom?: boolean;
 }
 
+export interface AiAgentAction {
+  id: string;
+  type: 
+    | 'ADD_EXERCISE'
+    | 'MODIFY_EXERCISE'
+    | 'DELETE_EXERCISE'
+    | 'ADD_TRAINING_DAY'
+    | 'ADD_TRAINING_WEEK'
+    | 'LOG_BODY_WEIGHT'
+    | 'LOG_CIRCUMFERENCE'
+    | 'LOG_BODY_MEASUREMENT'
+    | 'ADD_PROTOCOL_DOSE'
+    | 'ADD_CALENDAR_NOTE'
+    | 'ADD_BLOOD_TEST'
+    | 'APPLY_PROGRESSION'
+    | 'CREATE_DELOAD_WEEK'
+    | 'INSTALL_MESOCYCLE_PLAN'
+    | 'UPDATE_PROFILE'
+    | 'UPDATE_NUTRITION_MACROS'
+    | 'ADD_PERSONAL_RECORD'
+    | 'SAVE_AI_MEMORY'
+    | 'UPDATE_SETTINGS'
+    | 'CREATE_BACKUP'
+    | 'BATCH_ACTIONS';
+  title: string;
+  description: string;
+  payload: any;
+  status: 'pending' | 'executed' | 'dismissed';
+}
+
 export interface AiChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -450,6 +480,9 @@ export interface AiChatMessage {
   timestamp: string;
   model?: string;
   persona?: string;
+  action?: AiAgentAction;
+  actions?: AiAgentAction[];
+  audioBase64?: string;
 }
 
 export interface AiAgentMemory {

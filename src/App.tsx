@@ -926,6 +926,29 @@ export default function App() {
     }
   };
 
+  const handleAddExerciseToPlan = (weekId: string, dayId: string, exerciseData: Omit<Exercise, 'id'>) => {
+    const newEx: Exercise = {
+      ...exerciseData,
+      id: `ex-${Date.now()}`
+    };
+    setData((prev) => ({
+      ...prev,
+      weeks: prev.weeks.map((w) => {
+        if (w.id !== weekId) return w;
+        return {
+          ...w,
+          days: w.days.map((d) => {
+            if (d.id !== dayId) return d;
+            return {
+              ...d,
+              exercises: [...d.exercises, newEx]
+            };
+          })
+        };
+      })
+    }));
+  };
+
   const handleDeleteExercise = (weekId: string, dayId: string, exerciseId: string) => {
     if (data.settings.confirmBeforeDelete !== false && !window.confirm('Czy na pewno chcesz usunąć ćwiczenie?')) return;
     setData((prev) => ({
@@ -1092,6 +1115,14 @@ export default function App() {
   };
 
   // Protocol entries (Sterydy, HCG, itp.)
+  const handleUpdateWeeks = (newWeeks: TrainingWeek[]) => {
+    setData((prev) => ({
+      ...prev,
+      weeks: newWeeks
+    }));
+    createAutoBackup({ ...data, weeks: newWeeks }, 'ai_action_update_weeks');
+  };
+
   const handleAddProtocolEntry = (entry: Omit<ProtocolEntry, 'id'>) => {
     const newEntry: ProtocolEntry = {
       ...entry,
@@ -1612,11 +1643,23 @@ export default function App() {
               profile={data.profile}
               calendarNotes={data.calendarNotes || []}
               bodyWeights={data.bodyWeights || []}
+              circumferences={data.circumferences || []}
+              bodyPartMeasurements={data.bodyPartMeasurements || []}
               bloodTests={data.bloodTests || []}
               chatHistory={data.aiChatHistory || []}
               onUpdateChatHistory={handleUpdateAiChatHistory}
               agentMemories={data.aiAgentMemories || []}
               onUpdateAgentMemories={handleUpdateAiAgentMemories}
+              onAddExercise={handleAddExerciseToPlan}
+              onAddBodyWeight={handleAddBodyWeight}
+              onAddCircumference={handleAddCircumference}
+              onAddBodyMeasurement={handleAddBodyMeasurement}
+              onAddProtocolEntry={handleAddProtocolEntry}
+              onAddCalendarNote={handleAddCalendarNote}
+              onUpdateProfile={handleUpdateProfile}
+              onUpdateSettings={handleUpdateSettings}
+              onUpdateWeeks={handleUpdateWeeks}
+              onCreateBackup={handleCreateManualBackup}
             />
           )}
 

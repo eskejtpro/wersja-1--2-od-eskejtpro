@@ -5,7 +5,7 @@ Niniejsza macierz przedstawia szczegółowy opis wszystkich obszarów testowych 
 ---
 
 ## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.0)
-- **Łączna liczba testów jednostkowych i integracyjnych**: 78 / 78 (**PASS - 100%**)
+- **Łączna liczba testów jednostkowych i integracyjnych**: 88 / 88 (**PASS - 100%**)
 - **Testy serwera chmurowego Express / Google Cloud Run**: 11 / 11 (**PASS - 100%**)
 - **Kompilacja TypeScript i Linter**: `tsc --noEmit` (**PASS - 0 błędów**)
 - **Błędy krytyczne**: 0 (**FAIL: 0**)
@@ -34,6 +34,8 @@ Niniejsza macierz przedstawia szczegółowy opis wszystkich obszarów testowych 
 | **Kompletny Test Integracyjny E2E** | `tests/full-e2e-application-suite.test.cjs` | 10 | `npm test` | **PASS** | Pełna ścieżka: tworzenie planu, serie, waga, farmakokinetyka, eksport |
 | **Tryb Pełnej Mocy & Rampa Rozgrzewki**| `tests/turbo-power-features.test.cjs` | 3 | `npm test` | **PASS** | Rampa rozgrzewki Smart Warm-up, progresja przeciążenia +2.5kg, typy gryfów |
 | **Rozszerzona Analityka & Kalendarz** | `tests/enhanced-analysis-calendar.test.cjs` | 4 | `npm test` | **PASS** | Wskaźnik ACWR, intensywność na powtórzenie, 4 wzory 1RM, korelacja kalendarza |
+| **Autonomiczne Akcje Wykonawcze AI** | `tests/ai-agent-autonomous-actions.test.cjs` | 4 | `npm test` | **PASS** | Parsowanie intencji NLP, instalator planu, aplikowanie progresji +2.5kg |
+| **Autonomiczny Agent AI Pełnej Mocy** | `tests/ai-autonomous-features.test.cjs` | 6 | `npm test` | **PASS** | Multi-action batch JSON, deload -40%/-10%, makro, modyfikacje i usuwanie ćwiczeń |
 | **Serwer Google Cloud & Auth** | `tests/server.test.cjs` | 11 | `npm run test:server` | **PASS** | REST API `/api/*`, Google Sign-In, sesje Bearer, CORS dla Cloud Run, Rate Limit |
 
 ---

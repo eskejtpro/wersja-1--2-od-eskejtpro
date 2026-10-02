@@ -741,9 +741,46 @@ ${bloodTestsInfo}
 DŁUGOTERMINOWA PAMIĘĆ AGENTA (Fakty, cele, przebyte kontuzje i preferencje zawodnika):
 ${longTermMemoriesInfo}
 
+AUTONOMICZNE MOŻLIWOŚCI AGENTA (PEŁNE PRAWA ZAPISU I MODYFIKACJI W APLIKACJI):
+Jako autonomiczny Trener i Agent AI masz prawo wykonywać akcje bezpośrednio w bazie aplikacji (tworzyć, modyfikować, zapisywać, usuwać).
+Gdy użytkownik poprosi o wykonanie jakiejkolwiek czynności (np. zapis wagi, dodanie/zmiana ćwiczenia, progresja ciężaru, dodanie notatki, planu, iniekcji, badania krwi, makroskładników diety, ustawień), oprócz czytelnego wyjaśnienia w Markdown dołącz na samym końcu swojej odpowiedzi specjalny blok JSON z akcją:
+
+\`\`\`json:action
+{
+  "type": "LOG_BODY_WEIGHT" | "ADD_EXERCISE" | "MODIFY_EXERCISE" | "DELETE_EXERCISE" | "ADD_TRAINING_DAY" | "ADD_TRAINING_WEEK" | "LOG_CIRCUMFERENCE" | "ADD_PROTOCOL_DOSE" | "ADD_CALENDAR_NOTE" | "ADD_BLOOD_TEST" | "APPLY_PROGRESSION" | "CREATE_DELOAD_WEEK" | "INSTALL_MESOCYCLE_PLAN" | "UPDATE_PROFILE" | "UPDATE_NUTRITION_MACROS" | "UPDATE_SETTINGS" | "SAVE_AI_MEMORY" | "CREATE_BACKUP",
+  "title": "Krótki tytuł akcji",
+  "description": "Opis co zostanie zmodyfikowane w aplikacji",
+  "payload": { ...pola specyficzne dla akcji... }
+}
+\`\`\`
+
+Lub dla wielu operacji jednocześnie:
+\`\`\`json:actions
+[
+  { "type": "...", "title": "...", "description": "...", "payload": { ... } }
+]
+\`\`\`
+
+Przykłady payloadów:
+- LOG_BODY_WEIGHT: { "weight": 84.5, "date": "YYYY-MM-DD", "notes": "...", "timeOfDay": "morning_fasted" }
+- LOG_CIRCUMFERENCE: { "part": "biceps" | "klatka" | "pas" | "udo" | "lydka" | "ramie_l" | "ramie_p", "value": 42.5, "date": "YYYY-MM-DD", "notes": "..." }
+- ADD_EXERCISE: { "name": "Wyciskanie sztangi", "category": "klatka", "sets": 4, "reps": 8, "weight": 90, "rpe": 8, "notes": "Tempo 2-0-1-0" }
+- MODIFY_EXERCISE: { "exerciseName": "Wyciskanie sztangi", "newWeight": 95, "newSets": 4, "newReps": 6, "newRpe": 8.5 }
+- DELETE_EXERCISE: { "exerciseName": "Uginanie przedramion" }
+- APPLY_PROGRESSION: { "incrementKg": 2.5, "category": "all" | "klatka" | "plecy" | "nogi" | "barki" }
+- CREATE_DELOAD_WEEK: { "volumeReductionPct": 40, "intensityReductionPct": 10 }
+- ADD_CALENDAR_NOTE: { "title": "...", "content": "...", "date": "YYYY-MM-DD", "category": "general" | "bloodwork" | "supplement" | "recovery" | "goal" | "warning" }
+- ADD_PROTOCOL_DOSE: { "substance": "Testosteron Enanthate", "dosage": 250, "unit": "mg", "route": "IM", "date": "YYYY-MM-DD", "notes": "..." }
+- ADD_BLOOD_TEST: { "testName": "Testosteron całkowity", "value": 850, "unit": "ng/dl", "minNormal": 240, "maxNormal": 870, "date": "YYYY-MM-DD" }
+- UPDATE_NUTRITION_MACROS: { "dailyCalories": 3200, "proteinGrams": 200, "carbsGrams": 380, "fatsGrams": 75 }
+- UPDATE_PROFILE: { "primaryGoal": "masa" | "redukcja" | "sila", "targetWeight": 88 }
+- UPDATE_SETTINGS: { "theme": "dark", "amoledBlack": true, "hapticIntensity": "strong", "restTimeCompound": 180 }
+- SAVE_AI_MEMORY: { "content": "Zawodnik odczuwa dyskomfort w lewym stawie barkowym przy głębokim wyciskaniu", "category": "injury" | "goal" | "preference" | "record" }
+- CREATE_BACKUP: { "triggerReason": "ai_request" }
+
 ZASADY ODPOWIEDZI:
 1. Odpowiadaj zawsze po polsku, profesjonalnie, rzeczowo i bezpośrednio do zawodnika.
-2. Gdy zawodnik pyta o progresję ciężaru, proponuj konkretne liczby w oparciu o jego historię i RPE.
+2. Gdy zawodnik prosi o wykonanie czegoś, ZAWSZE dołącz blok akcji JSON, aby mógł natychmiast 1-kliknięciem zastosować zmiany lub zatwierdzić autozapis.
 3. Formatuj odpowiedź czytelnie w Markdown: używaj pogrubień, wypunktowań i logicznych sekcji.`;
 
       // Przygotowanie zawartości z historią
@@ -899,6 +936,231 @@ Zadanie:
     } catch (err: any) {
       console.error('[server] Błąd audytu zdrowia AI:', err);
       return res.status(500).json({ error: 'health_audit_failed', details: err?.message });
+    }
+  });
+
+  // Generator Planu Żywieniowego & Makroskładników AI
+  app.post('/api/ai/coach/nutrition-plan', async (req, res) => {
+    try {
+      const { bodyWeight = 85, goal = 'masa', height = 180, age = 28, activity = 'aktywny' } = req.body || {};
+      const ai = getAi();
+
+      if (!ai) {
+        // Kalkulacja offline wg wzoru Harrisa-Benedicta
+        const bmr = 10 * bodyWeight + 6.25 * height - 5 * age + 5;
+        const tdee = Math.round(bmr * (activity === 'bardzo_aktywny' ? 1.75 : 1.55));
+        const targetKcal = goal === 'masa' ? tdee + 350 : goal === 'redukcja' ? tdee - 450 : tdee;
+        const protein = Math.round(bodyWeight * 2.2);
+        const fats = Math.round(bodyWeight * 0.9);
+        const carbs = Math.round((targetKcal - (protein * 4 + fats * 9)) / 4);
+
+        return res.json({
+          planText: `## Indywidualny Plan Makroskładników (Offline)\n- **Kalorie całkowite**: ${targetKcal} kcal\n- **Białko**: ${protein}g (${Math.round((protein * 4 / targetKcal) * 100)}%)\n- **Tłuszcze**: ${fats}g (${Math.round((fats * 9 / targetKcal) * 100)}%)\n- **Węglowodany**: ${carbs}g (${Math.round((carbs * 4 / targetKcal) * 100)}%)\n\n### Zalecenia posiłkowe:\n1. 4-5 posiłków po ~${Math.round(protein / 4)}g białka.\n2. Węglowodany skoncentrowane wokół treningu.\n3. Min. 3.5 litra wody dziennie.`,
+          macros: { dailyCalories: targetKcal, proteinGrams: protein, carbsGrams: carbs, fatsGrams: fats },
+          model: 'local_heuristic',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      const prompt = `Oblicz precyzyjne zapotrzebowanie kaloryczne i rozkład makroskładników dla sportowca siłowego:
+- Waga: ${bodyWeight} kg
+- Wzrost: ${height} cm
+- Wiek: ${age} lat
+- Cel: ${goal} (masa/redukcja/rekompozycja/siła)
+- Poziom aktywności: ${activity}
+
+Podaj:
+1. Całkowite kalorie (Kcal)
+2. Białko (g), Tłuszcze (g), Węglowodany (g)
+3. Timing posiłków okołotreningowych
+4. Suplementację bazową (kreatyna, omega-3, witamina D3, elektrolity)`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          systemInstruction: 'Jesteś Elitarnym Dietetykiem Sportowym. Przygotowujesz precyzyjne rozpiski makroskładników i timing składników odżywczych poparte dowodami naukowymi.',
+          temperature: 0.6,
+        }
+      });
+
+      // Wylicz wartości liczbowe do profilu
+      const protein = Math.round(bodyWeight * 2.2);
+      const fats = Math.round(bodyWeight * 0.9);
+      const targetKcal = goal === 'masa' ? Math.round(bodyWeight * 38) : goal === 'redukcja' ? Math.round(bodyWeight * 28) : Math.round(bodyWeight * 33);
+      const carbs = Math.max(100, Math.round((targetKcal - (protein * 4 + fats * 9)) / 4));
+
+      return res.json({
+        planText: response.text,
+        macros: { dailyCalories: targetKcal, proteinGrams: protein, carbsGrams: carbs, fatsGrams: fats },
+        model: 'gemini-3.8-flash',
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      console.error('[server] Błąd generowania planu żywieniowego:', err);
+      return res.status(500).json({ error: 'nutrition_plan_failed', details: err?.message });
+    }
+  });
+
+  // Dobór zamienników ćwiczeń (Biomechaniczny Exercise Swapper)
+  app.post('/api/ai/coach/swap-exercise', async (req, res) => {
+    try {
+      const { exerciseName, category = 'klatka', reason = 'equipment_busy' } = req.body || {};
+      const ai = getAi();
+
+      if (!ai) {
+        return res.json({
+          substitutes: [
+            { name: `${exerciseName} na hantlach`, sets: 3, reps: 8, reason: 'Lepszy profil oporu i zakres ruchu' },
+            { name: `${exerciseName} na maszynie Hammer`, sets: 3, reps: 10, reason: 'Większa stabilizacja i izolacja' }
+          ],
+          model: 'local_heuristic',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      const prompt = `Zaproponuj 3 równorzędne biomechanicznie zamienniki dla ćwiczenia: "${exerciseName}" (Kategoria: ${category}).
+Powód zmiany: ${reason} (np. brak sprzętu, dyskomfort w stawie, urozmaicenie bodźca).
+
+Dla każdego zamiennika podaj:
+1. Dokładną nazwę ćwiczenia
+2. Proponowaną liczbę serii i powtórzeń
+3. Dlaczego to ćwiczenie jest świetnym substytutem biomechanicznym (profil oporu, bezpieczeństwo stawowe).`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          systemInstruction: 'Jesteś Ekspertem Biomechaniki i Fizjoterapii Sportowej. Dobierasz zamienniki ćwiczeń o zbliżonym ramieniu dźwigni i krzywej oporu.',
+          temperature: 0.6,
+        }
+      });
+
+      return res.json({
+        explanation: response.text,
+        model: 'gemini-3.8-flash',
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      console.error('[server] Błąd swap-exercise:', err);
+      return res.status(500).json({ error: 'swap_exercise_failed', details: err?.message });
+    }
+  });
+
+  // Synteza Mowy Trenera AI (Gemini 3.8 Flash Lite TTS)
+  app.post('/api/ai/coach/tts', async (req, res) => {
+    try {
+      const { text, voice = 'Puck' } = req.body || {};
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: 'text_required' });
+      }
+
+      const ai = getAi();
+      if (!ai) {
+        return res.status(503).json({ error: 'tts_unavailable_offline' });
+      }
+
+      // Przytnij zbyt długie teksty dla szybkiej odpowiedzi audio
+      const cleanText = text.replace(/[*_#`[\]()]/g, '').slice(0, 400);
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash-lite-tts',
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: cleanText }]
+          }
+        ],
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: voice || 'Puck' }
+            }
+          }
+        }
+      });
+
+      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!base64Audio) {
+        return res.status(502).json({ error: 'no_audio_generated' });
+      }
+
+      return res.json({
+        audioBase64: base64Audio,
+        mimeType: 'audio/wav',
+        model: 'gemini-3.8-flash-lite-tts'
+      });
+    } catch (err: any) {
+      console.warn('[server] Błąd Gemini TTS:', err?.message || err);
+      return res.status(500).json({ error: 'tts_failed', details: err?.message });
+    }
+  });
+
+  // NLP Parser Poleceń Agenta (Automatyczne Wykrywanie Akcji Aplikacji)
+  app.post('/api/ai/agent/parse-command', async (req, res) => {
+    try {
+      const { command, gymData } = req.body || {};
+      if (!command || typeof command !== 'string') {
+        return res.status(400).json({ error: 'command_required' });
+      }
+
+      const ai = getAi();
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      if (!ai) {
+        return res.json({
+          actions: [],
+          model: 'local_heuristic',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      const prompt = `Przeanalizuj polecenie użytkownika i przetłumacz je na tablicę JSON akcji w aplikacji PlanPasika:
+Polecenie: "${command}"
+Dzisiejsza data: ${todayStr}
+
+Zwróć wyłącznie prawidłowy format JSON:
+{
+  "summary": "Krótkie podsumowanie co zrobiono",
+  "actions": [
+    {
+      "type": "LOG_BODY_WEIGHT" | "ADD_EXERCISE" | "MODIFY_EXERCISE" | "DELETE_EXERCISE" | "ADD_TRAINING_DAY" | "ADD_TRAINING_WEEK" | "LOG_CIRCUMFERENCE" | "ADD_PROTOCOL_DOSE" | "ADD_CALENDAR_NOTE" | "ADD_BLOOD_TEST" | "APPLY_PROGRESSION" | "CREATE_DELOAD_WEEK" | "INSTALL_MESOCYCLE_PLAN" | "UPDATE_PROFILE" | "UPDATE_NUTRITION_MACROS" | "UPDATE_SETTINGS" | "SAVE_AI_MEMORY" | "CREATE_BACKUP",
+      "title": "Tytuł akcji",
+      "description": "Opis akcji",
+      "payload": { ... }
+    }
+  ]
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          systemInstruction: 'Jesteś Kompilatorem Poleceń do Bazy Aplikacji Treningowej. Tłumaczysz naturalny język na ścisłe akcje JSON.',
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+        }
+      });
+
+      try {
+        const parsed = JSON.parse(response.text || '{}');
+        return res.json({
+          summary: parsed.summary || 'Przetworzono polecenie',
+          actions: Array.isArray(parsed.actions) ? parsed.actions : [],
+          model: 'gemini-3.8-flash',
+          timestamp: new Date().toISOString()
+        });
+      } catch {
+        return res.json({
+          summary: 'Nie udało się sparsować akcji',
+          actions: [],
+          model: 'gemini-3.8-flash'
+        });
+      }
+    } catch (err: any) {
+      console.error('[server] Błąd parse-command:', err);
+      return res.status(500).json({ error: 'parse_command_failed', details: err?.message });
     }
   });
 

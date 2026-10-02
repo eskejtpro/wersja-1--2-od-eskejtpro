@@ -43,6 +43,10 @@ export const soundService = {
     this.playTone([523.25, 659.25, 783.99, 1046.50], 220, 'triangle');
   },
 
+  playSuccess(): void {
+    this.playTone([587.33, 739.99, 880, 1174.66], 180, 'triangle');
+  },
+
   playSportBeep(): void {
     this.playTone([880, 1100], 100, 'sine');
   },

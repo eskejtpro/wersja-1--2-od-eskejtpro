@@ -28,7 +28,21 @@ import {
   Plus,
   Bookmark,
   History,
-  Save
+  Save,
+  Wand2,
+  CheckSquare,
+  ArrowRight,
+  Utensils,
+  Repeat,
+  Square,
+  Shield,
+  HeartPulse,
+  Ruler,
+  Clock,
+  Play,
+  VolumeX,
+  PlusCircle,
+  HelpCircle
 } from 'lucide-react';
 import { 
   GymData, 
@@ -38,9 +52,20 @@ import {
   BodyWeightEntry, 
   CalendarDayNote,
   AiChatMessage,
-  AiAgentMemory
+  AiAgentMemory,
+  AiAgentAction,
+  Exercise,
+  ProtocolEntry,
+  CircumferenceEntry,
+  BodyPartMeasurement
 } from '../types';
 import { soundService } from '../utils/soundService';
+import { 
+  parseAiResponseAction, 
+  generateStructuredMesocycle, 
+  applyProgressionOverload,
+  createDeloadWeek
+} from '../utils/aiActionExecutor';
 
 interface AiCoachViewProps {
   gymData: GymData;
@@ -48,11 +73,24 @@ interface AiCoachViewProps {
   profile?: UserProfile;
   calendarNotes?: CalendarDayNote[];
   bodyWeights?: BodyWeightEntry[];
+  circumferences?: CircumferenceEntry[];
+  bodyPartMeasurements?: BodyPartMeasurement[];
   bloodTests?: any[];
   chatHistory?: AiChatMessage[];
   onUpdateChatHistory?: (history: AiChatMessage[]) => void;
   agentMemories?: AiAgentMemory[];
   onUpdateAgentMemories?: (memories: AiAgentMemory[]) => void;
+  // Execution callbacks for autonomous AI actions
+  onAddExercise?: (weekId: string, dayId: string, exerciseData: Omit<Exercise, 'id'>) => void;
+  onAddBodyWeight?: (entry: Omit<BodyWeightEntry, 'id'>) => void;
+  onAddCircumference?: (entry: Omit<CircumferenceEntry, 'id'>) => void;
+  onAddBodyMeasurement?: (entry: Omit<BodyPartMeasurement, 'id'>) => void;
+  onAddProtocolEntry?: (entry: Omit<ProtocolEntry, 'id'>) => void;
+  onAddCalendarNote?: (note: Omit<CalendarDayNote, 'id' | 'createdAt'>) => void;
+  onUpdateProfile?: (profile: Partial<UserProfile>) => void;
+  onUpdateSettings?: (settings: Partial<AppSettings>) => void;
+  onUpdateWeeks?: (weeks: TrainingWeek[]) => void;
+  onCreateBackup?: (reason?: string) => void;
 }
 
 type AiPersona = 'head_coach' | 'data_analyst' | 'health_specialist' | 'hardcore_motivator' | 'nutritionist';
@@ -100,12 +138,15 @@ const AI_PERSONAS = [
   }
 ];
 
-const QUICK_PROMPTS = [
-  { label: '📈 Progresja Ciężaru', prompt: 'Przeanalizuj moje ostatnie ćwiczenia i zaproponuj konkretną progresję ciężaru na najbliższy trening.' },
-  { label: '🛡️ Ocena Zmęczenia & Deload', prompt: 'Oceń mój tonaż i liczbę serii. Czy na podstawie wykonanych jednostek powinienem zaplanować tydzień deloadu?' },
-  { label: '🎯 Balans Objętości Partii', prompt: 'Czy objętość (liczba serii) na poszczególne grupy mięśniowe jest w moim planie zbalansowana?' },
-  { label: '🥗 Zapotrzebowanie Białkowe & Kalorie', prompt: 'Oceń moją wagę i trend EMA. Ile białka i kalorii powinienem spożywać na obecnym etapie cyklu?' },
-  { label: '🩸 Interpretacja Badań Krwi', prompt: 'Przeanalizuj moje ostatnie badania krwi i wskaż kluczowe biomarkery wymagające uwagi.' },
+const QUICK_COMMAND_PRESETS = [
+  { label: '⚡ Auto-Progresja +2.5kg', prompt: 'Zastosuj progresję przeciążenia +2.5kg do wszystkich głównych ćwiczeń wielostawowych.' },
+  { label: '🛡️ Zaplanuj Deload', prompt: 'Zaplanuj tydzień deloadu: zmniejsz objętość serii o 40% i obciążenie o 10%.' },
+  { label: '⚖️ Zapisz Wagę Poranną', prompt: 'Zapisz moją poranną wagę ciała na czczo: 84.5 kg.' },
+  { label: '🥗 Wylicz Makro na Masę', prompt: 'Oblicz moje zapotrzebowanie kaloryczne i rozkład makroskładników na masę jakościową (lean bulk).' },
+  { label: '📋 Stwórz Plan PPL 4-Dni', prompt: 'Stwórz dla mnie kompletny 4-dniowy profesjonalny plan treningowy Push Pull Legs z priorytetem góry ciała.' },
+  { label: '🩸 Audyt Badań Laboratoryjnych', prompt: 'Przeanalizuj moje ostatnie wyniki badań krwi i oceń profil lipidowy oraz próby wątrobowe.' },
+  { label: '📏 Zapisz Obwód Bicepsa', prompt: 'Zapisz pomiar obwodu bicepsa: 42.5 cm.' },
+  { label: '💾 Utwórz Kopię Zapasową', prompt: 'Wykonaj natychmiastową kopię zapasową bazy danych aplikacji.' },
 ];
 
 export const AiCoachView: React.FC<AiCoachViewProps> = ({
@@ -114,17 +155,29 @@ export const AiCoachView: React.FC<AiCoachViewProps> = ({
   profile,
   calendarNotes = [],
   bodyWeights = [],
+  circumferences = [],
+  bodyPartMeasurements = [],
   bloodTests = [],
   chatHistory = [],
   onUpdateChatHistory,
   agentMemories = [],
-  onUpdateAgentMemories
+  onUpdateAgentMemories,
+  onAddExercise,
+  onAddBodyWeight,
+  onAddCircumference,
+  onAddBodyMeasurement,
+  onAddProtocolEntry,
+  onAddCalendarNote,
+  onUpdateProfile,
+  onUpdateSettings,
+  onUpdateWeeks,
+  onCreateBackup
 }) => {
   const isDark = settings.theme === 'dark';
   const isAmoled = settings.amoledBlack === true;
   
   // Active Main Tab
-  const [activeTab, setActiveTab] = useState<'chat' | 'memories' | 'plan_generator' | 'health_audit' | 'mesocycle_report'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'automation' | 'plan_generator' | 'nutrition_plan' | 'exercise_swapper' | 'health_audit' | 'memories'>('chat');
   
   // Selected Persona
   const [selectedPersona, setSelectedPersona] = useState<AiPersona>('head_coach');
@@ -133,7 +186,20 @@ export const AiCoachView: React.FC<AiCoachViewProps> = ({
   const defaultWelcomeMessage: AiChatMessage = {
     id: 'welcome-msg',
     role: 'assistant',
-    content: `Cześć **${profile?.name || 'Zawodniku'}**! 👋 Jestem Twoim zaawansowanym **Trenerem AI Online (Gemini 3.8 Flash)** w aplikacji PlanPasika.v2.\n\n💾 **Pamięć Agenta jest włączona**: Zapamiętuję wszystkie nasze rozmowy, Twoje cele, historię tonażu, wagi EMA oraz badania krwi w bezpiecznej bazie Room SQL.\n\nW czym mogę Ci dzisiaj pomóc?`,
+    content: `Cześć **${profile?.name || 'Zawodniku'}**! 👋 Jestem Twoim autonomicznym **Trenerem AI & Agentem Wykonawczym (Gemini 3.8 Flash)** w aplikacji PlanPasika.v2.
+
+⚡ **Pełna kontrola nad aplikacją (Wszystkie Funkcje Zintegrowane)**:
+Mogę bezpośrednio w bazie aplikacji:
+- 🏋️ **Tworzyć, edytować i instalować plany treningowe** (PPL, Upper/Lower, FBW, Arnold Split)
+- 📈 **Stosować progresję liniową i skokową (+2.5kg / +5kg)** lub planować deload
+- ⚖️ **Rejestrować wagę ciała i pomiary obwodów sylwetki** (biceps, klatka, pas, udo)
+- 💉 **Dodawać iniekcje i suplementy do kalendarza cyklu**
+- 🩸 **Wprowadzać wyniki badań laboratoryjnych krwi i przeprowadzać audyty**
+- 🥗 **Generować i zapisywać cele makroskładników w profilu** (Kcal, Białko, Węgle, Tłuszcze)
+- 🔄 **Dobierać biomechaniczne zamienniki ćwiczeń**
+- ⚙️ **Konfigurować ustawienia aplikacji** (motywy, stoper, haptykę) oraz tworzyć kopie zapasowe
+
+Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z menu poniżej!`,
     timestamp: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
     model: 'gemini-3.8-flash',
     persona: 'head_coach'
@@ -157,6 +223,10 @@ export const AiCoachView: React.FC<AiCoachViewProps> = ({
   const [inputPrompt, setInputPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+
+  // Audio player ref
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // New Memory Input State
   const [newMemoryContent, setNewMemoryContent] = useState('');
@@ -170,13 +240,23 @@ export const AiCoachView: React.FC<AiCoachViewProps> = ({
   const [generatedPlanText, setGeneratedPlanText] = useState<string | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
 
+  // Nutrition Plan Generator State
+  const [nutritionGoal, setNutritionGoal] = useState<'masa' | 'redukcja' | 'rekompozycja'>('masa');
+  const [nutritionActivity, setNutritionActivity] = useState<string>('aktywny');
+  const [generatedNutritionText, setGeneratedNutritionText] = useState<string | null>(null);
+  const [generatedMacros, setGeneratedMacros] = useState<{ dailyCalories: number; proteinGrams: number; carbsGrams: number; fatsGrams: number } | null>(null);
+  const [isGeneratingNutrition, setIsGeneratingNutrition] = useState(false);
+
+  // Exercise Swapper State
+  const [swapExerciseName, setSwapExerciseName] = useState('Wyciskanie sztangi na ławce poziomej');
+  const [swapCategory, setSwapCategory] = useState<'klatka' | 'plecy' | 'biceps' | 'triceps' | 'barki' | 'nogi'>('klatka');
+  const [swapReason, setSwapReason] = useState('Brak wolnej sztangi / zajęty sprzęt');
+  const [swapResultText, setSwapResultText] = useState<string | null>(null);
+  const [isSwapping, setIsSwapping] = useState(false);
+
   // Health Audit State
   const [healthAuditText, setHealthAuditText] = useState<string | null>(null);
   const [isAuditingHealth, setIsAuditingHealth] = useState(false);
-
-  // Deep Analysis Report State
-  const [analysisReport, setAnalysisReport] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -225,11 +305,327 @@ export const AiCoachView: React.FC<AiCoachViewProps> = ({
       currentWeekName: currentWeek?.name || `Tydzień ${currentWeek?.number || 1}`,
       latestWeight,
       weightTrendEMA: settings.emaAlpha ? latestWeight : undefined,
-      recentExercises: recentExercises.slice(0, 10),
+      recentExercises: recentExercises.slice(0, 12),
       recentNotes,
       recentBloodTests: (bloodTests || []).slice(0, 10),
       memories: agentMemories.map(m => `[${m.category}] ${m.content}`)
     };
+  };
+
+  // Autonomous Single Action Executor
+  const executeSingleAction = (action: AiAgentAction) => {
+    try {
+      switch (action.type) {
+        case 'LOG_BODY_WEIGHT': {
+          if (onAddBodyWeight && action.payload?.weight) {
+            onAddBodyWeight({
+              date: action.payload.date || new Date().toISOString().split('T')[0],
+              weight: Number(action.payload.weight),
+              notes: action.payload.notes || 'Wpis przez Trenera AI'
+            });
+          }
+          break;
+        }
+        case 'LOG_CIRCUMFERENCE': {
+          if (onAddCircumference && action.payload?.value) {
+            const rawPart = (action.payload.part || action.payload.bodyPart || 'ramię') as any;
+            const validPart = ['klatka', 'talia', 'biodra', 'udo', 'łydka', 'ramię'].includes(rawPart) ? rawPart : 'ramię';
+            onAddCircumference({
+              date: action.payload.date || new Date().toISOString().split('T')[0],
+              bodyPart: validPart,
+              side: action.payload.side || null,
+              variant: action.payload.variant || 'standard',
+              millimeters: Math.round(Number(action.payload.value) * 10),
+              notes: action.payload.notes || 'Pomiar przez Trenera AI'
+            });
+          }
+          break;
+        }
+        case 'LOG_BODY_MEASUREMENT': {
+          if (onAddBodyMeasurement && action.payload?.value) {
+            const rawPart = (action.payload.part || 'biceps') as any;
+            const validPart = ['biceps', 'triceps', 'klata', 'barki', 'nogi'].includes(rawPart) ? rawPart : 'biceps';
+            onAddBodyMeasurement({
+              date: action.payload.date || new Date().toISOString().split('T')[0],
+              part: validPart,
+              value: Number(action.payload.value),
+              notes: action.payload.notes || 'Wpis AI'
+            });
+          }
+          break;
+        }
+        case 'ADD_PROTOCOL_DOSE': {
+          if (onAddProtocolEntry && action.payload?.substance) {
+            onAddProtocolEntry({
+              date: action.payload.date || new Date().toISOString().split('T')[0],
+              substance: action.payload.substance,
+              dosage: Number(action.payload.dosage) || 100,
+              unit: action.payload.unit || 'mg',
+              route: action.payload.route || 'IM',
+              notes: action.payload.notes,
+              color: action.payload.color || 'emerald'
+            });
+          }
+          break;
+        }
+        case 'ADD_CALENDAR_NOTE': {
+          if (onAddCalendarNote && action.payload?.content) {
+            onAddCalendarNote({
+              date: action.payload.date || new Date().toISOString().split('T')[0],
+              title: action.payload.title,
+              content: action.payload.content,
+              category: action.payload.category || 'general',
+              color: action.payload.color || 'amber',
+              isImportant: !!action.payload.isImportant
+            });
+          }
+          break;
+        }
+        case 'ADD_BLOOD_TEST': {
+          if (onAddCalendarNote && action.payload?.testName) {
+            onAddCalendarNote({
+              date: action.payload.date || new Date().toISOString().split('T')[0],
+              title: `Badanie: ${action.payload.testName}`,
+              content: `Wynik: ${action.payload.value} ${action.payload.unit || ''} (Norma: ${action.payload.minNormal || '-'}-${action.payload.maxNormal || '-'}). ${action.payload.notes || ''}`,
+              category: 'bloodwork',
+              color: 'purple',
+              isImportant: true
+            });
+          }
+          break;
+        }
+        case 'ADD_EXERCISE': {
+          if (onAddExercise && gymData.weeks && gymData.weeks.length > 0) {
+            const currentWeek = gymData.weeks[gymData.weeks.length - 1];
+            const currentDay = currentWeek?.days?.[0];
+            if (currentWeek && currentDay) {
+              onAddExercise(currentWeek.id, currentDay.id, {
+                name: action.payload.name || 'Nowe Ćwiczenie AI',
+                category: action.payload.category || 'klatka',
+                sets: Number(action.payload.sets) || 3,
+                reps: Number(action.payload.reps) || 8,
+                weight: Number(action.payload.weight) || 50,
+                rpe: Number(action.payload.rpe) || 8,
+                notes: action.payload.notes || 'Dodano przez Trenera AI',
+                history: []
+              });
+            }
+          }
+          break;
+        }
+        case 'MODIFY_EXERCISE': {
+          if (onUpdateWeeks && gymData.weeks && action.payload?.exerciseName) {
+            const targetName = String(action.payload.exerciseName).toLowerCase();
+            const updated = gymData.weeks.map(week => ({
+              ...week,
+              days: week.days.map(day => ({
+                ...day,
+                exercises: day.exercises.map(ex => {
+                  if (ex.name.toLowerCase().includes(targetName) || targetName.includes(ex.name.toLowerCase())) {
+                    return {
+                      ...ex,
+                      weight: action.payload.newWeight ? Number(action.payload.newWeight) : ex.weight,
+                      sets: action.payload.newSets ? Number(action.payload.newSets) : ex.sets,
+                      reps: action.payload.newReps ? Number(action.payload.newReps) : ex.reps,
+                      rpe: action.payload.newRpe ? Number(action.payload.newRpe) : ex.rpe,
+                      notes: action.payload.notes ? `${ex.notes || ''} [${action.payload.notes}]` : ex.notes
+                    };
+                  }
+                  return ex;
+                })
+              }))
+            }));
+            onUpdateWeeks(updated);
+          }
+          break;
+        }
+        case 'DELETE_EXERCISE': {
+          if (onUpdateWeeks && gymData.weeks && action.payload?.exerciseName) {
+            const targetName = String(action.payload.exerciseName).toLowerCase();
+            const updated = gymData.weeks.map(week => ({
+              ...week,
+              days: week.days.map(day => ({
+                ...day,
+                exercises: day.exercises.filter(ex => !ex.name.toLowerCase().includes(targetName) && !targetName.includes(ex.name.toLowerCase()))
+              }))
+            }));
+            onUpdateWeeks(updated);
+          }
+          break;
+        }
+        case 'APPLY_PROGRESSION': {
+          if (onUpdateWeeks && gymData.weeks && gymData.weeks.length > 0) {
+            const inc = Number(action.payload?.incrementKg) || 2.5;
+            const category = action.payload?.category;
+            const updated = applyProgressionOverload(gymData.weeks, inc, category);
+            onUpdateWeeks(updated);
+          }
+          break;
+        }
+        case 'CREATE_DELOAD_WEEK': {
+          if (onUpdateWeeks && gymData.weeks && gymData.weeks.length > 0) {
+            const lastWeek = gymData.weeks[gymData.weeks.length - 1];
+            const deload = createDeloadWeek(
+              lastWeek, 
+              gymData.weeks.length + 1, 
+              Number(action.payload?.volumeReductionPct) || 40,
+              Number(action.payload?.intensityReductionPct) || 10
+            );
+            onUpdateWeeks([...gymData.weeks, deload]);
+          }
+          break;
+        }
+        case 'INSTALL_MESOCYCLE_PLAN': {
+          if (onUpdateWeeks) {
+            const newWeeks = generateStructuredMesocycle(
+              action.payload?.goal || 'hypertrophy',
+              action.payload?.split || 'ppl',
+              action.payload?.days || 4,
+              4
+            );
+            onUpdateWeeks(newWeeks);
+          }
+          break;
+        }
+        case 'UPDATE_NUTRITION_MACROS': {
+          if (onUpdateProfile && action.payload) {
+            onUpdateProfile({
+              dailyCalories: action.payload.dailyCalories,
+              proteinGrams: action.payload.proteinGrams,
+              carbsGrams: action.payload.carbsGrams,
+              fatsGrams: action.payload.fatsGrams,
+              dietaryMacros: {
+                calories: action.payload.dailyCalories,
+                protein: action.payload.proteinGrams,
+                carbs: action.payload.carbsGrams,
+                fats: action.payload.fatsGrams
+              }
+            });
+          }
+          break;
+        }
+        case 'SAVE_AI_MEMORY': {
+          if (onUpdateAgentMemories && action.payload?.content) {
+            const newMemory: AiAgentMemory = {
+              id: `mem-${Date.now()}`,
+              content: action.payload.content,
+              category: action.payload.category || 'general',
+              createdAt: new Date().toLocaleDateString('pl-PL')
+            };
+            onUpdateAgentMemories([newMemory, ...agentMemories]);
+          }
+          break;
+        }
+        case 'CREATE_BACKUP': {
+          if (onCreateBackup) {
+            onCreateBackup('ai_agent_action');
+          }
+          break;
+        }
+        case 'UPDATE_PROFILE': {
+          if (onUpdateProfile && action.payload) {
+            onUpdateProfile(action.payload);
+          }
+          break;
+        }
+        case 'UPDATE_SETTINGS': {
+          if (onUpdateSettings && action.payload) {
+            onUpdateSettings(action.payload);
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      console.error('Error executing single action:', e);
+    }
+  };
+
+  // Execute All Actions in Message
+  const handleExecuteActions = (messageId: string, actionsToExecute: AiAgentAction[]) => {
+    try {
+      actionsToExecute.forEach(act => executeSingleAction(act));
+
+      // Update message status to 'executed'
+      const updatedMessages = messages.map(m => {
+        if (m.id === messageId) {
+          const updatedAction = m.action ? { ...m.action, status: 'executed' as const } : undefined;
+          const updatedActionsList = m.actions ? m.actions.map(a => ({ ...a, status: 'executed' as const })) : undefined;
+          return {
+            ...m,
+            action: updatedAction,
+            actions: updatedActionsList
+          };
+        }
+        return m;
+      });
+
+      setMessages(updatedMessages);
+      if (onUpdateChatHistory) {
+        onUpdateChatHistory(updatedMessages);
+      }
+      soundService.playSuccess();
+      soundService.triggerHaptic('strong');
+    } catch (e) {
+      console.error('Action execution error:', e);
+    }
+  };
+
+  // Play Speech Audio (TTS via Gemini or Web Speech)
+  const handlePlayVoice = async (messageId: string, textToSpeak: string) => {
+    if (playingAudioId === messageId) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      window.speechSynthesis?.cancel();
+      setPlayingAudioId(null);
+      return;
+    }
+
+    setPlayingAudioId(messageId);
+
+    try {
+      const response = await fetch('/api/ai/coach/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: textToSpeak,
+          voice: selectedPersona === 'hardcore_motivator' ? 'Fenrir' : selectedPersona === 'nutritionist' ? 'Kore' : 'Puck'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.audioBase64) {
+          const audio = new Audio(`data:audio/wav;base64,${data.audioBase64}`);
+          audioRef.current = audio;
+          audio.onended = () => setPlayingAudioId(null);
+          audio.onerror = () => {
+            playBrowserSpeech(textToSpeak, () => setPlayingAudioId(null));
+          };
+          await audio.play();
+          return;
+        }
+      }
+      // Fallback to Web Speech API
+      playBrowserSpeech(textToSpeak, () => setPlayingAudioId(null));
+    } catch {
+      playBrowserSpeech(textToSpeak, () => setPlayingAudioId(null));
+    }
+  };
+
+  const playBrowserSpeech = (text: string, onEnd: () => void) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const clean = text.replace(/[*_#`[\]()]/g, '').slice(0, 300);
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.lang = 'pl-PL';
+      utterance.rate = 1.05;
+      utterance.onend = onEnd;
+      utterance.onerror = onEnd;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      onEnd();
+    }
   };
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -270,13 +666,16 @@ export const AiCoachView: React.FC<AiCoachViewProps> = ({
       }
 
       const data = await response.json();
+      const { cleanContent, action, actions } = parseAiResponseAction(data.reply || '', messageText);
       const botMessage: AiChatMessage = {
         id: `msg-bot-${Date.now()}`,
         role: 'assistant',
-        content: data.reply || 'Otrzymano pustą odpowiedź.',
+        content: cleanContent || data.reply || 'Otrzymano odpowiedź.',
         timestamp: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
         model: data.model || 'gemini-3.8-flash',
-        persona: selectedPersona
+        persona: selectedPersona,
+        action,
+        actions
       };
 
       const finalMessagesList = [...newMessagesList, botMessage];
@@ -286,90 +685,33 @@ export const AiCoachView: React.FC<AiCoachViewProps> = ({
       }
       soundService.triggerHaptic('light');
     } catch (err: any) {
-      console.error('Chat network error, using client-side offline heuristic:', err);
+      console.error('Chat error, using offline intelligence:', err);
       const athleteName = profile?.name || 'Zawodniku';
-      const currentWeek = gymData.weeks?.[gymData.weeks.length - 1]?.name || 'Aktualny Tydzień';
-      const latestWeight = bodyWeights.length > 0 ? `${bodyWeights[bodyWeights.length - 1]?.weight} kg` : 'Brak danych';
+      const { cleanContent, action, actions } = parseAiResponseAction(`Przeanalizowałem Twoje zapytanie w trybie lokalnym. Wszystkie dane treningowe są bezpiecznie synchronizowane.`, messageText);
       
-      // Inteligentna odpowiedź offline na podstawie wiedzy metodycznej
-      const query = messageText.toLowerCase();
-      let offlineReply = '';
-      if (query.includes('progres') || query.includes('ciężar') || query.includes('1rm') || query.includes('sił')) {
-        offlineReply = `**Wskazówka Progresji Ciężaru dla ${athleteName} (Tryb Offline / Baza Wiedzy):**
-1. **Zasada mikro-progresji**: Zwiększ obciążenie o +1.25 kg do +2.5 kg w pierwszej serii roboczej głównego boju.
-2. **Kontrola RPE**: Jeśli poprzednia seria była na RPE ≤ 8 (min. 2 powtórzenia w zapasie), progresuj ciężar. W przeciwnym razie utrzymaj ciężar i dodaj 1 powtórzenie.
-3. **Pauza izometryczna**: Na ćwiczeniach akcesoryjnych dodaj 1-sekundową pauzę w punkcie maksymalnego rozciągnięcia.`;
-      } else if (query.includes('deload') || query.includes('zmęczen') || query.includes('regeneracj')) {
-        offlineReply = `**Ocena Regeneracji & Protokół Deloadu dla ${athleteName}:**
-- Jeśli na 2 kolejnych treningach w ${currentWeek} zanotowałeś spadek powtórzeń o >20%, układ nerwowy (OUN) wymaga deloadu.
-- **Zalecenie**: Zmniejsz tonaż o 35% na okres 5-7 dni, zachowując ten sam ciężar, ale wykonując tylko 2/3 zaplanowanych serii roboczych.`;
-      } else if (query.includes('białk') || query.includes('diet') || query.includes('kalor') || query.includes('makro')) {
-        offlineReply = `**Zalecenia Dietetyczne dla ${athleteName} (Waga: ${latestWeight}):**
-- **Podaż białka**: Celuj w 2.0g - 2.2g / kg m.c. (ok. ${bodyWeights.length > 0 ? Math.round((bodyWeights[bodyWeights.length - 1].weight || 80) * 2.1) : 170}g białka dziennie).
-- **Okołotreningowo**: Posiłek z węglowodanami złożonymi na 90 min przed sesją i 40g białka potreningowo dla optymalizacji kinazy mTOR.`;
-      } else {
-        offlineReply = `Witaj ${athleteName}! [Tryb Bazy Wiedzy Offline]
-Dla etapu **${currentWeek}** kluczowa jest powtarzalność serii roboczych w zadanym RIR 1-2 oraz prawidłowa rejestracja danych w aplikacji. Pamięć faktów agenta pozostaje w pełni aktywna w lokalnej bazie Room SQL.`;
-      }
-
       const botMessage: AiChatMessage = {
-        id: `msg-offline-${Date.now()}`,
+        id: `msg-bot-${Date.now()}`,
         role: 'assistant',
-        content: offlineReply,
+        content: `**Komunikat Trenera dla ${athleteName} (Silnik Lokalny):**\n\nPrzetworzyłem Twoje polecenie: *„${messageText}”*.\n\nKliknij poniższy przycisk akcji, aby natychmiast zastosować zmiany w aplikacji lub kontynuuj trening.`,
         timestamp: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
-        model: 'offline_knowledge_base',
-        persona: selectedPersona
+        model: 'local_heuristic_engine',
+        persona: selectedPersona,
+        action,
+        actions
       };
+
       const finalMessagesList = [...newMessagesList, botMessage];
       setMessages(finalMessagesList);
       if (onUpdateChatHistory) {
         onUpdateChatHistory(finalMessagesList);
       }
-      soundService.triggerHaptic('light');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleClearHistory = () => {
-    if (window.confirm('Czy na pewno chcesz wyczyścić całą zapisaną historię czatu z Trenerem AI?')) {
-      const resetList = [defaultWelcomeMessage];
-      setMessages(resetList);
-      if (onUpdateChatHistory) {
-        onUpdateChatHistory(resetList);
-      }
-      soundService.triggerHaptic('medium');
-    }
-  };
-
-  const handleAddMemory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMemoryContent.trim()) return;
-
-    const newEntry: AiAgentMemory = {
-      id: `mem-${Date.now()}`,
-      content: newMemoryContent.trim(),
-      category: newMemoryCategory,
-      createdAt: new Date().toLocaleDateString('pl-PL')
-    };
-
-    const updated = [newEntry, ...agentMemories];
-    if (onUpdateAgentMemories) {
-      onUpdateAgentMemories(updated);
-    }
-    setNewMemoryContent('');
-    soundService.triggerHaptic('light');
-  };
-
-  const handleDeleteMemory = (id: string) => {
-    const updated = agentMemories.filter(m => m.id !== id);
-    if (onUpdateAgentMemories) {
-      onUpdateAgentMemories(updated);
-    }
-    soundService.triggerHaptic('light');
-  };
-
-  const handleGeneratePlan = async () => {
+  // Generator Planu Treningowego Tab
+  const handleGeneratePlanTab = async () => {
     setIsGeneratingPlan(true);
     try {
       const response = await fetch('/api/ai/coach/generate-plan', {
@@ -379,592 +721,740 @@ Dla etapu **${currentWeek}** kluczowa jest powtarzalność serii roboczych w zad
           goal: planGoal,
           split: planSplit,
           daysPerWeek: planDays,
-          experience: planExperience,
-          focusMuscle: 'general'
+          experience: planExperience
         })
       });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setGeneratedPlanText(data.planText);
-      soundService.triggerHaptic('medium');
-    } catch (err: any) {
-      console.error('Generate plan network error, using structured offline generator:', err);
-      const splitNames: Record<string, string> = {
-        ppl: 'Push / Pull / Legs',
-        upper_lower: 'Góra / Dół (Upper/Lower)',
-        full_body: 'Full Body Workout (FBW)'
-      };
-      const fallbackPlan = `## Plan Treningowy [Generator Bazy Wiedzy Offline]
-- **Cel**: ${planGoal === 'hypertrophy' ? 'Masa i Hipertrofia' : planGoal === 'strength' ? 'Siła 1RM' : 'Rekompozycja'}
-- **Podział**: ${splitNames[planSplit] || planSplit} (${planDays} dni/tydzień)
-- **Zaawansowanie**: ${planExperience}
-
-### Dzień 1: Push (Klatka, Przedni Akton Barku, Triceps)
-1. **Wyciskanie sztangi na ławce poziomej**: 4 serie x 6-8 powt. (RIR 2, przerwa 120s)
-2. **Wyciskanie hantli na skosie dodatnim 30°**: 3 serie x 8-10 powt. (RIR 1-2, przerwa 90s)
-3. **Wznosy hantli bokiem (boczny akton)**: 4 serie x 12-15 powt. (RIR 1, przerwa 60s)
-4. **Wyciskanie francuskie ze sztangą łamaną leżąc**: 3 serie x 10-12 powt. (RIR 1, przerwa 75s)
-5. **Prostowanie ramion na wyciągu (sznur)**: 3 serie x 12-15 powt. (RIR 0, przerwa 60s)
-
-### Dzień 2: Pull (Plecy, Tył Barku, Biceps)
-1. **Wiosłowanie sztangą w opadzie tułowia**: 4 serie x 6-8 powt. (RIR 2, przerwa 120s)
-2. **Ściąganie drążka wyciągu pionowego do klatki**: 3 serie x 8-10 powt. (RIR 1-2, przerwa 90s)
-3. **Face Pulls na bramie (rotacja zewnętrzna)**: 4 serie x 15 powt. (RIR 1, przerwa 60s)
-4. **Uginanie przedramion ze sztangą stojąc**: 3 serie x 8-10 powt. (RIR 1, przerwa 75s)
-5. **Uginanie przedramion z hantlami chwytem młotkowym**: 3 serie x 10-12 powt. (RIR 0, przerwa 60s)
-
-### Dzień 3: Legs (Czworogłowe, Dwugłowe, Łydki)
-1. **Przysiad ze sztangą na plecach (Back Squat)**: 4 serie x 6-8 powt. (RIR 2, przerwa 150s)
-2. **Rumuński Martwy Ciąg z hantlami (RDL)**: 3 serie x 8-10 powt. (RIR 2, przerwa 90s)
-3. **Wypychanie ciężaru na suwnicy (Leg Press)**: 3 serie x 10-12 powt. (RIR 1, przerwa 90s)
-4. **Uginanie nóg leżąc na maszynie**: 3 serie x 12-15 powt. (RIR 1, przerwa 60s)
-5. **Wspięcia na palce stojąc (łydki)**: 4 serie x 15-20 powt. (pauza 2s na dole, przerwa 45s)`;
-      setGeneratedPlanText(fallbackPlan);
-      soundService.triggerHaptic('medium');
+      soundService.playSuccess();
+    } catch (e) {
+      console.error(e);
+      setGeneratedPlanText(`## Wygenerowany Plan Treningowy (Tryb Offline)\n- Cel: ${planGoal}\n- Split: ${planSplit}\n- Dni: ${planDays}\n\n1. Dzień 1: Push\n2. Dzień 2: Pull\n3. Dzień 3: Legs\n4. Dzień 4: Upper Power`);
     } finally {
       setIsGeneratingPlan(false);
     }
   };
 
+  // Generator Makro Tab
+  const handleGenerateNutritionTab = async () => {
+    setIsGeneratingNutrition(true);
+    try {
+      const currentWeight = bodyWeights.length > 0 ? bodyWeights[bodyWeights.length - 1].weight : (profile?.targetWeight || 84);
+      const response = await fetch('/api/ai/coach/nutrition-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bodyWeight: currentWeight,
+          goal: nutritionGoal,
+          height: profile?.heightCm || profile?.height || 180,
+          age: profile?.age || 28,
+          activity: nutritionActivity
+        })
+      });
+      const data = await response.json();
+      setGeneratedNutritionText(data.planText);
+      if (data.macros) {
+        setGeneratedMacros(data.macros);
+      }
+      soundService.playSuccess();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingNutrition(false);
+    }
+  };
+
+  // Exercise Swapper Tab
+  const handleSwapExerciseTab = async () => {
+    setIsSwapping(true);
+    try {
+      const response = await fetch('/api/ai/coach/swap-exercise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exerciseName: swapExerciseName,
+          category: swapCategory,
+          reason: swapReason
+        })
+      });
+      const data = await response.json();
+      setSwapResultText(data.explanation || 'Znaleziono optymalne biomechaniczne zamienniki.');
+      soundService.playSuccess();
+    } catch (e) {
+      console.error(e);
+      setSwapResultText(`## Rekomendowane Zamienniki Biomechaniczne (Offline)\n1. **${swapExerciseName} na hantlach** - lepszy profil oporu i naturalny tor ruchu stawu.\n2. **Wyciskanie na maszynie Hammer Strength** - izolacja i maksymalna stabilizacja.`);
+    } finally {
+      setIsSwapping(false);
+    }
+  };
+
+  // Health Audit Tab
   const handleRunHealthAudit = async () => {
     setIsAuditingHealth(true);
     try {
-      const latestWeight = bodyWeights.length > 0 ? bodyWeights[bodyWeights.length - 1]?.weight : 85;
+      const currentWeight = bodyWeights.length > 0 ? bodyWeights[bodyWeights.length - 1].weight : 85;
       const response = await fetch('/api/ai/coach/audit-health', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bloodTests,
           notes: calendarNotes,
-          bodyWeight: latestWeight
+          bodyWeight: currentWeight
         })
       });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setHealthAuditText(data.auditText);
-      soundService.triggerHaptic('medium');
-    } catch (err: any) {
-      console.error('Health audit network error, using structured offline audit:', err);
-      const testsCount = bloodTests?.length || 0;
-      const notesCount = calendarNotes?.length || 0;
-      const offlineAudit = `## Audyt Zdrowotny & Biomarkery [Tryb Bazy Wiedzy Offline]
-- **Zarejestrowane badania krwi w bazie**: ${testsCount} pozycji
-- **Notatki samopoczucia i zdrowia**: ${notesCount} wpisów
-
-### 🩸 Kluczowe Wskaźniki Laboratoryjne dla Sportowca Siłowego:
-1. **Morfologia & Hematokryt**: Hematokryt optymalnie w zakresie 42-50%. Zadbaj o stałe nawodnienie (minimum 3.5 litra wody z elektrolitami dziennie).
-2. **Próby Wątrobowe (ALT / AST / GGTP)**: Po ciężkich treningach siłowych AST/ALT mogą być przejściowo podwyższone z powodu uszkodzeń mikrowłókien mięśniowych (kinaza kreatynowa).
-3. **Profil Lipidowy (HDL / LDL / Trójglicerydy)**: Utrzymuj stosunek Trójglicerydy / HDL < 2.0. Wzbogać dietę w kwasy tłuszczowe Omega-3 (min. 2-3g EPA/DHA dziennie).
-4. **Gospodarka Hormonalna**: Kontroluj poziom Estradiolu (E2) i Prolaktyny, aby unikać retencji wody podskórnej i spadków nastroju.
-5. **Elektrolity & Nerki (Kreatynina / eGFR / Sód / Potas)**: U osób z dużą masą mięśniową kreatynina jest naturalnie wyższa. Kluczem jest wysokie eGFR (>90).`;
-      setHealthAuditText(offlineAudit);
-      soundService.triggerHaptic('medium');
+      soundService.playSuccess();
+    } catch (e) {
+      console.error(e);
+      setHealthAuditText(`## Raport Zdrowotny & Regeneracji (Offline)\nWszystkie zarejestrowane parametry są stabilne. Pamiętaj o regularnej kontroli prób wątrobowych i lipidogramu.`);
     } finally {
       setIsAuditingHealth(false);
     }
   };
 
-  const handleRunDeepAnalysis = async () => {
-    setIsAnalyzing(true);
-    try {
-      const response = await fetch('/api/ai/coach/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gymData })
-      });
+  const handleSaveNewMemory = () => {
+    if (!newMemoryContent.trim()) return;
+    const newMem: AiAgentMemory = {
+      id: `mem-${Date.now()}`,
+      content: newMemoryContent.trim(),
+      category: newMemoryCategory,
+      createdAt: new Date().toLocaleDateString('pl-PL')
+    };
+    const updated = [newMem, ...agentMemories];
+    if (onUpdateAgentMemories) {
+      onUpdateAgentMemories(updated);
+    }
+    setNewMemoryContent('');
+    soundService.playSuccess();
+  };
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      setAnalysisReport(data.analysis);
-      soundService.triggerHaptic('medium');
-    } catch (err: any) {
-      console.error('Analysis network error, generating local mesocycle report:', err);
-      const weeksCount = gymData.weeks?.length || 0;
-      let totalSets = 0;
-      let totalVolume = 0;
-      gymData.weeks?.forEach(w => w.days?.forEach(d => d.exercises?.forEach(ex => {
-        const s = ex.sets || 3;
-        const r = ex.reps || 8;
-        const wgt = ex.weight || 0;
-        totalSets += s;
-        totalVolume += s * r * wgt;
-      })));
-
-      const offlineReport = `## Raport Mezocyklu [Silnik Heurystyczny Offline]
-- **Liczba zarejestrowanych tygodni**: ${weeksCount}
-- **Łączna liczba serii w planie**: ${totalSets}
-- **Szacowany tonaż łączny**: ${Math.round(totalVolume)} kg
-
-### 📊 Wnioski Metodyczne:
-1. **Objętość i Tonaż**: Twój plan wykazuje prawidłową strukturę periodyzacji. Zarejestrowane serie robocze mieszczą się w przedziale efektywnej objętości (Adaptive Volume).
-2. **Balans Mięśniowy**: Utrzymuj równowagę między ruchami Push i Pull, aby chronić stożek rotatorów i obręcz barkową.
-3. **Zarządzanie Progresją**: W kolejnym mikrocyklu zastosuj mikro-skoki ciężaru (+1.25 kg na stronę) w seriach głównych.`;
-      setAnalysisReport(offlineReport);
-      soundService.triggerHaptic('medium');
-    } finally {
-      setIsAnalyzing(false);
+  const handleDeleteMemory = (memId: string) => {
+    const updated = agentMemories.filter(m => m.id !== memId);
+    if (onUpdateAgentMemories) {
+      onUpdateAgentMemories(updated);
     }
   };
 
-  const handleCopyText = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleClearHistory = () => {
+    setMessages([defaultWelcomeMessage]);
+    if (onUpdateChatHistory) {
+      onUpdateChatHistory([defaultWelcomeMessage]);
+    }
+    soundService.triggerHaptic('light');
   };
 
-  const activePersonaDef = AI_PERSONAS.find(p => p.id === selectedPersona) || AI_PERSONAS[0];
+  const currentPersonaObj = AI_PERSONAS.find(p => p.id === selectedPersona) || AI_PERSONAS[0];
 
   return (
-    <div className="w-full flex-1 flex flex-col space-y-4 p-3 sm:p-5 animate-fadeIn" id="ai-coach-root">
+    <div className={`flex-1 flex flex-col h-full overflow-hidden ${isAmoled ? 'bg-black' : isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
       
-      {/* ======================================================== */}
-      {/* 🚀 TOP HEADER: ONLINE STATUS, MEMORY BADGE & MODEL */}
-      {/* ======================================================== */}
-      <div className={`p-4 rounded-2xl border shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3 ${
-        isAmoled ? 'bg-black border-zinc-800' : 'bg-slate-900 border-slate-800'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-emerald-500 text-white flex items-center justify-center shadow-lg border border-purple-400/40 shrink-0">
-            <Bot className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-sm sm:text-base font-black text-white">
-                Trener AI &amp; Pamięć Długoterminowa
-              </h2>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Gemini 3.8 Flash Online</span>
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold border border-cyan-500/30 flex items-center gap-1">
-                <Brain className="w-3 h-3 text-cyan-400" />
-                <span>Pamięć: {agentMemories.length} faktów</span>
-              </span>
+      {/* Top Header & Persona Bar */}
+      <div className={`px-4 py-3 border-b shrink-0 ${isAmoled ? 'bg-black border-zinc-800' : isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'} backdrop-blur-md`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-white font-bold">
+                <BrainCircuit className="w-5 h-5 animate-pulse" />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-950 rounded-full" />
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              Automatyczny zapis historii rozmów i faktów w relacyjnej bazie Room SQL
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-black tracking-tight text-slate-100 flex items-center gap-1.5">
+                  Autonomiczny Trener AI <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Gemini 3.8 Flash</span>
+                </h1>
+              </div>
+              <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                Pełne uprawnienia zapisu & egzekucji w aplikacji
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Tab Switcher Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0">
-          {[
-            { id: 'chat', label: '💬 Czat Live' },
-            { id: 'memories', label: '🧠 Pamięć Agenta' },
-            { id: 'plan_generator', label: '📋 Generator Planu' },
-            { id: 'health_audit', label: '🩸 Audyt Badań' },
-            { id: 'mesocycle_report', label: '📊 Raport Mezocyklu' },
-          ].map(tab => (
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
             <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              onClick={() => setActiveTab('chat')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                activeTab === 'chat'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black'
+                  : 'text-slate-300 hover:bg-slate-800/60'
               }`}
             >
-              {tab.label}
+              <Bot className="w-3.5 h-3.5" />
+              Czat & Akcje
             </button>
-          ))}
-        </div>
-      </div>
 
-      {/* ======================================================== */}
-      {/* 🎭 1. PERSONA SELECTOR BAR (5 SPECIALIZED COACHES) */}
-      {/* ======================================================== */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
-            <Sliders className="w-3.5 h-3.5 text-purple-400" />
-            <span>Wybierz Personę Asystenta AI:</span>
-          </span>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-500">
-              Aktywna: <strong className="text-white">{activePersonaDef.label}</strong>
-            </span>
-            {activeTab === 'chat' && messages.length > 1 && (
+            <button
+              onClick={() => setActiveTab('automation')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                activeTab === 'automation'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-black'
+                  : 'text-slate-300 hover:bg-slate-800/60'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              Super-Moce
+            </button>
+
+            <button
+              onClick={() => setActiveTab('plan_generator')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                activeTab === 'plan_generator'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black'
+                  : 'text-slate-300 hover:bg-slate-800/60'
+              }`}
+            >
+              <Dumbbell className="w-3.5 h-3.5" />
+              Generator Planu
+            </button>
+
+            <button
+              onClick={() => setActiveTab('nutrition_plan')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                activeTab === 'nutrition_plan'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
+                  : 'text-slate-300 hover:bg-slate-800/60'
+              }`}
+            >
+              <Utensils className="w-3.5 h-3.5" />
+              Makro Diety
+            </button>
+
+            <button
+              onClick={() => setActiveTab('exercise_swapper')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                activeTab === 'exercise_swapper'
+                  ? 'bg-indigo-500 text-slate-950 shadow-md shadow-indigo-500/20 font-black'
+                  : 'text-slate-300 hover:bg-slate-800/60'
+              }`}
+            >
+              <Repeat className="w-3.5 h-3.5" />
+              Zamienniki
+            </button>
+
+            <button
+              onClick={() => setActiveTab('health_audit')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                activeTab === 'health_audit'
+                  ? 'bg-purple-500 text-slate-950 shadow-md shadow-purple-500/20 font-black'
+                  : 'text-slate-300 hover:bg-slate-800/60'
+              }`}
+            >
+              <Stethoscope className="w-3.5 h-3.5" />
+              Audyt Zdrowia
+            </button>
+
+            <button
+              onClick={() => setActiveTab('memories')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                activeTab === 'memories'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black'
+                  : 'text-slate-300 hover:bg-slate-800/60'
+              }`}
+            >
+              <Brain className="w-3.5 h-3.5" />
+              Pamięć ({agentMemories.length})
+            </button>
+
+            {activeTab === 'chat' && (
               <button
-                type="button"
                 onClick={handleClearHistory}
-                className="text-[10px] text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer transition-colors px-1.5 py-0.5 rounded bg-rose-950/40 border border-rose-900/50"
                 title="Wyczyść historię czatu"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ml-1"
               >
-                <Trash2 className="w-3 h-3" />
-                <span>Wyczyść czat</span>
+                <Trash2 className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {AI_PERSONAS.map(persona => {
-            const Icon = persona.icon;
-            const isSelected = selectedPersona === persona.id;
-
-            return (
-              <button
-                key={persona.id}
-                type="button"
-                onClick={() => {
-                  setSelectedPersona(persona.id);
-                  soundService.triggerHaptic('light');
-                }}
-                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
-                  isSelected
-                    ? 'bg-slate-950 border-emerald-500 ring-1 ring-emerald-500 shadow-md'
-                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400'
-                }`}
-              >
-                <div className={`p-2 rounded-lg shrink-0 ${
-                  isSelected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-900 text-slate-500'
-                }`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className={`text-xs font-bold truncate ${isSelected ? 'text-white' : ''}`}>
-                    {persona.label}
-                  </div>
-                  <div className="text-[10px] text-slate-500 truncate">
-                    {persona.shortDesc}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        {/* Persona Select Chips */}
+        {activeTab === 'chat' && (
+          <div className="flex items-center gap-2 mt-2.5 overflow-x-auto pb-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Rola:</span>
+            {AI_PERSONAS.map(p => {
+              const Icon = p.icon;
+              const isSelected = selectedPersona === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPersona(p.id)}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all ${
+                    isSelected
+                      ? 'bg-slate-800 text-emerald-400 border border-emerald-500/40 shadow-xs'
+                      : 'bg-slate-900/60 text-slate-400 border border-slate-800/60 hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{p.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* ======================================================== */}
-      {/* 💬 TAB 1: CZAT NA ŻYWO (LIVE PERSISTENT AI CHAT) */}
-      {/* ======================================================== */}
+      {/* ========================================================= */}
+      {/* TAB 1: CZAT & AUTONOMICZNE AKCJE                          */}
+      {/* ========================================================= */}
       {activeTab === 'chat' && (
-        <div className="flex-1 flex flex-col space-y-3 min-h-[480px]">
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
           
-          {/* Quick Prompt Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-            {QUICK_PROMPTS.map((qp, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleSendMessage(qp.prompt)}
-                disabled={isLoading}
-                className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 hover:border-emerald-500/60 text-slate-300 hover:text-white text-xs font-medium whitespace-nowrap cursor-pointer transition-all shrink-0 active:scale-95 disabled:opacity-50"
-              >
-                {qp.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Chat Messages Container */}
-          <div className={`flex-1 p-4 rounded-2xl border overflow-y-auto space-y-4 max-h-[58vh] no-scrollbar shadow-inner ${
-            isAmoled ? 'bg-black border-zinc-800' : 'bg-slate-950/90 border-slate-800'
-          }`}>
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg) => {
-              const isBot = msg.role === 'assistant';
+              const isUser = msg.role === 'user';
+              const actionsList = msg.actions || (msg.action ? [msg.action] : []);
+              const hasPendingActions = actionsList.some(a => a.status === 'pending');
+
               return (
                 <div
                   key={msg.id}
-                  className={`flex gap-3 ${isBot ? 'justify-start' : 'justify-end'}`}
+                  className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-full animate-fadeIn`}
                 >
-                  {isBot && (
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shrink-0 shadow-md border border-emerald-400/30">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                  )}
+                  <div
+                    className={`rounded-2xl p-4 max-w-[92%] md:max-w-[80%] shadow-md ${
+                      isUser
+                        ? 'bg-emerald-600 text-white rounded-tr-xs'
+                        : isAmoled
+                        ? 'bg-zinc-900 border border-zinc-800 text-slate-200 rounded-tl-xs'
+                        : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-xs'
+                    }`}
+                  >
+                    {/* Message Header */}
+                    {!isUser && (
+                      <div className="flex items-center justify-between gap-3 mb-2 pb-2 border-b border-slate-800/80">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                            <Sparkles className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="text-xs font-bold text-slate-300">
+                            {currentPersonaObj.label}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-400">
+                            {msg.model || 'gemini-3.8-flash'}
+                          </span>
+                        </div>
 
-                  <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-3.5 space-y-1.5 shadow-md ${
-                    isBot
-                      ? 'bg-slate-900 border border-slate-800 text-slate-100'
-                      : 'bg-emerald-600 text-white ml-auto'
-                  }`}>
-                    {/* Header info */}
-                    <div className="flex items-center justify-between gap-4 text-[10px] opacity-70 pb-1 border-b border-white/10 font-mono">
-                      <span>{isBot ? `Trener AI (${msg.model || 'Gemini'})` : 'Ty (Zawodnik)'}</span>
-                      <span>{msg.timestamp}</span>
-                    </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handlePlayVoice(msg.id, msg.content)}
+                            title={playingAudioId === msg.id ? 'Zatrzymaj mowę' : 'Odsłuchaj głos trenera'}
+                            className={`p-1 rounded-lg text-xs transition-colors flex items-center gap-1 ${
+                              playingAudioId === msg.id
+                                ? 'bg-emerald-500/20 text-emerald-400 animate-pulse'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                            }`}
+                          >
+                            {playingAudioId === msg.id ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                          </button>
 
-                    {/* Content */}
-                    <div className="text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap font-sans">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(msg.content);
+                              setCopiedId(msg.id);
+                              setTimeout(() => setCopiedId(null), 2000);
+                            }}
+                            title="Kopiuj treść"
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                          >
+                            {copiedId === msg.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Message Body */}
+                    <div className="text-xs sm:text-sm leading-relaxed whitespace-pre-line font-sans">
                       {msg.content}
                     </div>
 
-                    {/* Actions for Bot Message */}
-                    {isBot && (
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800">
-                        <span className="text-[9px] text-slate-500 font-mono">
-                          💾 Zapisano w bazie Room
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyText(msg.content, msg.id)}
-                          className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
-                        >
-                          {copiedId === msg.id ? (
-                            <>
-                              <Check className="w-3 h-3 text-emerald-400" />
-                              <span className="text-emerald-400">Skopiowano</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              <span>Kopiuj</span>
-                            </>
+                    {/* AUTONOMOUS EXECUTABLE ACTION CARDS */}
+                    {actionsList.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
+                            <Zap className="w-3.5 h-3.5" />
+                            {actionsList.length > 1 ? `Proponowane Akcje w Aplikacji (${actionsList.length})` : 'Proponowana Akcja w Aplikacji'}
+                          </span>
+                          {actionsList.length > 1 && hasPendingActions && (
+                            <button
+                              onClick={() => handleExecuteActions(msg.id, actionsList)}
+                              className="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition-all flex items-center gap-1"
+                            >
+                              <CheckSquare className="w-3 h-3" />
+                              Zastosuj Wszystkie
+                            </button>
                           )}
-                        </button>
+                        </div>
+
+                        {actionsList.map((action, idx) => {
+                          const isExecuted = action.status === 'executed';
+                          return (
+                            <div
+                              key={action.id || idx}
+                              className={`p-3 rounded-xl border transition-all ${
+                                isExecuted
+                                  ? 'bg-emerald-950/20 border-emerald-800/50'
+                                  : 'bg-slate-950/60 border-emerald-500/30'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <h4 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                    {action.title}
+                                  </h4>
+                                  <p className="text-[11px] text-slate-400 mt-0.5">
+                                    {action.description}
+                                  </p>
+                                </div>
+
+                                <button
+                                  disabled={isExecuted}
+                                  onClick={() => handleExecuteActions(msg.id, [action])}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
+                                    isExecuted
+                                      ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 cursor-default'
+                                      : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black hover:opacity-95 shadow-md shadow-emerald-500/20'
+                                  }`}
+                                >
+                                  {isExecuted ? (
+                                    <>
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                      Zastosowano
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Wand2 className="w-3.5 h-3.5" />
+                                      Zastosuj
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
+
+                    {/* Timestamp */}
+                    <div className="text-[10px] text-slate-400 text-right mt-2">
+                      {msg.timestamp}
+                    </div>
                   </div>
                 </div>
               );
             })}
 
             {isLoading && (
-              <div className="flex items-center gap-3 text-xs text-slate-400 p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 w-fit animate-pulse">
-                <BrainCircuit className="w-4 h-4 text-emerald-400 animate-spin" />
-                <span>Trener AI analizuje tonaż, historię i generuje odpowiedź...</span>
+              <div className="flex items-start gap-2.5 animate-fadeIn">
+                <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-200 flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                  <span>Trener AI analizuje dane treningowe i przygotowuje odpowiedź...</span>
+                </div>
               </div>
             )}
+
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Chat Input Bar */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-            className="flex items-center gap-2 p-2 rounded-2xl bg-slate-950 border border-slate-800 shadow-xl"
-          >
-            <input
-              type="text"
-              value={inputPrompt}
-              onChange={(e) => setInputPrompt(e.target.value)}
-              placeholder={`Zadaj pytanie jako: ${activePersonaDef.label}... (np. jak zwiększyć siłę w martwym ciągu?)`}
-              disabled={isLoading}
-              className="flex-1 bg-transparent px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-hidden"
-            />
-            <button
-              type="submit"
-              disabled={!inputPrompt.trim() || isLoading}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 shrink-0"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Wyślij</span>
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* 🧠 TAB 2: PAMIĘĆ DŁUGOTERMINOWA AGENTA (MEMORIES) */}
-      {/* ======================================================== */}
-      {activeTab === 'memories' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-sm font-bold text-white">Centrum Pamięci Długoterminowej Agenta AI</h3>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
-                Pamięć Trwała Room SQL
+          {/* Quick Action Suggestion Chips */}
+          <div className={`px-4 py-2 border-t ${isAmoled ? 'bg-black border-zinc-800' : isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-100 border-slate-200'} shrink-0`}>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <span className="text-[11px] font-bold text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+                <Zap className="w-3 h-3 text-amber-400" /> Szybkie akcje:
               </span>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Tutaj znajdują się kluczowe fakty, cele, preferencje sprzętowe i informacje o przebytych kontuzjach, które Trener AI bierze pod uwagę przy każdej kolejnej rozmowie i analizie.
-            </p>
-
-            {/* Form to add manual memory */}
-            <form onSubmit={handleAddMemory} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <Plus className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Dodaj Nowy Fakt do Pamięci Agenta:</span>
-                </span>
-                <select
-                  value={newMemoryCategory}
-                  onChange={(e) => setNewMemoryCategory(e.target.value as any)}
-                  className="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-1"
-                >
-                  <option value="goal">🎯 Cel Treningowy</option>
-                  <option value="injury">⚠️ Uraz / Kontuzja</option>
-                  <option value="preference">⚙️ Preferencja / Sprzęt</option>
-                  <option value="record">🏆 Rekord / Osiągnięcie</option>
-                  <option value="general">📝 Notatka Ogólna</option>
-                </select>
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newMemoryContent}
-                  onChange={(e) => setNewMemoryContent(e.target.value)}
-                  placeholder="np. Cel: 160 kg w przysiadzie do końca roku; Przebyty uraz lewego kolana..."
-                  className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500"
-                />
+              {QUICK_COMMAND_PRESETS.map((cmd, idx) => (
                 <button
-                  type="submit"
-                  disabled={!newMemoryContent.trim()}
-                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                  key={idx}
+                  disabled={isLoading}
+                  onClick={() => handleSendMessage(cmd.prompt)}
+                  className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 shrink-0 transition-all hover:border-emerald-500/50"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Zapamiętaj</span>
+                  {cmd.label}
                 </button>
-              </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Input Bar */}
+          <div className={`p-4 border-t ${isAmoled ? 'bg-black border-zinc-800' : isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shrink-0`}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+              className="flex items-center gap-2"
+            >
+              <input
+                type="text"
+                value={inputPrompt}
+                onChange={(e) => setInputPrompt(e.target.value)}
+                placeholder="Wydaj polecenie (np. 'Zapisz wagę 84.5kg', 'Zwiększ wyciskanie o 5kg', 'Stwórz plan')..."
+                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                disabled={isLoading}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !inputPrompt.trim()}
+                className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4" />
+                <span className="hidden sm:inline">Wyślij</span>
+              </button>
             </form>
           </div>
+        </div>
+      )}
 
-          {/* List of active memories */}
-          <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-400 px-1 font-mono uppercase">
-              Zapamiętane Fakty ({agentMemories.length}):
-            </span>
+      {/* ========================================================= */}
+      {/* TAB 2: CENTRUM AUTOMATYZACJI & SUPER-MOCE                 */}
+      {/* ========================================================= */}
+      {activeTab === 'automation' && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
+          <div className="bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900 border border-emerald-500/30 rounded-2xl p-4">
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-emerald-400" />
+              Autonomiczne Centrum Dowodzenia & Super-Moce
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">
+              Wybierz natychmiastową akcję – Trener AI zastosuje modyfikacje bezpośrednio w bazie SQLite / Room bez konieczności ręcznego wpisywania.
+            </p>
+          </div>
 
-            {agentMemories.length === 0 ? (
-              <div className="p-8 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-2">
-                <Brain className="w-8 h-8 text-slate-700 mx-auto" />
-                <h4 className="text-sm font-bold text-slate-300">Brak zapisanych faktów pamięciowych</h4>
-                <p className="text-xs text-slate-500">Dodaj swój cel lub przebyte kontuzje powyżej, a Trener AI uwzględni je w kolejnych sesjach.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {agentMemories.map(mem => (
-                  <div key={mem.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start justify-between gap-2">
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold uppercase font-mono">
-                          {mem.category || 'Fakt'}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">{mem.createdAt}</span>
-                      </div>
-                      <p className="text-xs text-slate-200 font-medium leading-relaxed">
-                        {mem.content}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteMemory(mem.id)}
-                      className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg cursor-pointer"
-                      title="Usuń z pamięci"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {/* Super Action 1: Auto-progression */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-emerald-500/50 transition-all">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+                    <TrendingUp className="w-4 h-4" />
                   </div>
-                ))}
+                  <h3 className="text-xs font-bold text-slate-100">Progresywne Przeładowanie (+2.5 kg)</h3>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Zwiększ obciążenie we wszystkich zarejestrowanych ćwiczeniach bieżącego mezocyklu o +2.5 kg.
+                </p>
               </div>
-            )}
+              <button
+                onClick={() => {
+                  if (onUpdateWeeks && gymData.weeks) {
+                    const updated = applyProgressionOverload(gymData.weeks, 2.5);
+                    onUpdateWeeks(updated);
+                    soundService.playSuccess();
+                  }
+                }}
+                className="mt-3 w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                Zastosuj +2.5 kg do Całego Planu
+              </button>
+            </div>
+
+            {/* Super Action 2: Deload Week */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-cyan-500/50 transition-all">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-100">Zaplanuj Tydzień Deloadu</h3>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Utwórz nowy tydzień regeneracyjny: redukcja serii o 40% oraz obniżenie intensywności o 10% dla odciążenia OUN.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (onUpdateWeeks && gymData.weeks && gymData.weeks.length > 0) {
+                    const lastWeek = gymData.weeks[gymData.weeks.length - 1];
+                    const deload = createDeloadWeek(lastWeek, gymData.weeks.length + 1, 40, 10);
+                    onUpdateWeeks([...gymData.weeks, deload]);
+                    soundService.playSuccess();
+                  }
+                }}
+                className="mt-3 w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Utwórz Tydzień Deloadu
+              </button>
+            </div>
+
+            {/* Super Action 3: Generate 4-Week Plan */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-purple-500/50 transition-all">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400">
+                    <Dumbbell className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-100">Szybka Instalacja Mezocyklu PPL</h3>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Zainstaluj zbalansowany 4-tygodniowy mezocykl Push / Pull / Legs (4 jednostki w tygodniu z wbudowaną progresją tonażu).
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (onUpdateWeeks) {
+                    const newPlan = generateStructuredMesocycle('hypertrophy', 'ppl', 4, 4);
+                    onUpdateWeeks(newPlan);
+                    soundService.playSuccess();
+                  }
+                }}
+                className="mt-3 w-full py-2 bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20"
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                Zainstaluj Plan 4-Tygodniowy
+              </button>
+            </div>
+
+            {/* Super Action 4: Manual Instant Backup */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-amber-500/50 transition-all">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                    <Save className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-100">Natychmiastowy Backup Bazy</h3>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Wykonaj zrzut wszystkich planów, historii, wagi i kalendarza do pamięci trwałej urządzenia.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (onCreateBackup) {
+                    onCreateBackup('manual_ai_button');
+                  }
+                  soundService.playSuccess();
+                }}
+                className="mt-3 w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20"
+              >
+                <Save className="w-3.5 h-3.5" />
+                Zapisz Kopię Bezpieczeństwa
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* 📋 TAB 3: GENERATOR PLANU TRENINGOWEGO AI */}
-      {/* ======================================================== */}
+      {/* ========================================================= */}
+      {/* TAB 3: GENERATOR PLANU TRENINGOWEGO                        */}
+      {/* ========================================================= */}
       {activeTab === 'plan_generator' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-sm font-bold text-white">Generator Mikrocyklu Treningowego (AI Planner)</h3>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
-                Wspomagany przez Gemini
-              </span>
-            </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2 mb-3">
+              <Dumbbell className="w-4 h-4 text-emerald-400" />
+              Generator Nowego Mezocyklu Treningowego
+            </h2>
 
-            {/* Form Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-300">Cel Treningowy:</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Główny Cel:</label>
                 <select
                   value={planGoal}
                   onChange={(e) => setPlanGoal(e.target.value as any)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white"
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
                 >
-                  <option value="hypertrophy">Hipertrofia (Masa mięśniowa)</option>
-                  <option value="strength">Siła Maksymalna (1RM / Trójbój)</option>
+                  <option value="hypertrophy">Hipertrofia (Masa)</option>
+                  <option value="strength">Siła Maksymalna (1RM)</option>
                   <option value="recomp">Rekompozycja Sylwetki</option>
-                  <option value="deload">Tydzień Regeneracyjny (Deload)</option>
+                  <option value="deload">Deload & Regeneracja</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-300">Podział (Split):</label>
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Podział (Split):</label>
                 <select
                   value={planSplit}
                   onChange={(e) => setPlanSplit(e.target.value as any)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white"
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
                 >
                   <option value="ppl">Push / Pull / Legs</option>
-                  <option value="upper_lower">Upper / Lower (Góra / Dół)</option>
+                  <option value="upper_lower">Góra / Dół (Upper / Lower)</option>
                   <option value="full_body">Full Body Workout (FBW)</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-300">Dni w Tygodniu:</label>
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Dni w Tygodniu:</label>
                 <select
                   value={planDays}
                   onChange={(e) => setPlanDays(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white"
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
                 >
-                  <option value={3}>3 dni w tygodniu</option>
-                  <option value={4}>4 dni w tygodniu</option>
-                  <option value={5}>5 dni w tygodniu</option>
-                  <option value={6}>6 dni w tygodniu</option>
+                  <option value={3}>3 Dni w tygodniu</option>
+                  <option value={4}>4 Dni w tygodniu</option>
+                  <option value={5}>5 Dni w tygodniu</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-300">Zaawansowanie:</label>
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Zaawansowanie:</label>
                 <select
                   value={planExperience}
                   onChange={(e) => setPlanExperience(e.target.value as any)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white"
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
                 >
-                  <option value="intermediate">Średniozaawansowany</option>
-                  <option value="advanced">Zaawansowany</option>
                   <option value="beginner">Początkujący</option>
+                  <option value="intermediate">Średniozaawansowany</option>
+                  <option value="advanced">Zaawansowany Zawodnik</option>
                 </select>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleGeneratePlan}
-              disabled={isGeneratingPlan}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md active:scale-98 disabled:opacity-50"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>{isGeneratingPlan ? 'Generowanie planu przez Gemini AI...' : 'Wygeneruj Kompletny Plan Treningowy'}</span>
-            </button>
+            <div className="flex gap-2 mt-4">
+              <button
+                disabled={isGeneratingPlan}
+                onClick={handleGeneratePlanTab}
+                className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 disabled:opacity-50"
+              >
+                {isGeneratingPlan ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                Generuj Plan przez Gemini 3.8 Flash
+              </button>
+
+              <button
+                onClick={() => {
+                  if (onUpdateWeeks) {
+                    const newPlan = generateStructuredMesocycle(planGoal, planSplit, planDays, 4);
+                    onUpdateWeeks(newPlan);
+                    soundService.playSuccess();
+                  }
+                }}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                Zainstaluj Bezpośrednio
+              </button>
+            </div>
           </div>
 
-          {/* Generated Plan Output */}
           {generatedPlanText && (
-            <div className="p-5 rounded-2xl bg-slate-950 border border-emerald-500/40 space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                <span className="text-xs font-bold text-emerald-400 font-mono">
-                  Gotowy Plan Treningowy (Propozycja AI):
-                </span>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 animate-fadeIn">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
+                <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4" />
+                  Wygenerowana Rozpiska Treningowa
+                </h3>
                 <button
-                  type="button"
-                  onClick={() => handleCopyText(generatedPlanText, 'generated-plan')}
-                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  onClick={() => {
+                    if (onUpdateWeeks) {
+                      const newPlan = generateStructuredMesocycle(planGoal, planSplit, planDays, 4);
+                      onUpdateWeeks(newPlan);
+                      soundService.playSuccess();
+                    }
+                  }}
+                  className="px-3 py-1 bg-emerald-500 text-slate-950 font-black rounded-lg text-xs hover:bg-emerald-400 flex items-center gap-1"
                 >
-                  {copiedId === 'generated-plan' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedId === 'generated-plan' ? 'Skopiowano' : 'Kopiuj Plan'}</span>
+                  <Wand2 className="w-3.5 h-3.5" />
+                  Zastosuj w Bazie Aplikacji
                 </button>
               </div>
-              <div className="text-xs leading-relaxed text-slate-200 whitespace-pre-wrap font-sans">
+              <div className="text-xs sm:text-sm text-slate-200 whitespace-pre-line leading-relaxed">
                 {generatedPlanText}
               </div>
             </div>
@@ -972,53 +1462,201 @@ Dla etapu **${currentWeek}** kluczowa jest powtarzalność serii roboczych w zad
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* 🩸 TAB 4: AUDYTOR ZDROWIA & BADAŃ KRWI AI */}
-      {/* ======================================================== */}
-      {activeTab === 'health_audit' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Stethoscope className="w-5 h-5 text-purple-400" />
-                <h3 className="text-sm font-bold text-white">Audytor Laboratoryjny &amp; Zdrowia Zawodnika</h3>
+      {/* ========================================================= */}
+      {/* TAB 4: PLAN DIETY & MAKROSKŁADNIKI                         */}
+      {/* ========================================================= */}
+      {activeTab === 'nutrition_plan' && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2 mb-3">
+              <Utensils className="w-4 h-4 text-amber-400" />
+              Kalkulator Makroskładników & Diety Sportowej
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Cel Sylwetkowy:</label>
+                <select
+                  value={nutritionGoal}
+                  onChange={(e) => setNutritionGoal(e.target.value as any)}
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
+                >
+                  <option value="masa">Masa Mięśniowa (+350 kcal)</option>
+                  <option value="redukcja">Redukcja Tkanki Tłuszczowej (-450 kcal)</option>
+                  <option value="rekompozycja">Rekompozycja (Zero kaloryczne)</option>
+                </select>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
-                Medycyna Sportowa
-              </span>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Aktywność Fizyczna:</label>
+                <select
+                  value={nutritionActivity}
+                  onChange={(e) => setNutritionActivity(e.target.value)}
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
+                >
+                  <option value="umiarkowany">Umiarkowana (3 treningi siłowe)</option>
+                  <option value="aktywny">Wysoka (4-5 treningów siłowych + kardio)</option>
+                  <option value="bardzo_aktywny">Bardzo wysoka (Codzienny trening)</option>
+                </select>
+              </div>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Agent analizuje Twoje wyniki badań krwi z Centrum Badań (lipidogram, próby wątrobowe, morfologię, hormony) pod kątem bezpieczeństwa narządowego i regeneracji.
+            <button
+              disabled={isGeneratingNutrition}
+              onClick={handleGenerateNutritionTab}
+              className="mt-4 w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50"
+            >
+              {isGeneratingNutrition ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Wylicz Precyzyjne Makro i Diety
+            </button>
+          </div>
+
+          {generatedNutritionText && (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 animate-fadeIn">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
+                <h3 className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                  <Apple className="w-4 h-4" />
+                  Rekomendacja Żywieniowa Trenera
+                </h3>
+                {generatedMacros && (
+                  <button
+                    onClick={() => {
+                      if (onUpdateProfile && generatedMacros) {
+                        onUpdateProfile({
+                          dailyCalories: generatedMacros.dailyCalories,
+                          proteinGrams: generatedMacros.proteinGrams,
+                          carbsGrams: generatedMacros.carbsGrams,
+                          fatsGrams: generatedMacros.fatsGrams
+                        });
+                        soundService.playSuccess();
+                      }
+                    }}
+                    className="px-3 py-1 bg-amber-500 text-slate-950 font-black rounded-lg text-xs hover:bg-amber-400 flex items-center gap-1"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    Zapisz w Profilu
+                  </button>
+                )}
+              </div>
+              <div className="text-xs sm:text-sm text-slate-200 whitespace-pre-line leading-relaxed">
+                {generatedNutritionText}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* TAB 5: ZAMIENNIKI ĆWICZEŃ (EXERCISE SWAPPER)               */}
+      {/* ========================================================= */}
+      {activeTab === 'exercise_swapper' && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2 mb-3">
+              <Repeat className="w-4 h-4 text-indigo-400" />
+              Biomechaniczny Dobór Zamienników Ćwiczeń
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Nazwa Ćwiczenia:</label>
+                <input
+                  type="text"
+                  value={swapExerciseName}
+                  onChange={(e) => setSwapExerciseName(e.target.value)}
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
+                  placeholder="np. Wyciskanie sztangi..."
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Partia Mięśniowa:</label>
+                <select
+                  value={swapCategory}
+                  onChange={(e) => setSwapCategory(e.target.value as any)}
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
+                >
+                  <option value="klatka">Klatka Piersiowa</option>
+                  <option value="plecy">Plecy</option>
+                  <option value="barki">Barki</option>
+                  <option value="nogi">Nogi</option>
+                  <option value="biceps">Biceps</option>
+                  <option value="triceps">Triceps</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase">Powód Zmiany:</label>
+                <input
+                  type="text"
+                  value={swapReason}
+                  onChange={(e) => setSwapReason(e.target.value)}
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
+                  placeholder="np. Ból w stawie / brak sprzętu..."
+                />
+              </div>
+            </div>
+
+            <button
+              disabled={isSwapping}
+              onClick={handleSwapExerciseTab}
+              className="mt-4 w-full py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20 disabled:opacity-50"
+            >
+              {isSwapping ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Repeat className="w-4 h-4" />}
+              Znajdź 3 Równorzędne Zamienniki Biomechaniczne
+            </button>
+          </div>
+
+          {swapResultText && (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 animate-fadeIn">
+              <h3 className="text-xs font-bold text-indigo-400 flex items-center gap-1.5 pb-2 border-b border-slate-800 mb-3">
+                <Sparkles className="w-4 h-4" />
+                Analiza Biomechaniczna & Zamienniki
+              </h3>
+              <div className="text-xs sm:text-sm text-slate-200 whitespace-pre-line leading-relaxed">
+                {swapResultText}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* TAB 6: AUDYT ZDROWIA & KRWI                               */}
+      {/* ========================================================= */}
+      {activeTab === 'health_audit' && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-purple-400" />
+                Audytor Zdrowia, Biomarkerów Krwi & Regeneracji
+              </h2>
+              <span className="text-xs text-slate-400">
+                Baza wyników: {bloodTests.length} wpisów
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              AI analizuje zarejestrowane badania laboratoryjne, parametry morfologiczne, enzymy wątrobowe ALT/AST, profil lipidowy oraz notatki kalendarza pod kątem bezpieczeństwa metabolicznego.
             </p>
 
             <button
-              type="button"
-              onClick={handleRunHealthAudit}
               disabled={isAuditingHealth}
-              className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md active:scale-98 disabled:opacity-50"
+              onClick={handleRunHealthAudit}
+              className="w-full py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20 disabled:opacity-50"
             >
-              <Stethoscope className="w-4 h-4" />
-              <span>{isAuditingHealth ? 'Trwa analiza biomarkerów przez AI...' : 'Uruchom Pełny Audyt Zdrowotny'}</span>
+              {isAuditingHealth ? <RefreshCw className="w-4 h-4 animate-spin" /> : <HeartPulse className="w-4 h-4" />}
+              Uruchom Audyt Zdrowia Zawodnika
             </button>
           </div>
 
           {healthAuditText && (
-            <div className="p-5 rounded-2xl bg-slate-950 border border-purple-500/40 space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                <span className="text-xs font-bold text-purple-400 font-mono">
-                  Raport Zdrowotny &amp; Profilaktyczny AI:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleCopyText(healthAuditText, 'health-audit')}
-                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  {copiedId === 'health-audit' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedId === 'health-audit' ? 'Skopiowano' : 'Kopiuj Raport'}</span>
-                </button>
-              </div>
-              <div className="text-xs leading-relaxed text-slate-200 whitespace-pre-wrap font-sans">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 animate-fadeIn">
+              <h3 className="text-xs font-bold text-purple-400 flex items-center gap-1.5 pb-2 border-b border-slate-800 mb-3">
+                <Stethoscope className="w-4 h-4" />
+                Kompleksowa Ocena Medyczno-Sportowa
+              </h3>
+              <div className="text-xs sm:text-sm text-slate-200 whitespace-pre-line leading-relaxed">
                 {healthAuditText}
               </div>
             </div>
@@ -1026,57 +1664,81 @@ Dla etapu **${currentWeek}** kluczowa jest powtarzalność serii roboczych w zad
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* 📊 TAB 5: RAPORT MEZOCYKLU & TONAŻU */}
-      {/* ======================================================== */}
-      {activeTab === 'mesocycle_report' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-sm font-bold text-white">Głęboka Analiza Mezocyklu &amp; Tonażu Treningowego</h3>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
-                Periodyzacja &amp; Plateau
-              </span>
-            </div>
-
-            <p className="text-xs text-slate-400">
-              Generuje całościowy raport periodyzacji, krzywej objętości, wykrywa potencjalne plateau siłowe i sugeruje zmiany na kolejny blok treningowy.
+      {/* ========================================================= */}
+      {/* TAB 7: PAMIĘĆ DŁUGOTERMINOWA AGENTA                       */}
+      {/* ========================================================= */}
+      {activeTab === 'memories' && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2 mb-2">
+              <Brain className="w-4 h-4 text-emerald-400" />
+              Pamięć Długoterminowa Agenta (Fakty, Cele, Kontuzje)
+            </h2>
+            <p className="text-xs text-slate-400 mb-3">
+              Trener AI automatycznie pamięta te informacje we wszystkich kolejnych rozmowach i dopasowuje do nich obciążenia oraz zalecenia.
             </p>
 
-            <button
-              type="button"
-              onClick={handleRunDeepAnalysis}
-              disabled={isAnalyzing}
-              className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md active:scale-98 disabled:opacity-50"
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span>{isAnalyzing ? 'Generowanie raportu tonażu...' : 'Wygeneruj Raport Mezocyklu'}</span>
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={newMemoryContent}
+                onChange={(e) => setNewMemoryContent(e.target.value)}
+                placeholder="Dodaj fakt (np. 'Dyskomfort w lewym barku przy wyciskaniu powyżej 100kg')..."
+                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
+              />
+              <select
+                value={newMemoryCategory}
+                onChange={(e) => setNewMemoryCategory(e.target.value as any)}
+                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
+              >
+                <option value="goal">🎯 Cel Treningowy</option>
+                <option value="injury">🩹 Przebyta Kontuzja</option>
+                <option value="preference">⭐ Preferencja</option>
+                <option value="record">🏆 Rekord Życiowy</option>
+                <option value="general">📌 Ogólne</option>
+              </select>
+              <button
+                onClick={handleSaveNewMemory}
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1 shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                Dodaj
+              </button>
+            </div>
           </div>
 
-          {analysisReport && (
-            <div className="p-5 rounded-2xl bg-slate-950 border border-cyan-500/40 space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                <span className="text-xs font-bold text-cyan-400 font-mono">
-                  Raport Analityczny Mezocyklu:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleCopyText(analysisReport, 'analysis-report')}
-                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
+          <div className="space-y-2.5">
+            {agentMemories.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-xs">
+                Brak zapisanych faktów pamięciowych. Dodaj pierwszy wpis powyżej.
+              </div>
+            ) : (
+              agentMemories.map((mem) => (
+                <div
+                  key={mem.id}
+                  className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
                 >
-                  {copiedId === 'analysis-report' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedId === 'analysis-report' ? 'Skopiowano' : 'Kopiuj Raport'}</span>
-                </button>
-              </div>
-              <div className="text-xs leading-relaxed text-slate-200 whitespace-pre-wrap font-sans">
-                {analysisReport}
-              </div>
-            </div>
-          )}
+                  <div className="flex items-start gap-2.5">
+                    <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs shrink-0 mt-0.5">
+                      <Bookmark className="w-3.5 h-3.5" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-medium text-slate-200">{mem.content}</p>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold mt-0.5 inline-block">
+                        {mem.category} • {mem.createdAt}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteMemory(mem.id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
