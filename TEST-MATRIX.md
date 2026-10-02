@@ -1,16 +1,16 @@
-# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.5)
+# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.6)
 
-Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.5. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
+Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.6. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
 
 ---
 
-## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.5)
+## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.6)
 - **Łączna liczba testów aplikacji**: 102 / 102 (**PASS - 100%**)
 - **Testy serwera/OIDC**: 16 / 16 (**PASS - 100%**)
 - **Testy UI Google i konfiguracji Androida**: 3 / 3 (**PASS - 100%**)
 - **Testy serwisu aktualizacji**: 4 / 4 (**PASS**, `npm run test:update`)
 - **Kompilacja TypeScript i Linter**: `tsc --noEmit` (**PASS - 0 błędów**)
-- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug `3.0.5` zbudowany, instalacja na urządzeniu **UNVERIFIED**
+- **Web build / Capacitor sync**: (**PASS**). Android assembleDebug/APK 3.0.6: **UNVERIFIED** — dostępny JDK 17 nie obsługuje źródeł Java 21 wymaganych przez zależność Android.
 - **Błędy krytyczne**: 0 (**FAIL: 0**)
 
 ---

@@ -45,6 +45,7 @@ function loadTsModule(filePath, customContext = {}) {
         return require(resolved);
       }
     }
+    if (customContext.externalRequire) return customContext.externalRequire(reqPath);
     return require(reqPath);
   }
 
@@ -155,4 +156,36 @@ test('TypeScript local-data adapter operates on JSON partitions and DAO-shaped A
 
   db.activeDraftDao.clearDraft();
   assert.equal(db.activeDraftDao.getDraft(), null);
+});
+
+test('structured database write rejects when persistent localStorage fails', async () => {
+  const failingStorage = {
+    getItem: () => null,
+    setItem: () => { throw new Error('QuotaExceededError'); },
+    removeItem: () => {},
+    clear: () => {}
+  };
+  const context = {
+    window: { localStorage: failingStorage },
+    localStorage: failingStorage,
+    externalRequire: (id) => id === '@capacitor/preferences'
+      ? { Preferences: { set: async () => {}, remove: async () => {} } }
+      : require(id)
+  };
+  const dbModule = loadTsModule(path.join(__dirname, '../src/data/db/RoomDatabase.ts'), context);
+
+  await assert.rejects(
+    dbModule.roomDatabase.atomicWriteFromGymData({
+      settings: { unit: 'kg' },
+      weeks: [],
+      bodyWeights: [],
+      circumferences: [],
+      bodyPartMeasurements: [],
+      catalogExercises: [],
+      protocolEntries: [],
+      calendarNotes: [],
+      profile: { name: 'Tester' }
+    }),
+    /QuotaExceededError/
+  );
 });

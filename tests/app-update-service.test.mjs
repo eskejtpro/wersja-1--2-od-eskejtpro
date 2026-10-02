@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { AppUpdateService } from '../src/utils/appUpdateService.ts';
 
 const update = {
-  version: '9.9.9', currentVersion: '3.0.5', releaseDate: '2026-10-02', title: 'test', releaseNotes: [],
+  version: '9.9.9', currentVersion: '3.0.6', releaseDate: '2026-10-02', title: 'test', releaseNotes: [],
   downloadUrl: 'https://example.invalid/app.apk', fileSizeBytes: 20, sha256Checksum: 'a'.repeat(64),
   isMandatory: false, packageType: 'full_dist', author: 'test'
 };

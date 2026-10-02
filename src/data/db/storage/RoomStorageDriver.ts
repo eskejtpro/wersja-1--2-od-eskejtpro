@@ -64,19 +64,24 @@ export class RoomStorageDriver {
    */
   public writeTable<T>(table: RoomTableName, data: T): void {
     const key = this.getTableKey(table);
-    this.inMemoryCache.set(key, data);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const serialized = JSON.stringify(data);
+      // Fail before updating the cache so callers cannot mistake volatile data for a durable save.
+      window.localStorage.setItem(key, serialized);
+      this.inMemoryCache.set(key, data);
 
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const serialized = JSON.stringify(data);
-        window.localStorage.setItem(key, serialized);
-
-        // Asynchronous mirror only; errors are not surfaced to the caller.
-        Preferences.set({ key, value: serialized }).catch(() => {});
+      // Android Preferences is an asynchronous mirror only, not the authoritative store.
+      try {
+        void Preferences.set({ key, value: serialized }).catch((error) => {
+          console.warn(`[RoomStorageDriver] Błąd kopii Preferences dla ${table}:`, error);
+        });
+      } catch (error) {
+        console.warn(`[RoomStorageDriver] Błąd kopii Preferences dla ${table}:`, error);
       }
-    } catch (e) {
-      console.error(`[RoomStorageDriver] Błąd zapisu tabeli ${table}:`, e);
+      return;
     }
+
+    this.inMemoryCache.set(key, data);
   }
 
   /**

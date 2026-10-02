@@ -1,6 +1,6 @@
-# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.5)
+# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.6)
 > **DOKUMENTACJA ARCHITEKTONICZNA, SYSTEMOWA I PROCEDURA TESTOWA DLA AGENTÓW AI**
-> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.5 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
+> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.6 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
 >
 > **Ważne:** starsze opisy architektury poniżej zawierają deklaracje odziedziczone z wcześniejszych wersji. Zweryfikowany stan wykonawczy i jawne ograniczenia są zapisane w sekcji „Aktualizacja stanu 3.0.2” na końcu; w szczególności aktywny Android data store nie jest Room SQLite.
 
@@ -224,3 +224,10 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - Usunięto z żądania do audytu zdrowia niewykorzystywane notatki kalendarza. Prompt ogranicza wynik do edukacyjnego omówienia, nie diagnozy/leczenia.
 - Wersja package/API/UI/Android: 3.0.5, Android `versionCode=305`; testy i artefakt w `CHANGELOG-V3.0.5.md`.
 - Weryfikacja 3.0.5: app 102/102, server 16/16, Google UI 3/3, updater 4/4, lint/build/Cap sync/Android assembleDebug PASS. Urządzenie fizyczne UNVERIFIED.
+
+## Aktualizacja stanu 3.0.6 (2026-10-02)
+
+- `RoomStorageDriver.writeTable` propaguje błędy `localStorage`; pamięć podręczna aktualizuje się dopiero po udanym zapisie trwałym.
+- Autosave może teraz zgłosić awarię trwałego zapisu zamiast fałszywego „Zapis lokalny OK”. Test regresyjny wymusza `QuotaExceededError`.
+- Zapis nadal obejmuje wiele partycji bez ACID/rollbacku; to ograniczenie jest jawne.
+- Weryfikacja i artefakt: `CHANGELOG-V3.0.6.md`.
