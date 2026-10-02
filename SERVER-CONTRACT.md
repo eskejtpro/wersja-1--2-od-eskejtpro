@@ -2,6 +2,8 @@
 
 `server.ts` jest jedynym serwerem Node/Express projektu. Domyślnie nasłuchuje wyłącznie na `127.0.0.1:3000`; LAN można włączyć ręcznie przez `GYMTRACKER_BIND`, np. po świadomym ustawieniu adresu interfejsu. Serwer przechowuje własny magazyn poza repozytorium i nigdy nie dotyka `workout_data.json` aplikacji desktopowej.
 
+Pełna mapa każdej trasy Express, auth/input/output/persistence/status oraz first-party caller coverage znajduje się w [`API-ROUTE-INVENTORY.md`](API-ROUTE-INVENTORY.md); ta umowa podaje tylko najczęściej używane kontrakty.
+
 ## Uruchomienie i konfiguracja
 
 ```powershell

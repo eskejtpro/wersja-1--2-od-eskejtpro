@@ -237,3 +237,4 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - Rutynowy czat AI przestał dołączać badania krwi, notatki kalendarza, profil użytkownika i trwałe pamięci AI; historia czatu ograniczona do ostatnich 8 wiadomości.
 - Awaria transportu nie jest już prezentowana jako wygenerowana odpowiedź lub synchronizacja zakończona sukcesem; AI Coach i Quick Access pokazują niedostępność.
 - Weryfikacja 3.0.7: app 107/107, server 16/16, Google UI 3/3, updater 4/4, lint/build/Cap sync/Android assembleDebug PASS. APK debug zweryfikowany; urządzenie fizyczne niepodłączone, runtime UNVERIFIED. Szczegóły: `CHANGELOG-V3.0.7.md`.
+- Inwentaryzacja wszystkich tras Express oraz mapowanie do wywołań UI: `API-ROUTE-INVENTORY.md`. Wskazuje nieużywane trasy, brak pełnego pokrycia testami AI oraz brak walidacji zakresów w dwóch endpointach.
