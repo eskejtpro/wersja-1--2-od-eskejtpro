@@ -55,10 +55,11 @@ export const soundService = {
           navigator.vibrate(customPattern);
           return;
         }
+        // Zoptymalizowane mikropulsy pod liniowy silnik haptyczny X-axis w Xiaomi 14T
         const patterns: Record<Exclude<HapticIntensity, 'off'>, number[]> = {
-          light: [35],
-          medium: [75, 40, 75],
-          strong: [140, 60, 180],
+          light: [20], // Precyzyjny mikro-klik haptyczny
+          medium: [45, 25, 40], // Satysfakcjonujące mechaniczne potwierdzenie serii
+          strong: [85, 40, 110], // Wyraźny podwójny impuls ukończenia odliczania stopera
         };
         navigator.vibrate(patterns[intensity]);
       }

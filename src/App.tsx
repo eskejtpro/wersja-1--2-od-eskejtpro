@@ -1435,7 +1435,7 @@ export default function App() {
 
         {/* View Switcher Container */}
         <main className={`flex-1 overflow-y-auto flex flex-col pb-[max(5.5rem,calc(4.5rem+env(safe-area-inset-bottom)))] md:pb-0 ${
-          isAmoled ? 'bg-black' : isDark ? 'bg-slate-950' : 'bg-slate-50'
+          isAmoled ? 'bg-black' : isDark ? 'bg-slate-950 bg-mesh-3d' : 'bg-slate-50'
         }`}>
           {activeView === 'quick_access' && (
             <QuickAccessDashboard

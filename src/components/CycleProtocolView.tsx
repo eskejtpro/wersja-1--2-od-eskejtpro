@@ -543,7 +543,62 @@ export const CycleProtocolView: React.FC<CycleProtocolViewProps> = ({
       {/* TAB 1: KALENDARZ MIESIĘCZNY, NOTATKI & DAWKOWANIE */}
       {/* ======================================================== */}
       {activeTab === 'calendar' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="space-y-4">
+          {/* Smart Injections & Day Overview Strip */}
+          <div className="card-3d p-4 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                <Syringe className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">Ostatnia Zarejestrowana Dawka:</span>
+                  {filteredEntries.length > 0 ? (
+                    <span className="text-xs font-mono font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                      {filteredEntries[0].substance} ({filteredEntries[0].dosage} {filteredEntries[0].unit})
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-500 italic">Brak zarejestrowanych dawek</span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {filteredEntries.length > 0 ? (
+                    <>
+                      Data podania: <strong className="text-slate-200">{filteredEntries[0].date}</strong> {filteredEntries[0].time ? `o godz. ${filteredEntries[0].time}` : ''} • Wybrana data w kalendarzu: <strong className="text-emerald-400 font-mono">{selectedDateStr}</strong>
+                    </>
+                  ) : (
+                    <>
+                      Wybierz datę w kalendarzu poniżej, aby dodać pierwsze podanie lub notatkę. Wybrana data: <strong className="text-emerald-400 font-mono">{selectedDateStr}</strong>
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleToday}
+                className="btn-3d-secondary px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+              >
+                <CalendarDays className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Dzisiaj</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDateStr(new Date().toISOString().split('T')[0]);
+                  setRightPanelMode('dose');
+                }}
+                className="btn-3d-emerald px-3.5 py-1.5 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Dodaj dawkę dzisiaj</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left / Center: Interactive Month Calendar (7 cols on lg) */}
           <div className="lg:col-span-7 bg-slate-900 rounded-2xl border border-slate-800 p-4 sm:p-5 flex flex-col shadow-md">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-3">
@@ -984,6 +1039,35 @@ export const CycleProtocolView: React.FC<CycleProtocolViewProps> = ({
               {/* MODE 2: ADD CALENDAR NOTE TO DATE */}
               {rightPanelMode === 'note' && (
                 <form onSubmit={handleAddNote} className="space-y-3.5 animate-fadeIn">
+                  {/* Szybkie Szablony Notatek */}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 block mb-1.5">
+                      Szybkie szablony wpisów dnia (1-klik):
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { title: 'Badania krwi', content: 'Pobranie krwi na czczo (morfologia, lipidogram, próby wątrobowe, estradiol, testosteron)', cat: 'bloodwork' },
+                        { title: 'Mocny trening PR', content: 'Świetna dyspozycja siłowa, rekord w boju głównym, energia 10/10', cat: 'training' },
+                        { title: 'Czysta miska', content: 'Dieta i makroskładniki dopięte w 100%, odpowiednie nawodnienie', cat: 'supplement' },
+                        { title: 'Dzień wolny', content: 'Pełna regeneracja, spacer, sen 8h, brak zmęczenia stawów', cat: 'recovery' },
+                        { title: 'Zmęczenie OUN', content: 'Uczucie znużenia, zalecany lżejszy trening lub deload', cat: 'warning' },
+                      ].map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setNoteTitle(preset.title);
+                            setNoteContent(preset.content);
+                            setNoteCategory(preset.cat as any);
+                          }}
+                          className="text-[10px] px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer"
+                        >
+                          {preset.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[11px] font-bold text-slate-400 block mb-1">Data</label>
@@ -1556,6 +1640,7 @@ export const CycleProtocolView: React.FC<CycleProtocolViewProps> = ({
               </div>
             )}
           </div>
+        </div>
         </div>
       )}
 

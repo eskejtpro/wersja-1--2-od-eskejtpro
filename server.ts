@@ -350,7 +350,9 @@ export function createApp(options: AppOptions = {}) {
 
   app.disable('x-powered-by');
   app.use(helmet({
-    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false,
     hsts: config.httpsEnabled ? undefined : false,
   }));
   app.use(express.json({ limit: config.maxBodyBytes, strict: true }));
@@ -358,18 +360,22 @@ export function createApp(options: AppOptions = {}) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
     const origin = req.headers.origin;
-    const isAllowedOrigin = origin && (
+    // Zezwól na zapytania z chmury Google Cloud Run, AI Studio, Android Capacitor, localhost oraz sieci lokalnej
+    const isAllowedOrigin = !origin || (
       origin === 'http://localhost:3000' ||
       origin === 'https://localhost' ||
       origin === 'http://localhost' ||
       origin === 'capacitor://localhost' ||
+      origin.includes('.run.app') ||
+      origin.includes('.google.com') ||
+      origin.includes('.googleusercontent.com') ||
       /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin)
     );
     if (origin && isAllowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Vary', 'Origin');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     }
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
@@ -601,7 +607,7 @@ export function createApp(options: AppOptions = {}) {
   let aiClient: GoogleGenAI | null = null;
   const getAi = () => {
     if (aiClient) return aiClient;
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) return null;
     aiClient = new GoogleGenAI({
       apiKey,

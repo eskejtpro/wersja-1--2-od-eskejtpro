@@ -113,20 +113,20 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
 
   const getContainerStyle = () => {
     if (navStyle === 'floating_dock') {
-      return `fixed bottom-2 left-2 right-2 z-40 md:hidden border backdrop-blur-2xl rounded-2xl shadow-2xl px-1.5 py-1 ${
+      return `fixed bottom-[max(0.5rem,calc(0.25rem+env(safe-area-inset-bottom,0px)))] left-2 right-2 z-40 md:hidden border rounded-2xl dock-3d px-1.5 py-1 ${
         isAmoled
-          ? 'bg-black/95 border-zinc-800 text-slate-200'
+          ? 'bg-black/95 border-zinc-800/90 text-slate-200'
           : isDark 
-            ? 'bg-slate-950/95 border-slate-800/90 text-slate-200' 
+            ? 'text-slate-200' 
             : 'bg-white/95 border-slate-200 text-slate-800 shadow-xl'
       }`;
     }
     if (navStyle === 'minimal_capsule') {
-      return `fixed bottom-3 left-6 right-6 z-40 md:hidden border backdrop-blur-3xl rounded-full shadow-2xl px-3 py-1 ${
+      return `fixed bottom-[max(0.75rem,calc(0.5rem+env(safe-area-inset-bottom,0px)))] left-4 right-4 z-40 md:hidden border rounded-full dock-3d px-3 py-1 ${
         isAmoled
-          ? 'bg-black/90 border-zinc-800 text-slate-200'
+          ? 'bg-black/90 border-zinc-800/90 text-slate-200'
           : isDark 
-            ? 'bg-slate-950/90 border-slate-800/80 text-slate-200' 
+            ? 'text-slate-200' 
             : 'bg-white/90 border-slate-200 text-slate-800'
       }`;
     }
@@ -158,22 +158,22 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
               type="button"
               id={`android-tab-${item.id}`}
               onClick={() => onSelectView(item.id)}
-              className={`flex-1 min-w-[36px] max-w-[54px] flex flex-col items-center justify-center px-0.5 rounded-xl transition-all cursor-pointer group ${getMinHeightClass()} ${
+              className={`flex-1 min-w-[36px] max-w-[54px] flex flex-col items-center justify-center px-0.5 rounded-xl transition-all cursor-pointer group active:translate-y-0.5 ${getMinHeightClass()} ${
                 isActive
                   ? isDark
                     ? 'text-emerald-400 font-bold'
                     : 'text-emerald-700 font-bold'
                   : isDark
-                    ? 'text-slate-400 hover:text-slate-200 active:scale-90'
-                    : 'text-slate-500 hover:text-slate-900 active:scale-90'
+                    ? 'text-slate-400 hover:text-slate-200'
+                    : 'text-slate-500 hover:text-slate-900'
               }`}
               title={item.title}
             >
               <div className={`w-8 h-7 rounded-xl transition-all flex items-center justify-center ${showLabel ? 'mb-0.5' : ''} ${
                 isActive 
                   ? isDark 
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs scale-105' 
-                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs scale-105'
+                    ? 'bg-gradient-to-b from-emerald-500/30 to-emerald-600/10 text-emerald-400 border border-emerald-400/50 shadow-lg shadow-emerald-500/20 scale-105' 
+                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-md scale-105'
                   : 'bg-transparent'
               }`}>
                 <Icon className={`w-4 h-4 transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />

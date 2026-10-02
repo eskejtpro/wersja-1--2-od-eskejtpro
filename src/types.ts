@@ -212,6 +212,10 @@ export interface AppSettings {
   cardDensity?: 'compact' | 'standard' | 'ultra_dense' | 'spacious';
   handedness?: 'right' | 'left';
   screenWakeLock?: boolean;
+  turbo144HzMode?: boolean;
+  smartWarmupCalculator?: boolean;
+  autoProgressionAssistant?: boolean;
+  barbellCollarWeight?: number;
   autoFocusNextSet?: boolean;
   quickWeightIncrements?: number[];
   timerAutoStart?: boolean;

@@ -18,10 +18,11 @@ import {
   ArrowUp,
   ArrowDown,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Flame
 } from 'lucide-react';
 import { Exercise, LoggedSet, AppSettings } from '../types';
-import { calculate1RM, calculateVolume } from '../utils/calculations';
+import { calculate1RM, calculateVolume, calculatePlates } from '../utils/calculations';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -80,6 +81,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const [reps, setReps] = useState<number>(exercise.reps || 8);
   const [weight, setWeight] = useState<number>(exercise.weight ?? 60);
   const [isTrackerOpen, setIsTrackerOpen] = useState<boolean>(false);
+  const [isWarmupOpen, setIsWarmupOpen] = useState<boolean>(false);
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
 
   const isAmoled = settings?.amoledBlack === true;
@@ -214,10 +216,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     <div 
       className={`${cardRadiusClass} border transition-all duration-200 ${
         isUltraDense ? 'p-2.5 sm:p-3 space-y-2' : isCompact ? 'p-3 sm:p-4 space-y-2.5' : 'p-4 sm:p-5 space-y-4'
-      } shadow-xs ${
+      } ${
+        isAmoled ? 'amoled-card-3d' : 'card-3d'
+      } ${
         isFullyCompleted 
-          ? 'bg-slate-900/95 border-emerald-500/40 shadow-emerald-950/10' 
-          : isAmoled ? 'bg-black border-zinc-800' : 'bg-slate-900/90 border-slate-800/90 hover:border-slate-700'
+          ? 'border-emerald-500/50 shadow-emerald-950/20' 
+          : isAmoled ? 'border-zinc-800' : 'border-slate-800/90 hover:border-slate-700'
       } ${isHighContrast ? 'border-emerald-500/60 ring-1 ring-emerald-500/30' : ''}`}
       id={`exercise-card-${exercise.id}`}
     >
@@ -577,10 +581,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all shadow-sm ${
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 cursor-pointer ${
               savedSuccess
-                ? 'bg-emerald-600 text-white scale-102'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/40 active:scale-95'
+                ? 'bg-emerald-600 text-white scale-102 shadow-md'
+                : 'btn-3d-emerald text-white'
             }`}
             id={`btn-save-performance-${exercise.id}`}
             title="Zapisz aktualny ciężar i serie do planu"
@@ -612,8 +616,78 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             <span>Serie robocze ({completedSetsCount}/{detailedSets.length})</span>
             {isTrackerOpen ? <ChevronUp className="w-3.5 h-3.5 text-emerald-400" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setIsWarmupOpen(!isWarmupOpen)}
+            className={`px-2.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1 transition-all cursor-pointer ${
+              isWarmupOpen
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-amber-300 hover:bg-slate-800'
+            }`}
+            title="Kalkulator serii rozgrzewkowych i talerzy"
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Rozgrzewka</span>
+          </button>
         </div>
       </div>
+
+      {/* Drawer: Smart Warm-up Ramp & Plate Breakdown */}
+      {isWarmupOpen && (
+        <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-500/30 text-xs space-y-2 animate-fadeIn">
+          <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5" /> Rampa Rozgrzewki dla {weight} {unit}
+            </span>
+            <span className="text-[10px] text-slate-400 font-mono">Gryf {settings?.barbellCollarWeight || 20}kg</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { label: 'Gryf', w: settings?.barbellCollarWeight || 20, reps: '10p' },
+              { label: '45%', w: Math.round(((settings?.barbellCollarWeight || 20) + (weight - (settings?.barbellCollarWeight || 20)) * 0.45) / 2.5) * 2.5, reps: '5p' },
+              { label: '70%', w: Math.round(((settings?.barbellCollarWeight || 20) + (weight - (settings?.barbellCollarWeight || 20)) * 0.70) / 2.5) * 2.5, reps: '3p' },
+              { label: '85%', w: Math.round(((settings?.barbellCollarWeight || 20) + (weight - (settings?.barbellCollarWeight || 20)) * 0.85) / 2.5) * 2.5, reps: '1p' }
+            ].map((ramp, rIdx) => {
+              const bWeight = settings?.barbellCollarWeight || 20;
+              const plates = calculatePlates(Math.max(bWeight, ramp.w), bWeight);
+              return (
+                <div key={rIdx} className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                  <div className="flex justify-between items-center text-[10px] text-slate-400 mb-0.5">
+                    <span>{ramp.label}</span>
+                    <span className="font-mono font-bold text-white">{ramp.reps}</span>
+                  </div>
+                  <span className="text-xs font-black font-mono text-amber-400 block">{ramp.w} {unit}</span>
+                  <div className="text-[9px] text-slate-400 truncate mt-1">
+                    {plates.length === 0 ? 'Sam gryf' : plates.map(p => `${p.count}×${p.weight}k`).join(', ')}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Sugestia Progresji po Ukończeniu Wszystkich Serii */}
+      {isFullyCompleted && (
+        <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-emerald-200">
+              <strong>Zaliczono wszystkie serie!</strong> Sugerowana progresja na kolejny tydzień:
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => adjustWeight(2.5)}
+            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+            title="Dodaj +2.5 kg do aktualnego ciężaru"
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>+2.5 kg</span>
+          </button>
+        </div>
+      )}
 
       {/* 3. Interactive Set Bubbles Tracker (Quick Click to Check-off Sets) */}
       <div className={`flex items-center justify-between gap-2 pt-0.5 ${isLeftHanded ? 'flex-row-reverse' : 'flex-row'}`}>

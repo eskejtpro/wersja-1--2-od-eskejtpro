@@ -45,6 +45,7 @@ import { LayoutCustomizerSettings } from './LayoutCustomizerSettings';
 import { AppIntegrityDiagnosticRunner } from './AppIntegrityDiagnosticRunner';
 import { AppUpdateServerPanel } from './AppUpdateServerPanel';
 import { AppKnowledgeGuide } from './AppKnowledgeGuide';
+import { TurboPowerSettingsPanel } from './TurboPowerSettingsPanel';
 
 interface SettingsViewProps {
   data: GymData;
@@ -62,6 +63,7 @@ interface SettingsViewProps {
 }
 
 type SettingsCategory = 
+  | 'turbo'
   | 'google' 
   | 'layout' 
   | 'agent' 
@@ -177,8 +179,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     reader.readAsText(file);
   };
 
-  // Definicje 8 głównych kafelków ustawień
+  // Definicje głównych kafelków ustawień
   const categoriesList = useMemo(() => [
+    {
+      id: 'turbo' as SettingsCategory,
+      title: 'Tryb Pełnej Mocy (Xiaomi 14T Turbo)',
+      shortTitle: 'Pełna Moc (Turbo)',
+      description: '144Hz silnik GPU, rampa rozgrzewki z talerzami, asystent progresji i haptyka X-axis',
+      badge: data.settings.turbo144HzMode !== false ? '⚡ 144Hz Turbo' : 'Standard',
+      badgeColor: 'text-emerald-300 bg-emerald-500/20 border-emerald-500/40',
+      icon: Zap,
+      accentColor: 'from-emerald-500 via-teal-600 to-cyan-600',
+      iconBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      keywords: ['turbo', 'moc', 'xiaomi', '14t', '144hz', 'rozgrzewka', 'rampa', 'progresja', 'haptyka', 'wibracje', 'wakelock', 'gpu']
+    },
     {
       id: 'google' as SettingsCategory,
       title: 'Serwer Google & Logowanie',
@@ -536,6 +550,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* ⚡ 0. KAFELEK: TRYB PEŁNEJ MOCY & TURBO XIAOMI 14T                        */}
+      {/* ========================================================================= */}
+      <div className={activeCategory === 'turbo' ? 'space-y-4 animate-fadeIn' : 'hidden'}>
+        <TurboPowerSettingsPanel
+          settings={data.settings}
+          data={data}
+          onUpdateSettings={onUpdateSettings}
+          isDark={true}
+        />
+      </div>
 
       {/* ========================================================================= */}
       {/* 🚀 1. KAFELEK: SERWER GOOGLE & LOGOWANIE                                  */}

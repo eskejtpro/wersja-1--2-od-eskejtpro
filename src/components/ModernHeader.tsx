@@ -96,11 +96,14 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
 
   return (
     <header
-      className={`border-b select-none px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4 transition-colors z-10 ${
+      className={`border-b select-none px-4 sm:px-6 pb-3.5 pt-[max(0.875rem,calc(0.65rem+env(safe-area-inset-top,0px)))] flex items-center justify-between gap-4 transition-colors z-10 ${
         isDark 
-          ? 'bg-slate-950/80 backdrop-blur-md border-slate-800/80 text-slate-100' 
-          : 'bg-white/90 backdrop-blur-md border-slate-200/80 text-slate-900 shadow-xs'
+          ? 'bg-gradient-to-b from-slate-900/90 to-slate-950/95 backdrop-blur-xl border-slate-800/80 text-slate-100' 
+          : 'bg-white/95 backdrop-blur-xl border-slate-200/80 text-slate-900 shadow-sm'
       }`}
+      style={{
+        boxShadow: isDark ? '0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.06)' : undefined
+      }}
       id="modern-app-header"
     >
       {/* Left: Mobile Menu Toggle & Title */}

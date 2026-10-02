@@ -34,3 +34,26 @@ export function getTodayDateString(): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+export interface PlateCount {
+  weight: number;
+  count: number;
+}
+
+export function calculatePlates(targetWeight: number, barWeight: number = 20): PlateCount[] {
+  if (targetWeight <= barWeight) return [];
+  let remainingPerSide = (targetWeight - barWeight) / 2;
+  const plateTypes = [25, 20, 15, 10, 5, 2.5, 1.25];
+  const result: PlateCount[] = [];
+
+  for (const plate of plateTypes) {
+    if (remainingPerSide >= plate) {
+      const count = Math.floor(remainingPerSide / plate);
+      result.push({ weight: plate, count });
+      remainingPerSide = Math.round((remainingPerSide - count * plate) * 100) / 100;
+    }
+  }
+
+  return result;
+}
+

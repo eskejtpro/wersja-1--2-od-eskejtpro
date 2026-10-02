@@ -1,5 +1,24 @@
 import React, { useMemo, useState } from 'react';
-import { TrendingUp, Award, Flame, BarChart3, Calendar, Layers, FileSpreadsheet, ChevronLeft, ChevronRight, Dumbbell, Target, Sparkles } from 'lucide-react';
+import { 
+  TrendingUp, 
+  Award, 
+  Flame, 
+  BarChart3, 
+  Calendar, 
+  Layers, 
+  FileSpreadsheet, 
+  ChevronLeft, 
+  ChevronRight, 
+  Dumbbell, 
+  Target, 
+  Sparkles,
+  Copy,
+  Check,
+  Calculator,
+  Activity,
+  Zap,
+  ShieldCheck
+} from 'lucide-react';
 import { TrainingWeek, ExerciseHistoryPoint, BodyWeightEntry, AppSettings } from '../types';
 import { calculate1RM } from '../utils/calculations';
 import { MesocycleReportView } from './MesocycleReportView';
@@ -168,6 +187,48 @@ export const StatsView: React.FC<StatsViewProps> = ({
       }, 0)
     );
   }, 0);
+
+  // Średnia intensywność na powtórzenie (Tonnage Intensity Index)
+  const selectedExerciseTonnage = historyPoints.reduce((acc, p) => acc + (p.weight * p.reps * (p.sets || 1)), 0);
+  const selectedExerciseReps = historyPoints.reduce((acc, p) => acc + (p.reps * (p.sets || 1)), 0);
+  const intensityPerRep = selectedExerciseReps > 0 ? Math.round((selectedExerciseTonnage / selectedExerciseReps) * 10) / 10 : 0;
+
+  // Wskaźnik obciążenia ACWR (Acute:Chronic Workload Ratio)
+  const weeklyTonnages = scopedWeeks.map((w, wIdx) => {
+    const wOptions = analysisOptionsForWeek(w, analysisOptions, scopedWeeks[wIdx + 1]?.startDate);
+    return w.days.reduce((acc, d) => {
+      return acc + d.exercises.reduce((eAcc, e) => {
+        const s = typeof e.sets === 'number' ? e.sets : 0;
+        return eAcc + ((e.weight || 0) * (e.reps || 0) * (s || 1));
+      }, 0);
+    }, 0);
+  });
+  const acuteVolume = weeklyTonnages.length > 0 ? weeklyTonnages[weeklyTonnages.length - 1] : 0;
+  const last4Weeks = weeklyTonnages.slice(-4);
+  const chronicVolume = last4Weeks.length > 0 ? (last4Weeks.reduce((a, b) => a + b, 0) / last4Weeks.length) : 0;
+  const acwr = chronicVolume > 0 ? Math.round((acuteVolume / chronicVolume) * 100) / 100 : 1.0;
+
+  // Porównanie 4 wiodących wzorów 1RM dla najlepszego wyniku
+  const bestW = bestPoint?.weight || 0;
+  const bestR = bestPoint?.reps || 1;
+  const epley1RM = bestR === 1 ? bestW : Math.round(bestW * (1 + bestR / 30) * 10) / 10;
+  const brzycki1RM = bestR === 1 ? bestW : (37 - bestR > 0 ? Math.round(bestW * (36 / (37 - bestR)) * 10) / 10 : epley1RM);
+  const wathan1RM = bestR === 1 ? bestW : Math.round(((100 * bestW) / (48.8 + 53.8 * Math.exp(-0.075 * bestR))) * 10) / 10;
+  const lombardi1RM = bestR === 1 ? bestW : Math.round(bestW * Math.pow(bestR, 0.10) * 10) / 10;
+
+  const [copiedReport, setCopiedReport] = useState(false);
+  const handleCopyCoachSummary = () => {
+    const text = `📊 RAPORT TRENINGOWY: ${selectedExerciseName}
+• Maksymalny Ciężar: ${maxWeight} ${unit}
+• Szacowany 1RM: ${best1RM} ${unit} (Brzycki: ${brzycki1RM} ${unit} | Wathan: ${wathan1RM} ${unit})
+• Progresja od początku: +${weightGain} ${unit} (+${weightGainPct}%)
+• Wykonane serie: ${totalSetsExecuted}
+• Średni ciężar na powtórzenie: ${intensityPerRep} ${unit}
+• Wskaźnik obciążenia ACWR: ${acwr} (${acwr > 1.3 ? '⚠️ Wysokie przeciążenie' : acwr < 0.8 ? '🟢 Deload / Regeneracja' : '🔥 Optymalna strefa adaptacji'})`;
+    navigator.clipboard.writeText(text);
+    setCopiedReport(true);
+    setTimeout(() => setCopiedReport(false), 2500);
+  };
 
   // SVG Chart rendering
   const [hoveredPoint, setHoveredPoint] = useState<ExerciseHistoryPoint | null>(null);
@@ -378,50 +439,81 @@ export const StatsView: React.FC<StatsViewProps> = ({
             />
           )}
 
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 shadow-xs">
+          {/* KPI Cards (Expanded 6-metrics High-Power Grid) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xs">
               <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wider">Maksymalny Ciężar</span>
-                <Award className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Maksymalny Ciężar</span>
+                <Award className="w-3.5 h-3.5 text-emerald-400" />
               </div>
-              <div className="text-xl font-extrabold text-slate-100 font-mono">
+              <div className="text-lg font-black text-slate-100 font-mono">
                 {maxWeight} {unit}
               </div>
-              <span className="text-[11px] text-slate-500">Najwyższy zanotowany wynik</span>
+              <span className="text-[10px] text-slate-500">Najwyższy zanotowany</span>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 shadow-xs">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xs">
               <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wider">Szacowany 1RM</span>
-                <Flame className="w-4 h-4 text-amber-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Szacowany 1RM</span>
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
               </div>
-              <div className="text-xl font-extrabold text-amber-400 font-mono">
+              <div className="text-lg font-black text-amber-400 font-mono">
                 {best1RM} {unit}
               </div>
-              <span className="text-[11px] text-slate-500">Kalkulator Epleya (1 powt.)</span>
+              <span className="text-[10px] text-slate-500">Kalkulator Epleya</span>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 shadow-xs">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xs">
               <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wider">Przyrost Ciężaru</span>
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Przyrost Ciężaru</span>
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
               </div>
-              <div className="text-xl font-extrabold text-emerald-400 font-mono">
+              <div className="text-lg font-black text-emerald-400 font-mono">
                 +{weightGain} {unit}
               </div>
-              <span className="text-[11px] text-emerald-400/90 font-medium">+{weightGainPct}% progresu</span>
+              <span className="text-[10px] text-emerald-400/90 font-medium font-mono">+{weightGainPct}% progresu</span>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 shadow-xs">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xs">
               <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wider">Wykonane Serie</span>
-                <Layers className="w-4 h-4 text-teal-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Wykonane Serie</span>
+                <Layers className="w-3.5 h-3.5 text-teal-400" />
               </div>
-              <div className="text-xl font-extrabold text-teal-300 font-mono">
-                {totalSetsExecuted} serii
+              <div className="text-lg font-black text-teal-300 font-mono">
+                {totalSetsExecuted}
               </div>
-              <span className="text-[11px] text-slate-500">Zaliczonych od początku planu</span>
+              <span className="text-[10px] text-slate-500">Serie w całym planie</span>
+            </div>
+
+            {/* Nowy Wskaźnik: Intensywność Tonażu */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Śr. Ciężar/Powt.</span>
+                <Zap className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div className="text-lg font-black text-cyan-300 font-mono">
+                {intensityPerRep} {unit}
+              </div>
+              <span className="text-[10px] text-slate-500">Tonnage Intensity</span>
+            </div>
+
+            {/* Nowy Wskaźnik: Stosunek Zmęczenia ACWR */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Wskaźnik ACWR</span>
+                <Activity className="w-3.5 h-3.5 text-purple-400" />
+              </div>
+              <div className="text-lg font-black font-mono flex items-center gap-1.5">
+                <span className={acwr > 1.3 ? 'text-amber-400' : acwr < 0.8 ? 'text-sky-400' : 'text-emerald-400'}>
+                  {acwr}
+                </span>
+                <span className={`text-[9px] px-1 py-0.5 rounded font-bold uppercase ${
+                  acwr > 1.3 ? 'bg-amber-500/20 text-amber-300' : acwr < 0.8 ? 'bg-sky-500/20 text-sky-300' : 'bg-emerald-500/20 text-emerald-300'
+                }`}>
+                  {acwr > 1.3 ? 'Przeciążenie' : acwr < 0.8 ? 'Regeneracja' : 'Optimum'}
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-500">Acute/Chronic Ratio</span>
             </div>
           </div>
 
@@ -667,6 +759,67 @@ export const StatsView: React.FC<StatsViewProps> = ({
                     );
                   })}
                 </svg>
+              </div>
+            )}
+
+            {/* 4-Way 1RM Formula Comparison & Coach Export Toolbar */}
+            {historyPoints.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 shadow-xs">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                      <span className="font-bold text-amber-400">Wzór Epleya</span>
+                      <span className="text-[9px] font-mono text-slate-500">w*(1+r/30)</span>
+                    </div>
+                    <div className="text-base font-black text-white font-mono">{epley1RM} {unit}</div>
+                    <span className="text-[10px] text-slate-400">Standard trójbojowy</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 shadow-xs">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                      <span className="font-bold text-emerald-400">Wzór Brzyckiego</span>
+                      <span className="text-[9px] font-mono text-slate-500">w*(36/(37-r))</span>
+                    </div>
+                    <div className="text-base font-black text-white font-mono">{brzycki1RM} {unit}</div>
+                    <span className="text-[10px] text-slate-400">Konserwatywny (&lt;10 powt.)</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 shadow-xs">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                      <span className="font-bold text-cyan-400">Wzór Wathana</span>
+                      <span className="text-[9px] font-mono text-slate-500">nieliniowy exp</span>
+                    </div>
+                    <div className="text-base font-black text-white font-mono">{wathan1RM} {unit}</div>
+                    <span className="text-[10px] text-slate-400">Fizjologia hipertrofii</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 shadow-xs">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                      <span className="font-bold text-purple-400">Wzór Lombardiego</span>
+                      <span className="text-[9px] font-mono text-slate-500">w*r^0.1</span>
+                    </div>
+                    <div className="text-base font-black text-white font-mono">{lombardi1RM} {unit}</div>
+                    <span className="text-[10px] text-slate-400">Wyższe powtórzenia</span>
+                  </div>
+                </div>
+
+                {/* Coach Export Button */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/90 border border-slate-800 text-xs">
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="text-slate-300">
+                      Chcesz wysłać podsumowanie tego ćwiczenia swojemu trenerowi lub zapisać do notatek?
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyCoachSummary}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold btn-3d-emerald text-white flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+                  >
+                    {copiedReport ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedReport ? 'Skopiowano do Schowka ✓' : 'Kopiuj Raport dla Trenera'}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
