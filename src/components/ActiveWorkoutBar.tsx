@@ -16,6 +16,7 @@ interface ActiveWorkoutBarProps {
   onFinishWorkout: () => void;
   // Timer sesji przekazywany z persistent useWorkoutTimer
   elapsedSeconds?: number;
+  hasActiveSession?: boolean;
   isSessionActive?: boolean;
   onToggleSessionPause?: () => void;
   // Rest timer
@@ -35,6 +36,7 @@ export const ActiveWorkoutBar: React.FC<ActiveWorkoutBarProps> = ({
   unit,
   onFinishWorkout,
   elapsedSeconds = 0,
+  hasActiveSession = false,
   isSessionActive = true,
   onToggleSessionPause,
   restTimerSeconds,
@@ -147,7 +149,8 @@ export const ActiveWorkoutBar: React.FC<ActiveWorkoutBarProps> = ({
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
                 : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
             }`}
-            title={isSessionActive ? 'Wstrzymaj stoper sesji' : 'Wznów stoper'}
+            aria-label={isSessionActive ? 'Wstrzymaj trening' : hasActiveSession ? 'Wznów trening' : 'Rozpocznij trening'}
+            title={isSessionActive ? 'Wstrzymaj trening' : hasActiveSession ? 'Wznów trening' : 'Rozpocznij trening'}
           >
             {isSessionActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
           </button>

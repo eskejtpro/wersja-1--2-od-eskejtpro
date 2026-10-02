@@ -1,16 +1,16 @@
-# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.3)
+# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.4)
 
-Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.3. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
+Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.4. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
 
 ---
 
-## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.3)
-- **Łączna liczba testów aplikacji**: 95 / 95 (**PASS - 100%**)
+## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.4)
+- **Łączna liczba testów aplikacji**: 100 / 100 (**PASS - 100%**)
 - **Testy serwera/OIDC**: 15 / 15 (**PASS - 100%**)
 - **Testy UI Google i konfiguracji Androida**: 3 / 3 (**PASS - 100%**)
 - **Testy serwisu aktualizacji**: 4 / 4 (**PASS**, `npm run test:update`)
 - **Kompilacja TypeScript i Linter**: `tsc --noEmit` (**PASS - 0 błędów**)
-- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug `3.0.3` zbudowany, instalacja na urządzeniu **UNVERIFIED**
+- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug `3.0.4` zbudowany, instalacja na urządzeniu **UNVERIFIED**
 - **Błędy krytyczne**: 0 (**FAIL: 0**)
 
 ---
@@ -25,7 +25,8 @@ Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.3. Tes
 | **Odzyskiwanie danych przy starcie** | `tests/startup-data-recovery.test.cjs` | 3 | `npm test` | **PASS** | Zachowanie istniejącej bazy przy braku partycji, priorytet partycji, brak fałszywych deklaracji SQL |
 | **Procedura Migracyjna** | `tests/database-migration.test.cjs` | 4 | `npm test` | **PASS** | Walidacja sumy SHA256, nienaruszalność pierwotnego pliku przed migracją |
 | **Mapery Domenowe** | `tests/domain-mappers.test.cjs` | 3 | `npm test` | **PASS** | Bezpieczna konwersja encji domenowych, typowanie i wartości domyślne |
-| **Stoper Treningowy (Wall-Clock)** | `tests/workout-timer.test.cjs` | 1 | `npm test` | **PASS** | Odporność stopera na uśpienie karty, przełączanie okien i ubicie procesu Androida |
+| **Stoper Treningowy (Wall-Clock)** | `tests/workout-timer.test.cjs` | 1 | `npm test` | **PASS** | Test obliczeń wall-clock dla przełączenia okien, pauzy/wznowienia i przerwy; bez testu runtime urządzenia |
+| **Stan sesji i zakres WakeLock** | `tests/workout-session-state.test.cjs` | 5 | `npm test` | **PASS** | Stan nowej instalacji, odtworzenie legacy pause, koniec sesji i macierz warunków WakeLock; runtime urządzenia osobno UNVERIFIED |
 | **Pomiary Ciała & Obwody** | `tests/body-measurements.test.cjs` | 3 | `npm test` | **PASS** | Konwersja mm/cm, asymetria lewa/prawa strona, filtrowanie Z-score |
 | **Obwody & Matematyka 1RM** | `tests/circumference.test.cjs` | 3 | `npm test` | **PASS** | Wzór Brzyckiego, szacowanie e1RM, kalkulacja tonażu bez dzielenia przez zero |
 | **Dziennik Masy Ciała & Subkategorie**| `tests/body-weight-subcategories.test.cjs` | 3 | `npm test` | **PASS** | Średnie ważone, średnia krocząca EMA, podział na czczo / po treningu |

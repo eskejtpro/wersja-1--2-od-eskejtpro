@@ -1,69 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { soundService } from './soundService';
+import { readWorkoutSession, WORKOUT_SESSION_KEYS } from './workoutSessionStorage';
 
-const STORAGE_SESSION_START = 'planpasika_session_start_v1';
-const STORAGE_SESSION_PAUSED = 'planpasika_session_paused_v1';
-const STORAGE_PAUSED_AT = 'planpasika_session_paused_at_v1';
-const STORAGE_ACCUMULATED_PAUSED = 'planpasika_session_accumulated_paused_v1';
+const { start: STORAGE_SESSION_START, active: STORAGE_SESSION_ACTIVE, paused: STORAGE_SESSION_PAUSED,
+  pausedAt: STORAGE_PAUSED_AT, accumulatedPaused: STORAGE_ACCUMULATED_PAUSED } = WORKOUT_SESSION_KEYS;
 const STORAGE_REST_TARGET = 'planpasika_rest_target_v1';
 
 export interface WorkoutTimerState {
   elapsedSeconds: number;
+  hasActiveSession: boolean;
   isSessionActive: boolean;
   restTimerSeconds: number | null;
   toggleSessionPause: () => void;
-  resetSessionTimer: () => void;
+  endSessionTimer: () => void;
   startRestTimer: (seconds: number) => void;
   adjustRestTimer: (deltaSeconds: number) => void;
   cancelRestTimer: () => void;
 }
 
 export function useWorkoutTimer(): WorkoutTimerState {
-  // 1. Inicjalizacja czasu startu sesji z pamięci trwałej (odpornej na restart i zmianę okna)
-  const [sessionStartTime, setSessionStartTime] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_SESSION_START);
-      if (saved) {
-        const val = Number(saved);
-        if (!isNaN(val) && val > 0) return val;
-      }
-    } catch {}
-    const now = Date.now();
-    try {
-      localStorage.setItem(STORAGE_SESSION_START, String(now));
-    } catch {}
-    return now;
+  const [initialSession] = useState(() => {
+    try { return readWorkoutSession(localStorage); }
+    catch { return { startTime: 0, hasActiveSession: false, isSessionActive: false, pausedAt: null, accumulatedPausedMs: 0 }; }
   });
-
-  const [isSessionActive, setIsSessionActive] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_SESSION_PAUSED);
-      if (saved !== null) return saved !== 'true';
-    } catch {}
-    return true;
-  });
-
-  const [pausedAt, setPausedAt] = useState<number | null>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_PAUSED_AT);
-      if (saved) {
-        const val = Number(saved);
-        if (!isNaN(val) && val > 0) return val;
-      }
-    } catch {}
-    return null;
-  });
-
-  const [accumulatedPausedMs, setAccumulatedPausedMs] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_ACCUMULATED_PAUSED);
-      if (saved) {
-        const val = Number(saved);
-        if (!isNaN(val) && val >= 0) return val;
-      }
-    } catch {}
-    return 0;
-  });
+  const [sessionStartTime, setSessionStartTime] = useState<number>(initialSession.startTime);
+  const [hasActiveSession, setHasActiveSession] = useState<boolean>(initialSession.hasActiveSession);
+  const [isSessionActive, setIsSessionActive] = useState<boolean>(initialSession.isSessionActive);
+  const [pausedAt, setPausedAt] = useState<number | null>(initialSession.pausedAt);
+  const [accumulatedPausedMs, setAccumulatedPausedMs] = useState<number>(initialSession.accumulatedPausedMs);
 
   // 2. Rest Timer target timestamp (czas na zegarze, w którym kończy się przerwa)
   const [restTargetMs, setRestTargetMs] = useState<number | null>(() => {
@@ -88,7 +52,7 @@ export function useWorkoutTimer(): WorkoutTimerState {
     const now = Date.now();
 
     // Stoper sesji
-    if (sessionStartTime > 0) {
+    if (hasActiveSession && sessionStartTime > 0) {
       if (!isSessionActive && pausedAt) {
         const elapsed = Math.max(0, Math.floor((pausedAt - sessionStartTime - accumulatedPausedMs) / 1000));
         setElapsedSeconds(elapsed);
@@ -121,7 +85,7 @@ export function useWorkoutTimer(): WorkoutTimerState {
     } else {
       setRestTimerSeconds(null);
     }
-  }, [sessionStartTime, isSessionActive, pausedAt, accumulatedPausedMs, restTargetMs]);
+  }, [sessionStartTime, hasActiveSession, isSessionActive, pausedAt, accumulatedPausedMs, restTargetMs]);
 
   // Główny interwał zegara (500ms dla pełnej płynności i braku desynchronizacji)
   useEffect(() => {
@@ -164,6 +128,22 @@ export function useWorkoutTimer(): WorkoutTimerState {
         localStorage.setItem(STORAGE_PAUSED_AT, String(now));
       } catch {}
     } else {
+      if (!hasActiveSession) {
+        setSessionStartTime(now);
+        setHasActiveSession(true);
+        setIsSessionActive(true);
+        setPausedAt(null);
+        setAccumulatedPausedMs(0);
+        setElapsedSeconds(0);
+        try {
+          localStorage.setItem(STORAGE_SESSION_START, String(now));
+          localStorage.setItem(STORAGE_SESSION_ACTIVE, 'true');
+          localStorage.setItem(STORAGE_SESSION_PAUSED, 'false');
+          localStorage.setItem(STORAGE_ACCUMULATED_PAUSED, '0');
+          localStorage.removeItem(STORAGE_PAUSED_AT);
+        } catch {}
+        return;
+      }
       // Wznów
       let extraPaused = 0;
       if (pausedAt) {
@@ -175,17 +155,18 @@ export function useWorkoutTimer(): WorkoutTimerState {
       setIsSessionActive(true);
       try {
         localStorage.setItem(STORAGE_SESSION_PAUSED, 'false');
+        localStorage.setItem(STORAGE_SESSION_ACTIVE, 'true');
         localStorage.removeItem(STORAGE_PAUSED_AT);
         localStorage.setItem(STORAGE_ACCUMULATED_PAUSED, String(newAccumulated));
       } catch {}
     }
-  }, [isSessionActive, pausedAt, accumulatedPausedMs]);
+  }, [isSessionActive, hasActiveSession, pausedAt, accumulatedPausedMs]);
 
-  // Akcje: Reset stoperu sesji (np. po zakończeniu lub rozpoczęciu nowego treningu)
-  const resetSessionTimer = useCallback(() => {
-    const now = Date.now();
-    setSessionStartTime(now);
-    setIsSessionActive(true);
+  // Zakończenie treningu czyści trwałą sesję; nowa sesja zaczyna się jawnie z przycisku Start.
+  const endSessionTimer = useCallback(() => {
+    setSessionStartTime(0);
+    setHasActiveSession(false);
+    setIsSessionActive(false);
     setPausedAt(null);
     setAccumulatedPausedMs(0);
     setElapsedSeconds(0);
@@ -194,8 +175,9 @@ export function useWorkoutTimer(): WorkoutTimerState {
     hasNotifiedRestFinishedRef.current = false;
 
     try {
-      localStorage.setItem(STORAGE_SESSION_START, String(now));
-      localStorage.setItem(STORAGE_SESSION_PAUSED, 'false');
+      localStorage.removeItem(STORAGE_SESSION_START);
+      localStorage.setItem(STORAGE_SESSION_ACTIVE, 'false');
+      localStorage.removeItem(STORAGE_SESSION_PAUSED);
       localStorage.removeItem(STORAGE_PAUSED_AT);
       localStorage.setItem(STORAGE_ACCUMULATED_PAUSED, '0');
       localStorage.removeItem(STORAGE_REST_TARGET);
@@ -251,10 +233,11 @@ export function useWorkoutTimer(): WorkoutTimerState {
 
   return {
     elapsedSeconds,
+    hasActiveSession,
     isSessionActive,
     restTimerSeconds,
     toggleSessionPause,
-    resetSessionTimer,
+    endSessionTimer,
     startRestTimer,
     adjustRestTimer,
     cancelRestTimer

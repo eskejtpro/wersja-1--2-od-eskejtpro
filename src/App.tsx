@@ -30,6 +30,7 @@ import { appDatabase } from './data/db/AppDatabase';
 import { roomDatabase } from './data/db/RoomDatabase';
 import { initializeLocalDatabaseFlow } from './data/db/initializeLocalDatabase';
 import { normalizeGymDataToRelational } from './domain/mappers';
+import { shouldHoldWorkoutWakeLock } from './utils/workoutSessionStorage';
 
 const STORAGE_KEY = 'gymtracker_windows_data_v1';
 const BACKUPS_STORAGE_KEY = 'gymtracker_autobackups_v1';
@@ -229,22 +230,53 @@ export default function App() {
   // Screen WakeLock na Androidzie podczas aktywnego treningu (blokada wygaszania ekranu)
   useEffect(() => {
     let wakeLockSentinel: any = null;
+    let cancelled = false;
+    const shouldHoldWakeLock = () => shouldHoldWorkoutWakeLock(
+      data.settings.screenWakeLock !== false,
+      activeView,
+      workoutTimer.hasActiveSession,
+      workoutTimer.isSessionActive,
+      typeof document !== 'undefined' && !document.hidden,
+      typeof navigator !== 'undefined' && 'wakeLock' in navigator
+    );
+
+    const releaseWakeLock = () => {
+      const current = wakeLockSentinel;
+      wakeLockSentinel = null;
+      if (current) void current.release().catch(() => {});
+    };
     const requestWakeLock = async () => {
-      if (data.settings.screenWakeLock !== false && workoutTimer.isSessionActive && typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+      if (shouldHoldWakeLock() && !wakeLockSentinel) {
         try {
-          wakeLockSentinel = await (navigator as any).wakeLock.request('screen');
+          const requested = await (navigator as any).wakeLock.request('screen');
+          if (cancelled || !shouldHoldWakeLock()) {
+            await requested.release().catch(() => {});
+          } else {
+            wakeLockSentinel = requested;
+            requested.addEventListener('release', () => {
+              if (wakeLockSentinel === requested) wakeLockSentinel = null;
+            }, { once: true });
+          }
         } catch {
           // WakeLock może być niedozwolony przez politykę oszczędzania energii systemu
         }
       }
     };
-    requestWakeLock();
-    return () => {
-      if (wakeLockSentinel) {
-        wakeLockSentinel.release().catch(() => {});
-      }
+    const handleFocus = () => { void requestWakeLock(); };
+    const handleVisibilityChange = () => {
+      if (document.hidden) releaseWakeLock();
+      else void requestWakeLock();
     };
-  }, [data.settings.screenWakeLock, workoutTimer.isSessionActive]);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    void requestWakeLock();
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      releaseWakeLock();
+    };
+  }, [activeView, data.settings.screenWakeLock, workoutTimer.hasActiveSession, workoutTimer.isSessionActive]);
 
   // 2. Atomowy, asynchroniczny zapis do bazy Room bez blokowania wątku UI (Non-Blocking Queue)
   const pendingDataRef = useRef<GymData>(data);
@@ -701,6 +733,7 @@ export default function App() {
 
     // Uruchomienie inteligentnego rest timera po odhaczeniu serii
     if (loggedSets && loggedSets.some((s) => s.completed)) {
+      if (!workoutTimer.hasActiveSession) workoutTimer.toggleSessionPause();
       workoutTimer.startRestTimer(90);
     }
   };
@@ -719,7 +752,7 @@ export default function App() {
     }
 
     // Reset stoperu sesji i odliczania przerwy
-    workoutTimer.resetSessionTimer();
+    workoutTimer.endSessionTimer();
     soundService.notifyTimerFinished();
   };
 
@@ -1685,6 +1718,7 @@ export default function App() {
           onFinishWorkout={() => setIsSummaryModalOpen(true)}
           elapsedSeconds={workoutTimer.elapsedSeconds}
           isSessionActive={workoutTimer.isSessionActive}
+          hasActiveSession={workoutTimer.hasActiveSession}
           onToggleSessionPause={workoutTimer.toggleSessionPause}
           restTimerSeconds={workoutTimer.restTimerSeconds}
           onStartRestTimer={workoutTimer.startRestTimer}

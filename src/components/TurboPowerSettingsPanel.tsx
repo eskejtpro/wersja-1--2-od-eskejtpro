@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Zap, 
   Cpu, 
@@ -46,17 +46,7 @@ export const TurboPowerSettingsPanel: React.FC<TurboPowerSettingsPanelProps> = (
 
   // Status testu haptyki
   const [hapticTested, setHapticTested] = useState<boolean>(false);
-  const [wakeLockActive, setWakeLockActive] = useState<boolean>(false);
   const [localDataSummary, setLocalDataSummary] = useState<string | null>(null);
-
-  // Sprawdź wsparcie dla WakeLock
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator && settings.screenWakeLock) {
-      navigator.wakeLock.request('screen')
-        .then(() => setWakeLockActive(true))
-        .catch(() => setWakeLockActive(false));
-    }
-  }, [settings.screenWakeLock]);
 
   const handleTestHaptic = (intensity: 'light' | 'medium' | 'strong') => {
     soundService.triggerHaptic(intensity);
