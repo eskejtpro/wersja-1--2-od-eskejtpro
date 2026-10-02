@@ -1,6 +1,6 @@
-# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.7)
+# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.8)
 > **DOKUMENTACJA ARCHITEKTONICZNA, SYSTEMOWA I PROCEDURA TESTOWA DLA AGENTÓW AI**
-> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.7 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
+> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.8 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
 >
 > **Ważne:** starsze opisy architektury poniżej zawierają deklaracje odziedziczone z wcześniejszych wersji. Zweryfikowany stan wykonawczy i jawne ograniczenia są zapisane w sekcji „Aktualizacja stanu 3.0.2” na końcu; w szczególności aktywny Android data store nie jest Room SQLite.
 
@@ -238,3 +238,11 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - Awaria transportu nie jest już prezentowana jako wygenerowana odpowiedź lub synchronizacja zakończona sukcesem; AI Coach i Quick Access pokazują niedostępność.
 - Weryfikacja 3.0.7: app 107/107, server 16/16, Google UI 3/3, updater 4/4, lint/build/Cap sync/Android assembleDebug PASS. APK debug zweryfikowany; urządzenie fizyczne niepodłączone, runtime UNVERIFIED. Szczegóły: `CHANGELOG-V3.0.7.md`.
 - Inwentaryzacja wszystkich tras Express oraz mapowanie do wywołań UI: `API-ROUTE-INVENTORY.md`. Wskazuje nieużywane trasy, brak pełnego pokrycia testami AI oraz brak walidacji zakresów w dwóch endpointach.
+
+## Aktualizacja stanu 3.0.8 (2026-10-02)
+
+- Walidacja `/api/ai/coach/audit-health` ogranicza do 50 wyników i 12 kB JSON, kontroluje nazwy/wartości/jednostki/datę/zakresy, ignoruje nieznane pola i serializuje do promptu tylko dozwolone pola.
+- Dane w promptcie są jawnie oznaczone jako niezaufane; brak kosztu infrastruktury i brak zmian w danych przechowywanych.
+- Cloud Run nasłuchuje na `0.0.0.0` i `PORT`; lokalny serwer zachowuje `127.0.0.1:3000`. Test uruchomieniowy skompilowanego serwera potwierdził odpowiedź `degraded` na `/api/health`.
+- Metadane Cloud Run pokazują HTTPS na wejściu usługi, lecz nie reklamują niedostępnego magazynu ani logowania jako aktywnych możliwości.
+- Weryfikacja bieżących zmian: app 110/110, server/OIDC 18/18, Google UI 3/3, updater 4/4, lint i web/server build PASS. Android 3.0.8, telefon i chmurowa trwałość danych pozostają UNVERIFIED. Szczegóły: `CHANGELOG-V3.0.8.md`.

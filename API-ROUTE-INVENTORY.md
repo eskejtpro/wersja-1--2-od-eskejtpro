@@ -1,4 +1,4 @@
-# API route inventory — GymTracker Pro 3.0.7
+# API route inventory — GymTracker Pro 3.0.8
 
 Read-only inventory checked against Express route declarations in `server.ts` and first-party requests in `src/`. “AI auth” means `requireAiSession`: loopback-only local servers bypass Bearer auth; network-bound servers require a session. Cloud Run does not get the loopback bypass. “Local file” is process-local server storage, not durable Cloud Run storage.
 
@@ -23,7 +23,7 @@ Read-only inventory checked against Express route declarations in `server.ts` an
 | POST | `/api/ai/coach/chat` | AI auth | message/persona/context/history → reply/model/fallback | Gemini when configured; otherwise labelled local heuristic; no server-side chat persistence | Implemented; routine client context is minimized; provider exception is 503 |
 | POST | `/api/ai/chat` | AI auth | Same as coach chat | Same as coach chat | Backward-compatible alias; used by Quick Access |
 | POST | `/api/ai/coach/generate-plan` | AI auth | goal, days/split/experience/focus → plan text/model | Gemini or labelled local example; not persisted | Implemented; server test coverage is partial |
-| POST | `/api/ai/coach/audit-health` | AI auth | bloodTests/bodyWeight → educational audit | Gemini only; no-key and empty-response fail closed | Implemented; no-key 503 |
+| POST | `/api/ai/coach/audit-health` | AI auth | max 50 validated test rows + bodyWeight → educational audit | Gemini only; sanitized JSON fields, 12 kB aggregate cap; no-key and empty-response fail closed | Implemented; validation and no-key 503 tested |
 | POST | `/api/ai/coach/nutrition-plan` | AI auth | body metrics/goal/activity → text and macros | Gemini or local formula; not persisted | Implemented; input-bound validation needs separate audit |
 | POST | `/api/ai/coach/swap-exercise` | AI auth | exercise/category/reason → substitutions or explanation | Gemini or labelled local template; not persisted | Implemented; input-bound validation needs separate audit |
 | POST | `/api/ai/coach/tts` | AI auth | text/voice → base64 audio/MIME/model | Gemini TTS; no-key 503 | Implemented; UI caller exists |

@@ -1,7 +1,7 @@
 import { AppUpdateInfo, AppUpdateHistoryEntry } from '../types';
 
 const UPDATE_HISTORY_STORAGE_KEY = 'gymtracker_update_history_v1';
-export const CURRENT_APP_VERSION = '3.0.7';
+export const CURRENT_APP_VERSION = '3.0.8';
 
 export class AppUpdateService {
   static getUpdateHistory(): AppUpdateHistoryEntry[] {

@@ -1,6 +1,8 @@
-# GymTracker Pro 3.0.7 — kontrakt lokalnego serwera
+# GymTracker Pro 3.0.8 — kontrakt lokalnego serwera
 
 `server.ts` jest jedynym serwerem Node/Express projektu. Domyślnie nasłuchuje wyłącznie na `127.0.0.1:3000`; LAN można włączyć ręcznie przez `GYMTRACKER_BIND`, np. po świadomym ustawieniu adresu interfejsu. Serwer przechowuje własny magazyn poza repozytorium i nigdy nie dotyka `workout_data.json` aplikacji desktopowej.
+
+W środowisku Cloud Run (`K_SERVICE`) proces nasłuchuje na `0.0.0.0` i używa portu z `PORT` (domyślnie 8080, jeśli wartość jest niepoprawna). TLS kończy się na wejściu Cloud Run, a proces obsługuje HTTP wewnątrz kontenera. To spełnia kontrakt sieciowy kontenera, ale nie dodaje trwałego magazynu ani sesji w chmurze; odpowiednie operacje nadal zwracają 503.
 
 Pełna mapa każdej trasy Express, auth/input/output/persistence/status oraz first-party caller coverage znajduje się w [`API-ROUTE-INVENTORY.md`](API-ROUTE-INVENTORY.md); ta umowa podaje tylko najczęściej używane kontrakty.
 
@@ -28,7 +30,7 @@ Hash hasła można wygenerować przez eksport `createPasswordHash` z `server.ts`
 - `POST /api/agent/analyze` — autoryzowana, lokalna heurystyka na przekazanym wycinku danych. Nie pobiera automatycznie całego `GymData` i nie wykonuje połączeń zewnętrznych.
 - `POST /api/ai/coach/chat` (alias `/api/ai/chat`) — czat; lokalny fallback jest jawnie oznaczony, wyjątek AI zwraca `503 ai_unavailable`. Rutynowy request nie dołącza automatycznie badań, notatek, nazwiska, masy ciała ani pamięci AI.
 - `POST /api/ai/coach/generate-plan`, `/nutrition-plan`, `/swap-exercise`, `/tts`, `/analyze`, `/api/ai/agent/parse-command` — endpointy AI; ich fallbacki i kody błędów są odrębne i nie należy z opisu czatu wnioskować o ich zachowaniu.
-- `POST /api/ai/coach/audit-health` — wejście ograniczone do badań i masy ciała; bez klucza AI zwraca `503 ai_unavailable` i nie wystawia oceny wyników. Odpowiedź Gemini ma charakter edukacyjny, nie diagnostyczny.
+- `POST /api/ai/coach/audit-health` — maks. 50 wyników, maks. 12 kB znormalizowanego JSON; waliduje nazwę, wartość, jednostkę, datę i zakres. Do promptu przechodzą tylko jawnie obsługiwane pola. Bez klucza AI zwraca `503 ai_unavailable` i nie wystawia oceny wyników; odpowiedź Gemini ma charakter edukacyjny, nie diagnostyczny.
 
 Pozostawione historyczne `/api/update/download/:version`, `/api/update/apply` i `/api/update/rollback` zwracają jawne `503 unavailable_not_configured`; serwer nie udaje pobierania, instalacji ani rollbacku i nie uruchamia instalatora. Manifest stanowi miejsce pod późniejszą weryfikację podpisu, ale podpis nie jest jeszcze weryfikowany.
 

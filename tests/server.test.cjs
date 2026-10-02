@@ -81,14 +81,68 @@ test.after(async () => {
 test('health and version expose persistent-server capabilities', async () => {
   const health = await request('/api/health');
   assert.equal(health.response.status, 200);
-  assert.equal(health.body.version, '3.0.7');
+  assert.equal(health.body.version, '3.0.8');
   assert.equal(health.body.apiVersion, '1');
   assert.equal(health.body.capabilities.includes('google_oidc_login'), false);
+  assert.equal(health.body.capabilities.includes('google_cloud_server'), false);
+  assert.equal(health.body.capabilities.includes('google_account_auth'), false);
   assert.equal(health.response.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(health.response.headers.get('x-dns-prefetch-control'), 'off');
   const version = await request('/api/version');
   assert.equal(version.body.schemaVersion, 1);
   assert.equal(version.body.capabilities.includes('google_oidc_login'), false);
+});
+
+test('Cloud Run binds to all interfaces on PORT while local defaults remain loopback-only', () => {
+  const oldService = process.env.K_SERVICE;
+  const oldPort = process.env.PORT;
+  const oldBind = process.env.GYMTRACKER_BIND;
+  try {
+    delete process.env.K_SERVICE;
+    delete process.env.PORT;
+    delete process.env.GYMTRACKER_BIND;
+    const local = createApp().config;
+    assert.equal(local.bindHost, '127.0.0.1');
+    assert.equal(local.port, 3000);
+
+    process.env.K_SERVICE = 'planpasika-api';
+    process.env.PORT = '8081';
+    process.env.GYMTRACKER_BIND = '127.0.0.1';
+    const cloud = createApp().config;
+    assert.equal(cloud.isCloudRun, true);
+    assert.equal(cloud.bindHost, '0.0.0.0');
+    assert.equal(cloud.port, 8081);
+
+    process.env.PORT = 'invalid';
+    assert.equal(createApp().config.port, 8080);
+  } finally {
+    if (oldService === undefined) delete process.env.K_SERVICE;
+    else process.env.K_SERVICE = oldService;
+    if (oldPort === undefined) delete process.env.PORT;
+    else process.env.PORT = oldPort;
+    if (oldBind === undefined) delete process.env.GYMTRACKER_BIND;
+    else process.env.GYMTRACKER_BIND = oldBind;
+  }
+});
+
+test('Cloud Run reports HTTPS ingress without advertising unavailable cloud storage or login', async () => {
+  const { app } = createApp({ config: { isCloudRun: true, bindHost: '0.0.0.0', port: 0 } });
+  const cloudServer = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => cloudServer.once('listening', resolve));
+  try {
+    const url = `http://127.0.0.1:${cloudServer.address().port}`;
+    const info = await (await fetch(`${url}/api/server/google-info`)).json();
+    assert.equal(info.protocol, 'HTTPS');
+    assert.equal(info.ssl, 'HTTPS na wejściu Cloud Run');
+    assert.equal(info.googleAuthAvailable, false);
+    assert.equal(info.durableCloudStorage, false);
+    const health = await (await fetch(`${url}/api/health`)).json();
+    assert.equal(health.status, 'degraded');
+    assert.equal(health.capabilities.includes('google_cloud_server'), false);
+    assert.equal(health.capabilities.includes('google_account_auth'), false);
+  } finally {
+    await new Promise((resolve) => cloudServer.close(resolve));
+  }
 });
 
 test('health audit is explicitly unavailable without AI and never claims normal results', async () => {
@@ -110,6 +164,18 @@ test('health audit is explicitly unavailable without AI and never claims normal 
     });
     assert.equal(invalid.response.status, 400);
     assert.equal(invalid.body.error, 'invalid_health_audit_input');
+    for (const bloodTests of [
+      [null],
+      [{ testName: 'ALT', value: { secret: 'ignored' } }],
+      [{ testName: 'ALT', value: 30, minNormal: 40, maxNormal: 20 }],
+      Array.from({ length: 51 }, (_, i) => ({ testName: `T${i}`, value: i })),
+    ]) {
+      const malformedRow = await request('/api/ai/coach/audit-health', {
+        method: 'POST', body: JSON.stringify({ bloodTests, bodyWeight: 80 }),
+      });
+      assert.equal(malformedRow.response.status, 400);
+      assert.equal(malformedRow.body.error, 'invalid_health_audit_input');
+    }
   } finally {
     if (oldGeminiKey === undefined) delete process.env.GEMINI_API_KEY;
     else process.env.GEMINI_API_KEY = oldGeminiKey;
