@@ -2,7 +2,7 @@
  * Test zgodności i poprawności działania wszystkich funkcji na wersji Android (.apk)
  * Weryfikuje:
  * 1. Działanie sprzętowego przycisku Wstecz (Android Hardware Back Button Stack)
- * 2. Pełne działanie offline bazy Room Database bez zależności od sieci zewnętrznej
+ * 2. Zachowanie serializacji przykładowych logicznych partycji w mocku
  * 3. Poprawność konfiguracji Capacitor (capacitor.config.ts, webDir, androidScheme)
  * 4. Odporność timerów na usypianie i minimalizację aplikacji (Wall-Clock Accuracy)
  * 5. Dostępność i bezbłędne renderowanie wszystkich 8 modułów aplikacji Android
@@ -33,6 +33,16 @@ test('Capacitor config & Android meta viewport są poprawnie skonfigurowane dla 
   const indexContent = fs.readFileSync(indexPath, 'utf8');
   assert.match(indexContent, /viewport-fit=cover/, 'index.html musi zawierać viewport-fit=cover dla notch/pasek nawigacji Android');
   assert.match(indexContent, /name="viewport"/, 'index.html musi definiować meta viewport');
+});
+
+test('Manifest deklaruje tylko używane wibracje i blokadę wygaszania ekranu', () => {
+  const manifestPath = path.join(__dirname, '../android/app/src/main/AndroidManifest.xml');
+  const manifest = fs.readFileSync(manifestPath, 'utf8');
+
+  assert.match(manifest, /android\.permission\.INTERNET/);
+  assert.match(manifest, /android\.permission\.VIBRATE/);
+  assert.match(manifest, /android\.permission\.WAKE_LOCK/);
+  assert.doesNotMatch(manifest, /ACCESS_FINE_LOCATION|READ_CONTACTS|CAMERA/);
 });
 
 // ============================================================================
@@ -91,10 +101,10 @@ test('Stos przycisku wstecz (Android Hardware Back Button) zamyka modale, szufla
 });
 
 // ============================================================================
-// TEST 3: Działanie bazy Room Database offline na urządzeniu Android
+// TEST 3: Przykładowa serializacja partycji JSON w pamięci testowej (nie test urządzenia)
 // ============================================================================
-test('Baza danych Room Database i transakcje działają w 100% offline bez sieci', async () => {
-  // Prosty in-memory storage driver symulujący Android LocalStorage/Preferences
+test('Mock partycji JSON zachowuje przykładowe dane bez sieci', async () => {
+  // Ten mock sprawdza wyłącznie JSON w pamięci testowej, nie natywne Room/SQLite.
   const memoryStore = new Map();
   const mockStorageDriver = {
     readTable: (table, fallback) => {

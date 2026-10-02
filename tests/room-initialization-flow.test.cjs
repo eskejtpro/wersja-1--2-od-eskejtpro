@@ -61,7 +61,7 @@ function loadTsModule(filePath, customContext = {}) {
   return m.exports;
 }
 
-test('RoomDatabase initialization flow transitions from JSON storage to structured SQL tables', async () => {
+test('Local TypeScript adapter transitions from legacy JSON to logical JSON partitions', async () => {
   mockLocalStorage.clear();
 
   const dbModule = loadTsModule(path.join(__dirname, '../src/data/db/RoomDatabase.ts'));
@@ -109,7 +109,7 @@ test('RoomDatabase initialization flow transitions from JSON storage to structur
     ]
   };
 
-  // 3. Wykonanie bezpiecznej migracji z JSON do schematu Room SQL
+  // 3. Migracja legacy JSON do logicznych partycji JSON w mockowanym localStorage
   await db.migrateFromJson(legacyData);
 
   // 4. Potwierdzenie zapisu snapshotu bezpieczeństwa
@@ -124,7 +124,7 @@ test('RoomDatabase initialization flow transitions from JSON storage to structur
   assert.equal(db.exerciseDao.getAll().length, 1);
   assert.equal(db.loggedSetDao.getAll().length, 1);
 
-  // 6. Odtworzenie obiektu domenowego GymData ze znormalizowanych tabel Room SQL
+  // 6. Odtworzenie obiektu domenowego GymData z logicznych partycji JSON
   const reconstructed = db.loadGymData();
   assert.ok(reconstructed);
   assert.equal(reconstructed.weeks.length, 1);

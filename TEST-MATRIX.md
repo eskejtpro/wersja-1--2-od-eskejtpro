@@ -1,14 +1,15 @@
-# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.1)
+# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.2)
 
-Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.1. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
+Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.2. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
 
 ---
 
-## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.1)
-- **Łączna liczba testów aplikacji**: 91 / 91 (**PASS - 100%**)
+## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.2)
+- **Łączna liczba testów aplikacji**: 95 / 95 (**PASS - 100%**)
 - **Testy serwera/OIDC**: 15 / 15 (**PASS - 100%**)
 - **Testy UI Google i konfiguracji Androida**: 3 / 3 (**PASS - 100%**)
 - **Kompilacja TypeScript i Linter**: `tsc --noEmit` (**PASS - 0 błędów**)
+- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug `3.0.2` zbudowany, instalacja na urządzeniu **UNVERIFIED**
 - **Błędy krytyczne**: 0 (**FAIL: 0**)
 
 ---
@@ -18,8 +19,9 @@ Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.1. Pe�
 | Pakiet Testowy | Plik Testu | Liczba Testów | Sposób Uruchomienia | Status | Zakres Pokrycia |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Magazyn Danych & Atomowość** | `tests/storage.test.cjs` | 13 | `npm test` | **PASS** | Atomowość zapisu, rotacja kopii zapasowych `/backups`, odrzucanie uszkodzonego JSON, fail-closed |
-| **Relacyjna Baza Room SQL** | `tests/room-database.test.cjs` | 1 | `npm test` | **PASS** | Partycjonowane tabele (weeks, days, exercises, logged_sets, body_weights, agent_memory) |
-| **Inicjalizacja & Migracja Bazy** | `tests/room-initialization-flow.test.cjs` | 1 | `npm test` | **PASS** | Bezpieczne przejście ze spłaszczonego JSON do struktury relacyjnej Room |
+| **Logiczne partycje danych TypeScript** | `tests/room-database.test.cjs` | 1 | `npm test` | **PASS** | DAO-shape i partycje JSON w mockowanym localStorage; brak natywnego SQLite testu |
+| **Migracja partycji lokalnych** | `tests/room-initialization-flow.test.cjs` | 1 | `npm test` | **PASS** | Mapowanie JSON do partycji logicznych, test w środowisku Node/mock |
+| **Odzyskiwanie danych przy starcie** | `tests/startup-data-recovery.test.cjs` | 3 | `npm test` | **PASS** | Zachowanie istniejącej bazy przy braku partycji, priorytet partycji, brak fałszywych deklaracji SQL |
 | **Procedura Migracyjna** | `tests/database-migration.test.cjs` | 4 | `npm test` | **PASS** | Walidacja sumy SHA256, nienaruszalność pierwotnego pliku przed migracją |
 | **Mapery Domenowe** | `tests/domain-mappers.test.cjs` | 3 | `npm test` | **PASS** | Bezpieczna konwersja encji domenowych, typowanie i wartości domyślne |
 | **Stoper Treningowy (Wall-Clock)** | `tests/workout-timer.test.cjs` | 1 | `npm test` | **PASS** | Odporność stopera na uśpienie karty, przełączanie okien i ubicie procesu Androida |
@@ -29,7 +31,7 @@ Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.1. Pe�
 | **Pulpit Szybkiego Dostępu 3D** | `tests/quick-access-dashboard.test.cjs` | 10 | `npm test` | **PASS** | Kafelki Bento 3D, kalkulator talerzy na gryf 20kg, kalkulator 1RM (Brzycki & Epley), DnD |
 | **Trener AI Gemini & Pamięć** | `tests/ai-coach-online.test.cjs` | 1 | `npm test` | **PASS** | Kaskada modeli Gemini 3.8 Flash -> Gemini 2.5 Flash -> Offline Knowledge Base |
 | **Audyt Inteligentny Gemini** | `tests/gemini-pro-intelligent-audit.test.cjs` | 7 | `npm test` | **PASS** | Regresja liniowa OLS, ochrona przed brakiem wariancji, filtracja szumu |
-| **Kompatybilność z Android APK** | `tests/android-apk-compatibility.test.cjs` | 2 | `npm test` | **PASS** | Ergonomia ekranu Xiaomi 14T, motyw True AMOLED Black, uprawnienia |
+| **Kompatybilność z Android APK** | `tests/android-apk-compatibility.test.cjs` | 3 | `npm test` | **PASS** | Konfiguracja Capacitor, routing i deklaracje uprawnień; nie zastępuje instalacji/runtime na urządzeniu |
 | **Gęstość Kart UI** | `tests/card-density.test.cjs` | 1 | `npm test` | **PASS** | Tryby standardowy, kompaktowy oraz ultra-gęsty (dla małych ekranów) |
 | **Baza Wiedzy Aplikacji** | `tests/app-knowledge-guide.test.cjs` | 1 | `npm test` | **PASS** | Integralność podręcznika metodycznego i podpowiedzi treningowych |
 | **Kompletny Test Integracyjny E2E** | `tests/full-e2e-application-suite.test.cjs` | 10 | `npm test` | **PASS** | Pełna ścieżka: tworzenie planu, serie, waga, farmakokinetyka, eksport |

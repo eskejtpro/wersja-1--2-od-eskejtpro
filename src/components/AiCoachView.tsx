@@ -1221,7 +1221,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
               Autonomiczne Centrum Dowodzenia & Super-Moce
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              Wybierz natychmiastową akcję – Trener AI zastosuje modyfikacje bezpośrednio w bazie SQLite / Room bez konieczności ręcznego wpisywania.
+              Wybierz akcję, sprawdź jej podgląd i zatwierdź zmianę; dane są zapisywane przez lokalną warstwę aplikacji.
             </p>
           </div>
 

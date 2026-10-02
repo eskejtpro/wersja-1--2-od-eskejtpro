@@ -273,7 +273,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       id: 'tests' as SettingsCategory,
       title: 'Testy Integralności & Diagnostyka',
       shortTitle: 'Testy & Diagnostyka',
-      description: 'Automatyczna weryfikacja wszystkich funkcji, schematu Room SQL i integralności',
+      description: 'Wybrane kontrole logiki aplikacji i integralności danych lokalnych',
       badge: '100% Zautomatyzowane',
       badgeColor: 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30',
       icon: ShieldCheck,
@@ -526,7 +526,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div>
                 <span className="font-bold text-slate-200 block">Aktywny profil: {data.settings.athleteName || 'Zawodnik'}</span>
                 <span className="text-[11px] text-slate-400">
-                  Jednostka: <strong>{data.settings.unit || 'kg'}</strong> • Baza Room SQL: {data.weeks.length} tygodni • Auto-backup: {data.settings.autoBackupEnabled !== false ? 'Włączony' : 'Wyłączony'}
+                  Jednostka: <strong>{data.settings.unit || 'kg'}</strong> • Dane lokalne: {data.weeks.length} tygodni • Auto-backup: {data.settings.autoBackupEnabled !== false ? 'Włączony' : 'Wyłączony'}
                 </span>
               </div>
             </div>

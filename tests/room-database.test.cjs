@@ -61,7 +61,7 @@ function loadTsModule(filePath, customContext = {}) {
   return m.exports;
 }
 
-test('RoomDatabase operates on structured table partitions and DAOs', () => {
+test('TypeScript local-data adapter operates on JSON partitions and DAO-shaped APIs', () => {
   mockLocalStorage.clear();
 
   const dbModule = loadTsModule(path.join(__dirname, '../src/data/db/RoomDatabase.ts'));

@@ -200,7 +200,7 @@ export const AndroidMoreBottomSheet: React.FC<AndroidMoreBottomSheetProps> = ({
         {
           id: 'settings',
           label: 'Ustawienia & Kopie Bezpieczeństwa',
-          description: 'Personalizacja układu, auto-backup, baza Room SQL i diagnostyka',
+          description: 'Personalizacja układu, auto-backup, dane lokalne i diagnostyka',
           icon: Settings
         }
       ]

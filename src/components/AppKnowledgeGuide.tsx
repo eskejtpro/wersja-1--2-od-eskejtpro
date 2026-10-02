@@ -159,22 +159,22 @@ export const GUIDE_CHAPTERS: GuideChapter[] = [
   {
     id: 'room-database-architecture',
     category: 'room',
-    title: '6. Architektura Room Database (SQLite) & 100% Offline-First',
-    subtitle: 'Relacyjne tabele SQLite, DAO i nieblokująca kolejka zapisu',
+    title: '6. Lokalne przechowywanie danych offline',
+    subtitle: 'Podzielone klucze localStorage i pomocnicza kopia Capacitor Preferences',
     icon: Database,
-    badge: 'Room SQL',
-    summary: 'Aplikacja działa w oparciu o architekturę Android Room Database ze znormalizowanym schematem tabel SQLite i asynchronicznym zapisem.',
-    formula: 'Architektura: UI (60 FPS) ──> StateFlow ──> Non-Blocking Queue (Debounce 100ms) ──> Room DAO ──> SQLite Partition',
+    badge: 'Dane lokalne',
+    summary: 'Aktywna warstwa aplikacji przechowuje JSON podzielony na logiczne klucze w localStorage. Na Androidzie część zapisów jest dodatkowo kopiowana asynchronicznie przez Capacitor Preferences. Kotlinowe pliki Room nie są obecnie podłączone do modułu Android.',
+    formula: 'UI ──> lokalny stan ──> logiczne DAO TypeScript ──> localStorage; kopia Preferences jest best-effort',
     details: [
-      'Znormalizowane tabele relacyjne: `weeks`, `days`, `exercises`, `logged_sets`, `body_weights`, `circumferences`, `blood_tests`.',
-      'Transakcje atomowe ACID: Każda modyfikacja serii jest zapisywana w izolowanej transakcji, chroniącej przed uszkodzeniem danych przy nagłym zamknięciu aplikacji.',
-      'Gwarancja 100% Offline: Wszystkie operacje wykonują się lokalnie na urządzeniu bez konieczności połączenia z internetem.'
+      'Klucze danych obejmują m.in. `training_weeks`, `training_days`, `exercises`, `logged_sets` i `body_weights`; są to logiczne partycje JSON, a nie tabele SQLite.',
+      'Obecna implementacja nie zapewnia transakcji ACID ani rollbacku między kluczami. Import i migracje wymagają osobnej kopii zapasowej oraz weryfikacji.',
+      'Podstawowe operacje treningowe działają lokalnie bez sieci; serwer służy wyłącznie funkcjom online.'
     ],
     examples: [
-      { label: 'Struktura relacyjna', formula: 'Week (1:N) Day (1:N) Exercise (1:N) LoggedSet', result: 'Spójność kluczy obcych i indeksów' }
+      { label: 'Logiczne partycje danych', formula: 'Week → Day → Exercise → LoggedSet', result: 'Mapowanie typowane w TypeScript; brak SQLite/kluczy obcych w aktywnym adapterze' }
     ],
     faq: [
-      { q: 'Gdzie fizycznie znajdują się moje dane?', a: 'W pamięci wewnętrznej telefonu w bezpiecznym magazynie aplikacji Room SQLite oraz kopiach zapasowych JSON.' }
+      { q: 'Gdzie fizycznie znajdują się moje dane?', a: 'Dane aplikacji są w magazynie localStorage WebView. Część kluczy jest dodatkowo kopiowana do Capacitor Preferences, ale ta kopia nie jest obecnie bazą SQLite ani automatycznym mechanizmem odtwarzania.' }
     ]
   },
   {
@@ -358,7 +358,7 @@ export const AppKnowledgeGuide: React.FC<AppKnowledgeGuideProps> = ({ isDark = t
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj w poradniku: Brzycki, Epley, EMA, Tonaż, Room SQL, Talerze, Xiaomi, WakeLock..."
+            placeholder="Szukaj w poradniku: Brzycki, Epley, EMA, Tonaż, dane lokalne, Talerze, Xiaomi, WakeLock..."
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700/80 text-xs text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-emerald-500 transition-all font-sans"
           />
           {searchQuery && (
@@ -379,7 +379,7 @@ export const AppKnowledgeGuide: React.FC<AppKnowledgeGuideProps> = ({ isDark = t
             { id: 'calculators', label: '🧮 Kalkulatory 1RM & Talerzy' },
             { id: 'analytics', label: '📈 Analityka & Stagnacja' },
             { id: 'weight', label: '⚖️ Waga & Filtr EMA' },
-            { id: 'room', label: '🗄️ Baza Room SQLite' },
+            { id: 'room', label: '🗄️ Dane lokalne offline' },
             { id: 'sync', label: '🔄 Synchronizacja PC' },
             { id: 'ai', label: '🤖 Trener AI' },
             { id: 'hardware', label: '📱 Xiaomi 14T & AMOLED' },

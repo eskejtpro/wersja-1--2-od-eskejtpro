@@ -16,6 +16,7 @@ import {
   DownloadCloud
 } from 'lucide-react';
 import { AppSettings } from '../types';
+import { CURRENT_APP_VERSION } from '../utils/appUpdateService';
 
 interface ModernHeaderProps {
   activeView: string;
@@ -133,7 +134,7 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
               className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${isDark ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20' : 'text-emerald-700 border-emerald-300 bg-emerald-50 hover:bg-emerald-100'}`}
               title="Wersja aplikacji - kliknij, aby sprawdzić aktualizacje"
             >
-              v{settings.installedAppVersion || '3.0.0'}
+              v{CURRENT_APP_VERSION}
             </button>
           </h1>
           <p className={`text-xs font-medium truncate max-w-md ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>

@@ -28,6 +28,7 @@ import { getTodayDateString } from './utils/calculations';
 import { persistence } from './utils/persistence';
 import { appDatabase } from './data/db/AppDatabase';
 import { roomDatabase } from './data/db/RoomDatabase';
+import { initializeLocalDatabaseFlow } from './data/db/initializeLocalDatabase';
 import { normalizeGymDataToRelational } from './domain/mappers';
 
 const STORAGE_KEY = 'gymtracker_windows_data_v1';
@@ -119,7 +120,7 @@ export default function App() {
   }, [activeView, data.settings.rememberLastView, data.settings.startupView]);
   const [selectedWeekId, setSelectedWeekId] = useState<string>(data.weeks[0]?.id || 'week-1');
   const [selectedDayId, setSelectedDayId] = useState<string>(data.weeks[0]?.days[0]?.id || 'w1-d1');
-  const [autoSaveStatus, setAutoSaveStatus] = useState<string>('Zapisano w JSON');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<string>('Dane lokalne');
 
   // Modern UI states
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
@@ -192,59 +193,25 @@ export default function App() {
     }
   };
 
-  // 1. Inicjalizacja bazy Room SQL oraz bezpieczna migracja ze starego formatu JSON
+  // 1. Inicjalizacja podzielonego magazynu lokalnego z zachowaniem już wczytanych danych
   const [isDbReady, setIsDbReady] = useState<boolean>(false);
   const [googleSession, setGoogleSession] = useState<{ token: string; serverUrl: string } | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
 
-    async function initializeRoomDatabaseFlow() {
+    async function initializeLocalDatabase() {
       try {
-        roomDatabase.initialize();
-
-        // Krok A: Sprawdź czy struktura tabel Room jest już zainicjalizowana
-        if (roomDatabase.hasStructuredData()) {
-          const structuredData = roomDatabase.loadGymData();
-          if (structuredData && structuredData.weeks && structuredData.weeks.length > 0) {
-            if (!isCancelled) {
-              setData(normalizeGymData(structuredData));
-              setAutoSaveStatus(`Room SQL Gotowe (${new Date().toLocaleTimeString('pl-PL')})`);
-              setIsDbReady(true);
-              return;
-            }
-          }
-        }
-
-        // Krok B: Migracja ze starego magazynu JSON do schematu Room SQL
-        const legacyRaw = persistence.getItem(STORAGE_KEY);
-        if (legacyRaw) {
-          try {
-            const parsed = JSON.parse(legacyRaw);
-            if (parsed && Array.isArray(parsed.weeks) && parsed.weeks.length > 0) {
-              await roomDatabase.migrateFromJson(parsed);
-              const migrated = roomDatabase.loadGymData();
-              if (migrated && !isCancelled) {
-                setData(normalizeGymData(migrated));
-                setAutoSaveStatus(`Przemigrowano do Room SQL (${new Date().toLocaleTimeString('pl-PL')})`);
-                setIsDbReady(true);
-                return;
-              }
-            }
-          } catch (e) {
-            console.warn('Nieudane parsowanie JSON legacy do Room:', e);
-          }
-        }
-
-        // Krok C: Inicjalizacja bazy początkowej w schemacie Room
-        await roomDatabase.atomicWriteFromGymData(initialGymData);
+        const result = await initializeLocalDatabaseFlow(roomDatabase, data);
         if (!isCancelled) {
-          setData(normalizeGymData(initialGymData));
-          setAutoSaveStatus(`Room SQL Zainicjalizowano (${new Date().toLocaleTimeString('pl-PL')})`);
+          setData(normalizeGymData(result.data));
+          setAutoSaveStatus(
+            `${result.source === 'structured-data' ? 'Dane lokalne gotowe' : 'Odtworzono dane lokalne'} (${new Date().toLocaleTimeString('pl-PL')})`
+          );
           setIsDbReady(true);
         }
       } catch (err) {
-        console.error('Błąd w initializeRoomDatabaseFlow:', err);
+        console.error('Błąd inicjalizacji lokalnego magazynu danych:', err);
         if (!isCancelled) {
           setAutoSaveStatus('Tryb awaryjny offline');
           setIsDbReady(true);
@@ -252,7 +219,7 @@ export default function App() {
       }
     }
 
-    initializeRoomDatabaseFlow();
+    initializeLocalDatabase();
 
     return () => {
       isCancelled = true;
@@ -307,15 +274,15 @@ export default function App() {
           persistence.setItem(STORAGE_KEY, JSON.stringify(toWrite));
         } catch {}
 
-        setAutoSaveStatus(`Room SQL OK (${new Date().toLocaleTimeString('pl-PL')})`);
+        setAutoSaveStatus(`Zapis lokalny OK (${new Date().toLocaleTimeString('pl-PL')})`);
 
         // Trigger Auto Backup on Save if enabled
         if (toWrite.settings.autoBackupEnabled !== false && toWrite.settings.backupOnSave !== false) {
           createAutoBackup(toWrite, 'save');
         }
       } catch (e) {
-        console.error('Błąd zapisu do Room Database:', e);
-        setAutoSaveStatus('Błąd zapisu Room SQL');
+        console.error('Błąd zapisu lokalnego magazynu danych:', e);
+        setAutoSaveStatus('Błąd zapisu danych lokalnych');
       } finally {
         isWritingRef.current = false;
       }

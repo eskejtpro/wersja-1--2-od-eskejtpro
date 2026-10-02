@@ -252,8 +252,8 @@ test('SCENARIUSZ 9: Trener AI Online & Pamięć Trwała (Gemini Chat Context)', 
   assert.equal(chatMessages[1].role, 'assistant');
 });
 
-test('SCENARIUSZ 10: Relacyjna Baza Danych Room Database (Atomowość, Odporność na Awarie)', () => {
-  // Test partycjonowania tabel Room
+test('SCENARIUSZ 10: Lista logicznych partycji danych domenowych (nie test integracji bazy)', () => {
+  // To wyłącznie sprawdzenie listy nazw, nie dowód działania SQLite, atomowości ani recovery.
   const tables = [
     'plans',
     'weeks',
@@ -270,7 +270,7 @@ test('SCENARIUSZ 10: Relacyjna Baza Danych Room Database (Atomowość, Odpornoś
     'ai_agent_memories'
   ];
 
-  assert.equal(tables.length, 13, 'Baza Room posiada 13 dedykowanych partycji');
+  assert.equal(tables.length, 13, 'Lista testowa zawiera 13 oczekiwanych domen danych');
   assert.ok(tables.includes('plans'));
   assert.ok(tables.includes('exercises'));
   assert.ok(tables.includes('logged_sets'));

@@ -1,9 +1,9 @@
 import { Preferences } from '@capacitor/preferences';
 
 /**
- * Structured Table-Level Storage Driver for Android & Web
- * Transitions away from monolithic full-object serialization.
- * Each table is managed, read, and written independently, mirroring Room SQLite tables.
+ * Structured key-level storage for WebView localStorage and web.
+ * Values are JSON partitions, not SQLite tables. Android Preferences receives
+ * an asynchronous best-effort mirror; localStorage remains the synchronous source.
  */
 
 export const ROOM_TABLE_PREFIX = 'room_tbl_';
@@ -33,7 +33,7 @@ export class RoomStorageDriver {
   }
 
   /**
-   * Odczyt całej tabeli z pamięci urządzenia
+   * Odczyt partycji JSON z localStorage
    */
   public readTable<T>(table: RoomTableName, defaultValue: T): T {
     const key = this.getTableKey(table);
@@ -60,7 +60,7 @@ export class RoomStorageDriver {
   }
 
   /**
-   * Zapis pojedynczej tabeli (tylko zmienione dane, a nie cała baza!)
+   * Zapis pojedynczej partycji JSON i best-effort kopii Preferences na Androidzie
    */
   public writeTable<T>(table: RoomTableName, data: T): void {
     const key = this.getTableKey(table);
@@ -71,7 +71,7 @@ export class RoomStorageDriver {
         const serialized = JSON.stringify(data);
         window.localStorage.setItem(key, serialized);
 
-        // Opcjonalne asynchroniczne utrwalenie w Android SharedPreferences
+        // Asynchronous mirror only; errors are not surfaced to the caller.
         Preferences.set({ key, value: serialized }).catch(() => {});
       }
     } catch (e) {

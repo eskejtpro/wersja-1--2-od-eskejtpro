@@ -25,8 +25,8 @@ import { initialGymData } from '../initialData';
 import { normalizeGymDataToRelational, denormalizeRelationalToWeeks } from '../../domain/mappers';
 
 /**
- * Formal Room Database in TypeScript / Offline-First Architecture
- * Mirrors Android Room Database architecture and provides structured table-level DAOs.
+ * TypeScript local-data adapter exposing structured JSON partitions and DAO-shaped APIs.
+ * This is not Android Room/SQLite; the Kotlin Room sources are not wired into the Capacitor app module.
  */
 export class RoomDatabase {
   public static readonly VERSION = 3;
@@ -70,7 +70,7 @@ export class RoomDatabase {
   }
 
   /**
-   * Sprawdza czy baza Room posiada już zainicjalizowane tabele strukturalne
+   * Sprawdza, czy lokalne partycje JSON są już zainicjalizowane
    */
   public hasStructuredData(): boolean {
     const days = this.dayDao.getAll();
@@ -78,7 +78,7 @@ export class RoomDatabase {
   }
 
   /**
-   * Odtwarza pełny obiekt GymData bezpośrednio ze znormalizowanych tabel Room SQL
+   * Odtwarza obiekt GymData z logicznych partycji JSON
    */
   public loadGymData(): GymData | null {
     const days = this.dayDao.getAll();
@@ -126,7 +126,7 @@ export class RoomDatabase {
   }
 
   /**
-   * Atomowy zapis do partycjonowanych tabel Room bez blokowania wątku UI
+   * Zapisuje partycje JSON; brak transakcji ACID i rollbacku między kluczami
    */
   public async atomicWriteFromGymData(gymData: GymData): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -178,7 +178,7 @@ export class RoomDatabase {
   }
 
   /**
-   * Bezpieczna migracja ze starego formatu JSON do schematu Room SQL
+   * Zapisuje kopię wejściowego JSON przed zapisaniem partycji lokalnych
    */
   public async migrateFromJson(legacyData: GymData): Promise<void> {
     try {
@@ -200,7 +200,7 @@ export class RoomDatabase {
   }
 
   /**
-   * Wykonanie zestawu operacji w logicznej transakcji
+   * Zgodnościowy wrapper; nie zapewnia izolacji ani rollbacku.
    */
   public runInTransaction<T>(action: () => T): T {
     return action();

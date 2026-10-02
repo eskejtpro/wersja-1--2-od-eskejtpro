@@ -137,7 +137,8 @@ test('Poradnik: Struktura rozdziałów wiedzy zawiera kompletne opisy, wzory i F
   assert.ok(content.includes('Brzycki'), 'Musi zawierać wzór Brzyckiego');
   assert.ok(content.includes('Epley'), 'Musi zawierać wzór Epleya');
   assert.ok(content.includes('EMA_t = α · Waga_t'), 'Musi zawierać wzór EMA');
-  assert.ok(content.includes('Room Database'), 'Musi opisywać architekturę Room');
+  assert.ok(content.includes('localStorage'), 'Musi wskazywać rzeczywisty lokalny magazyn danych');
+  assert.ok(content.includes('Kotlinowe pliki Room nie są obecnie podłączone'), 'Musi odróżniać źródła Kotlin Room od aktywnej aplikacji');
   assert.ok(content.includes('Xiaomi 14T'), 'Musi zawierać opis optymalizacji Xiaomi 14T i AMOLED');
   assert.ok(content.includes('Piaskownica Matematyczna'), 'Musi posiadać interaktywną piaskownicę wzorów');
 });

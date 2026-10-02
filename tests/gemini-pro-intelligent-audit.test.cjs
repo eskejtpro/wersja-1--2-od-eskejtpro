@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // ==============================================================================
 // 🧠 GEMINI 3.8 PRO - INTELIGENTNY AUDYT ARCHITEKTURY, MATEMATYKI I ODPORNOŚCI ANDROIDA
@@ -139,48 +141,10 @@ test('AUDYT 4 [Android Lifecycle & Process Death]: Ciągłość Stopera Treningo
   assert.equal(workoutTimerEngine.isExpired(fakeStart + 100000), true);
 });
 
-test('AUDYT 5 [Izolacja Danych & Atomowość Bazy Room SQL]: Ochrona Przed Uszkodzeniem Danych Przy Nagłym Zamknięciu', () => {
-  const mockTableStorage = new Map();
-
-  const atomicTransaction = (operations) => {
-    // Snapshot przed transakcją
-    const backupSnapshot = new Map(mockTableStorage);
-    try {
-      for (const op of operations) {
-        if (op.type === 'fail') throw new Error('Symulacja awarii zasilania / LowMemoryKiller');
-        mockTableStorage.set(op.table, op.data);
-      }
-      return { success: true };
-    } catch (err) {
-      // Rollback
-      mockTableStorage.clear();
-      for (const [k, v] of backupSnapshot.entries()) {
-        mockTableStorage.set(k, v);
-      }
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Stan początkowy
-  mockTableStorage.set('plans', [{ id: 'p1', name: 'Plan Główny' }]);
-  mockTableStorage.set('logged_sets', [{ id: 's1', weight: 100 }]);
-
-  // Udana transakcja
-  const tx1 = atomicTransaction([
-    { table: 'plans', data: [{ id: 'p1', name: 'Plan Zmodyfikowany' }] },
-    { table: 'logged_sets', data: [{ id: 's1', weight: 102.5 }] }
-  ]);
-  assert.equal(tx1.success, true);
-  assert.equal(mockTableStorage.get('plans')[0].name, 'Plan Zmodyfikowany');
-
-  // Nieudana transakcja (awaria w trakcie)
-  const tx2 = atomicTransaction([
-    { table: 'plans', data: [{ id: 'p1', name: 'Zniszczony Plan' }] },
-    { type: 'fail' }
-  ]);
-  assert.equal(tx2.success, false);
-  // Weryfikacja nienaruszalności po rollbacku
-  assert.equal(mockTableStorage.get('plans')[0].name, 'Plan Zmodyfikowany', 'Rollback przywrócił poprawny stan');
+test('AUDYT 5 [Dane lokalne]: kod nie deklaruje nieistniejących transakcji ACID/rollback', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../src/data/db/RoomDatabase.ts'), 'utf8');
+  assert.match(source, /brak transakcji ACID i rollbacku między kluczami/);
+  assert.match(source, /return action\(\)/, 'Obecny wrapper wykonuje callback bez własnego mechanizmu rollbacku');
 });
 
 test('AUDYT 6 [Ergonomia Ekranu Xiaomi 14T & AMOLED]: Sprawdzenie Gęstości i Zużycia Energii', () => {

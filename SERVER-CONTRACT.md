@@ -1,4 +1,4 @@
-# GymTracker Pro 3.0.1 — kontrakt lokalnego serwera
+# GymTracker Pro 3.0.2 — kontrakt lokalnego serwera
 
 `server.ts` jest jedynym serwerem Node/Express projektu. Domyślnie nasłuchuje wyłącznie na `127.0.0.1:3000`; LAN można włączyć ręcznie przez `GYMTRACKER_BIND`, np. po świadomym ustawieniu adresu interfejsu. Serwer przechowuje własny magazyn poza repozytorium i nigdy nie dotyka `workout_data.json` aplikacji desktopowej.
 

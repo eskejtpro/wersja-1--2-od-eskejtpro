@@ -1,6 +1,8 @@
-# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.1)
+# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.2)
 > **DOKUMENTACJA ARCHITEKTONICZNA, SYSTEMOWA I PROCEDURA TESTOWA DLA AGENTÓW AI**
-> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.1 | Środowisko: Web / PWA / Android APK (Capacitor) / Windows Desktop (Electron)*
+> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.2 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
+>
+> **Ważne:** starsze opisy architektury poniżej zawierają deklaracje odziedziczone z wcześniejszych wersji. Zweryfikowany stan wykonawczy i jawne ograniczenia są zapisane w sekcji „Aktualizacja stanu 3.0.2” na końcu; w szczególności aktywny Android data store nie jest Room SQLite.
 
 ---
 
@@ -192,3 +194,12 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - `npm test` 91/91, `npm run test:server` 15/15, `npm run test:google-ui` 3/3, `npm run lint` oraz `npm run build` przeszły.
 - Android target wygenerowany; assembleDebug nie może być potwierdzony bez Android SDK (`ANDROID_HOME`/`sdk.dir` brak), ADB/urządzenie niedostępne.
 - Ten wpis nie zatwierdza historycznych twierdzeń w raporcie niżej jako nowych testów runtime; szczegóły zakresu i ograniczeń są w `CHANGELOG-V3.0.1.md`.
+
+## Aktualizacja stanu 3.0.2 (2026-10-02)
+
+- Odtworzono przypadek startowy w buildzie web: przy braku `room_tbl_*` i obecności poprawnej `planpasika_db_v3` wcześniejszy przepływ zastępował zapisany plan danymi przykładowymi. Inicjalizacja teraz przekazuje już wybrane dane startowe jako źródło odbudowy partycji.
+- Aktywny adapter to TypeScript DAO + partycje JSON w `localStorage`; na Androidzie część danych jest asynchronicznie kopiowana przez Capacitor Preferences. To nie jest natywna baza SQLite, a `runInTransaction` nie zapewnia ACID/rollbacku.
+- Kotlinowe `src/data/db/android/*.kt` nie są skompilowane przez `android/app`; nie wolno opisywać tego jako działającej Room Database.
+- Usunięto fałszywy sukces przy przycisku „optymalizacji” — teraz przedstawia wyłącznie podsumowanie liczby lokalnych encji.
+- Wersja package/UI/API/Android: 3.0.2, Android `versionCode=302`.
+- Fresh verification i limity środowiskowe: `CHANGELOG-V3.0.2.md`.

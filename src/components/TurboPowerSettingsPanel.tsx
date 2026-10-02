@@ -47,8 +47,7 @@ export const TurboPowerSettingsPanel: React.FC<TurboPowerSettingsPanelProps> = (
   // Status testu haptyki
   const [hapticTested, setHapticTested] = useState<boolean>(false);
   const [wakeLockActive, setWakeLockActive] = useState<boolean>(false);
-  const [optimizingDb, setOptimizingDb] = useState<boolean>(false);
-  const [dbOptimizedMessage, setDbOptimizedMessage] = useState<string | null>(null);
+  const [localDataSummary, setLocalDataSummary] = useState<string | null>(null);
 
   // Sprawdź wsparcie dla WakeLock
   useEffect(() => {
@@ -65,16 +64,11 @@ export const TurboPowerSettingsPanel: React.FC<TurboPowerSettingsPanelProps> = (
     setTimeout(() => setHapticTested(false), 1200);
   };
 
-  const handleOptimizeDatabase = () => {
-    setOptimizingDb(true);
-    setTimeout(() => {
-      setOptimizingDb(false);
-      const weeksCount = data.weeks?.length || 0;
-      const daysCount = data.weeks?.reduce((acc, w) => acc + (w.days?.length || 0), 0) || 0;
-      const exCount = data.weeks?.reduce((acc, w) => acc + (w.days?.reduce((a, d) => a + (d.exercises?.length || 0), 0) || 0), 0) || 0;
-      setDbOptimizedMessage(`Zoptymalizowano ${weeksCount} tygodni, ${daysCount} dni i ${exCount} ćwiczeń w 1.1 ms. Indeksy Room SQL odświeżone.`);
-      setTimeout(() => setDbOptimizedMessage(null), 4000);
-    }, 450);
+  const handleShowLocalDataSummary = () => {
+    const weeksCount = data.weeks?.length || 0;
+    const daysCount = data.weeks?.reduce((acc, w) => acc + (w.days?.length || 0), 0) || 0;
+    const exCount = data.weeks?.reduce((acc, w) => acc + (w.days?.reduce((a, d) => a + (d.exercises?.length || 0), 0) || 0), 0) || 0;
+    setLocalDataSummary(`Dane lokalne: ${weeksCount} tygodni, ${daysCount} dni, ${exCount} ćwiczeń. To podsumowanie nie zmienia danych.`);
   };
 
   // Generowanie serii rozgrzewkowych
@@ -359,7 +353,7 @@ export const TurboPowerSettingsPanel: React.FC<TurboPowerSettingsPanelProps> = (
         </div>
       </div>
 
-      {/* 🛠️ SEKCJA 3: OPTYMALIZACJA BAZY ROOM SQL & CACHE */}
+      {/* 🛠️ SEKCJA 3: PODSUMOWANIE LOKALNYCH DANYCH */}
       <div className="card-3d p-4 rounded-2xl space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -367,26 +361,25 @@ export const TurboPowerSettingsPanel: React.FC<TurboPowerSettingsPanelProps> = (
               <Gauge className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white">Optymalizacja Pamięci Podręcznej &amp; Bazy</h4>
-              <p className="text-[11px] text-slate-400">Kompaktowanie indeksów i czyszczenie buforów tymczasowych</p>
+              <h4 className="text-sm font-bold text-white">Podsumowanie danych lokalnych</h4>
+              <p className="text-[11px] text-slate-400">Pokaż liczbę zapisanych tygodni, dni i ćwiczeń; bez modyfikowania danych</p>
             </div>
           </div>
 
           <button
             type="button"
-            disabled={optimizingDb}
-            onClick={handleOptimizeDatabase}
-            className="btn-3d-secondary px-3 py-1.5 rounded-xl text-xs font-bold text-white flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            onClick={handleShowLocalDataSummary}
+            className="btn-3d-secondary px-3 py-1.5 rounded-xl text-xs font-bold text-white flex items-center gap-2 cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${optimizingDb ? 'animate-spin' : ''}`} />
-            <span>Optymalizuj Bazy</span>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Pokaż podsumowanie</span>
           </button>
         </div>
 
-        {dbOptimizedMessage && (
+        {localDataSummary && (
           <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-300 flex items-center gap-2 animate-fadeIn font-mono">
             <Check className="w-4 h-4 shrink-0 text-emerald-400" />
-            <span>{dbOptimizedMessage}</span>
+            <span>{localDataSummary}</span>
           </div>
         )}
       </div>

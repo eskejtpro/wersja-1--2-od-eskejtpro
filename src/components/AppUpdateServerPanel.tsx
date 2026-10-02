@@ -115,7 +115,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
   googleSession,
   onGoogleSessionChange,
 }) => {
-  const currentVersion = settings.installedAppVersion || CURRENT_APP_VERSION;
+  const currentVersion = CURRENT_APP_VERSION;
   const [notification, setNotification] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   
   // Google Cloud & Google Sign-In state
