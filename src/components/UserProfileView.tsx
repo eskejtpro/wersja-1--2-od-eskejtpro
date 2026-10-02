@@ -74,17 +74,17 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   const syncConfig: SyncServerConfig = data.syncConfig || {
     serverUrl: GOOGLE_CLOUD_SHARED_URL,
     port: 443,
-    deviceId: 'DEVICE-GOOGLE-CLOUD',
-    deviceName: 'Google Cloud Synchronized Node',
+    deviceId: 'LOCAL-DEVICE',
+    deviceName: 'Urządzenie lokalne',
     deviceType: 'android_mobile',
-    pairingCode: 'G-9428-CLD',
-    authToken: 'gcl_session_active',
-    autoSync: true,
+    pairingCode: '',
+    authToken: '',
+    autoSync: false,
     conflictResolution: 'ask',
-    lastSyncStatus: 'connected',
-    lastSyncAt: '2026-10-02 01:00',
-    lastSyncDetails: 'Serwer Google Cloud (europe-west2) aktywny. Synchronizacja w toku.',
-    lastPingMs: 14,
+    lastSyncStatus: 'offline',
+    lastSyncAt: '',
+    lastSyncDetails: 'Synchronizacja nie została jeszcze skonfigurowana.',
+    lastPingMs: undefined,
   };
 
   const syncLogs = data.syncLogs || [];
@@ -110,7 +110,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   const avatarFileRef = useRef<HTMLInputElement>(null);
 
   // Copy states
-  const [copiedToken, setCopiedToken] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
 
   // Sync state & connection guide
@@ -138,32 +137,14 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 
   // Ping Server Handshake
   const handlePingServer = () => {
-    setIsPinging(true);
-    setSyncFeedback('');
-    setTimeout(() => {
-      setIsPinging(false);
-      const simulatedPing = Math.floor(Math.random() * 15) + 8; // 8-22ms
-      onUpdateSyncConfig({
-        lastSyncStatus: 'connected',
-        lastPingMs: simulatedPing,
-        lastSyncDetails: `Handshake udany. Czas odpowiedzi węzła: ${simulatedPing} ms.`,
-      });
-      setSyncFeedback(`Połączono pomyślnie z serwerem (${simulatedPing} ms). Gotowość do synchronizacji z Androidem.`);
-      if (onAddSyncLog) {
-        onAddSyncLog({
-          id: `ping-${Date.now()}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          direction: 'handshake',
-          recordsAffected: 0,
-          status: 'success',
-          summary: `Test łącza (Ping): serwer ${syncConfig.serverUrl} odpowiedział w ${simulatedPing} ms.`,
-        });
-      }
-    }, 600);
+    setIsPinging(false);
+    setSyncFeedback('Test połączenia nie jest dostępny w tej wersji. Synchronizacja pozostaje wyłączona.');
   };
 
   // Safe Manual Synchronization
   const handleRunSafeSync = () => {
+    setSyncFeedback('Synchronizacja wielourządzeniowa nie jest jeszcze zaimplementowana. Dane lokalne pozostają bez zmian.');
+    return;
     if (!window.confirm('Czy na pewno chcesz rozpocząć bezpieczną synchronizację pomiędzy Windows i Androidem?\n\nŻadne dane nie zostaną nadpisane bez analizy zmian.')) {
       return;
     }
@@ -185,7 +166,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
         lastSyncDetails: `Zsynchronizowano pomyślnie ${totalWeeks} tygodni i ${totalWeights} wpisów wagi. Brak konfliktów.`,
       });
 
-      setSyncFeedback(`Synchronizacja ukończona pomyślnie (${affected} rekordów). Baza Windows i Android są w 100% spójne.`);
+      setSyncFeedback(`Tryb lokalny. Synchronizacja nie jest dostępna; ${affected} lokalnych rekordów nie zostało zmienionych.`);
 
       if (onAddSyncLog) {
         onAddSyncLog({
@@ -193,8 +174,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
           direction: 'push_to_server',
           recordsAffected: affected,
-          status: 'success',
-          summary: `Pomyślny transfer dwukierunkowy Windows ↔ Android. Schemat v2.24. Zaktualizowano ${affected} rekordów.`,
+          status: 'failed',
+          summary: 'Synchronizacja nieaktywna — żadne dane nie zostały wysłane.',
         });
       }
     }, 1100);
@@ -204,12 +185,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
     navigator.clipboard.writeText(syncConfig.pairingCode);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
-  };
-
-  const handleCopyAuthToken = () => {
-    navigator.clipboard.writeText(syncConfig.authToken);
-    setCopiedToken(true);
-    setTimeout(() => setCopiedToken(false), 2000);
   };
 
   // Health Entries Handlers (Strictly Date + Note + JSON)
@@ -812,10 +787,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               <div>
                 <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
                   <Cloud className="w-5 h-5 text-sky-400" />
-                  <span>Centrum Synchronizacji w Chmurze Google (Google Cloud Run Hub)</span>
+                  <span>Centrum synchronizacji wielourządzeniowej</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Bezpieczna, automatyczna wymiana danych między smartfonem Android, iOS a komputerem przez serwer w chmurze Google.
+                  Synchronizacja wielourządzeniowa nie jest aktywna; aplikacja zachowuje dane lokalnie.
                 </p>
               </div>
 
@@ -858,7 +833,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
                 <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Oficjalny Serwer Google Cloud</span>
+                  <span>Adres serwera API (nieaktywny)</span>
                 </span>
                 <input
                   type="text"
@@ -876,36 +851,24 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                   <span>Region &amp; Szyfrowanie</span>
                 </span>
                 <div className="font-mono text-xs text-slate-200 font-bold mt-1.5">
-                  europe-west2 • TLS 1.3
+                    Serwer nie skonfigurowany • protokół nieustalony
                 </div>
               </div>
 
               {/* Pairing Code */}
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[11px] font-bold text-slate-400 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <QrCode className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Kod Parowania Urządzeń</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleCopyPairingCode}
-                    className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    {copiedCode ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedCode ? 'Skopiowano' : 'Kopiuj'}</span>
-                  </button>
+                <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+                  <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Kod parowania</span>
                 </span>
-                <div className="font-mono text-base font-black text-amber-300 tracking-wider">
-                  {syncConfig.pairingCode}
-                </div>
+                <div className="font-mono text-sm font-bold text-slate-400">Nie używany — logowanie OAuth</div>
               </div>
 
               {/* Conflict strategy */}
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
                 <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Obsługa Konfliktów Danych</span>
+                  <span>Obsługa konfliktów (synchronizacja nieaktywna)</span>
                 </span>
                 <select
                   value={syncConfig.conflictResolution}
@@ -925,23 +888,14 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               <div className="space-y-1">
                 <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <Smartphone className="w-4 h-4 text-sky-400" />
-                  <span>Autoryzacja Google Bearer Token:</span>
+                  <span>Token API — funkcja nieaktywna</span>
                 </span>
                 <code className="text-xs font-mono text-sky-300 bg-slate-900 px-2.5 py-1 rounded-md border border-slate-800 block truncate max-w-md">
                   {syncConfig.authToken}
                 </code>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleCopyAuthToken}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  {copiedToken ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedToken ? 'Skopiowano token!' : 'Kopiuj Token'}</span>
-                </button>
-              </div>
+              <span className="text-xs text-slate-400">Sesja sync nie jest aktywna.</span>
             </div>
 
             {/* Safety policy banner */}
@@ -952,13 +906,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               </h4>
               <ul className="list-disc pl-5 space-y-1 text-[11px] text-slate-400">
                 <li>
-                  <strong className="text-slate-300">Synchronizacja tylko zmienionych rekordów (Delta):</strong> przesyłana jest wyłącznie różnica zmian od ostatniej zatwierdzonej synchronizacji.
+                  <strong className="text-slate-300">Synchronizacja:</strong> nieaktywna w tej wersji; dane pozostają lokalne.
                 </li>
                 <li>
-                  <strong className="text-slate-300">Niezależność lokalna (Offline-First):</strong> brak połączenia z internetem w siłowni nie blokuje działania aplikacji — dane zostaną wysłane do chmury Google po odzyskaniu połączenia.
+                  <strong className="text-slate-300">Tryb lokalny:</strong> brak sieci nie blokuje treningu ani zapisu danych.
                 </li>
                 <li>
-                  <strong className="text-slate-300">Brak automatycznego nadpisywania:</strong> w przypadku edycji tego samego rekordu na dwóch urządzeniach proces kontroluje nagłówki revision i contentHash.
+                  <strong className="text-slate-300">Dane:</strong> automatyczny transfer między urządzeniami nie jest dostępny.
                 </li>
               </ul>
             </div>
@@ -977,13 +931,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-100 flex items-center gap-2">
-                      <span>Instrukcja: Jak połączyć telefon z serwerem w chmurze Google</span>
+                      <span>Konfiguracja serwera API</span>
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-950 border border-sky-800/80 text-sky-300">
                         Krok po kroku
                       </span>
                     </h4>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      Przewodnik połączenia telefonu z oficjalnym serwerem Google Cloud bez konieczności konfiguracji routera i zapory Windows.
+                      Logowanie Google konfiguruje się w Ustawieniach; samo logowanie nie synchronizuje danych.
                     </p>
                   </div>
                 </div>
@@ -1008,7 +962,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                         <span className="font-bold text-slate-200">Otwórz aplikację na telefonie (Android / iOS)</span>
                       </div>
                       <p className="text-[11px] text-slate-400 leading-relaxed pl-7">
-                        Wejdź w przeglądarce mobilnej na oficjalny adres serwera: <code className="text-sky-300 font-mono text-[10px]">{GOOGLE_CLOUD_SHARED_URL}</code> lub dodaj aplikację do ekranu głównego telefonu (PWA).
+                        Ustaw publiczny adres HTTPS API w `VITE_GYMTRACKER_SERVER_URL` przed zbudowaniem aplikacji.
                       </p>
                     </div>
 
@@ -1021,7 +975,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                         <span className="font-bold text-slate-200">Zaloguj się kontem Google</span>
                       </div>
                       <p className="text-[11px] text-slate-400 leading-relaxed pl-7">
-                        Przejdź do <em>Ustawienia → Serwer Google &amp; Logowanie</em> i kliknij przycisk <strong>„Zaloguj z kontem Google”</strong>. Urządzenie otrzyma 30-dniowy token sesji.
+                        Przejdź do <em>Ustawienia → Serwer Google</em>. Token sesji pozostaje w pamięci aplikacji.
                       </p>
                     </div>
 
@@ -1044,10 +998,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                         <span className="w-5 h-5 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-700/60 flex items-center justify-center text-[11px] font-bold">
                           4
                         </span>
-                        <span className="font-bold text-slate-200">Dostęp 24/7 bez włączonego komputera PC</span>
+                        <span className="font-bold text-slate-200">Dostępność serwera zależy od wdrożenia</span>
                       </div>
                       <p className="text-[11px] text-slate-400 leading-relaxed pl-7">
-                        Serwer działa niezależnie w europejskim centrum danych Google Cloud Run. Nie musisz już utrzymywać włączonego komputera w domu ani odblokowywać portów w zaporze sieciowej.
+                        Nie potwierdzamy obecnie wdrożenia serwera publicznego ani jego dostępności.
                       </p>
                     </div>
                   </div>

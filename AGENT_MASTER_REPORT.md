@@ -1,6 +1,6 @@
-# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.0)
+# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.1)
 > **DOKUMENTACJA ARCHITEKTONICZNA, SYSTEMOWA I PROCEDURA TESTOWA DLA AGENTÓW AI**
-> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.0 | Środowisko: Web / PWA / Android APK (Capacitor) / Windows Desktop (Electron)*
+> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.1 | Środowisko: Web / PWA / Android APK (Capacitor) / Windows Desktop (Electron)*
 
 ---
 
@@ -185,3 +185,10 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 
 5. **Obowiązek Aktualizacji Niniejszego Raportu**:
    - **Każdy Agent wprowadzający zmiany architektoniczne, nowe moduły lub nowe testy ma obowiązek zaktualizować ten plik (`AGENT_MASTER_REPORT.md`) oraz uruchomić `npm test` i `npm run test:server` przed zakończeniem zadania.**
+# Aktualizacja stanu 3.0.1 (2026-10-02)
+
+- Google sign-in na gałęzi 3.0.1 korzysta z prawdziwego ID tokenu i server-side verification. Token sesji jest tylko w pamięci UI; nie jest serializowany z ustawieniami.
+- Google data store lokalny izoluje principal po verified `sub`; Cloud Run pozostaje fail-closed, bo brak trwałego/session store.
+- `npm test` 91/91, `npm run test:server` 15/15, `npm run test:google-ui` 3/3, `npm run lint` oraz `npm run build` przeszły.
+- Android target wygenerowany; assembleDebug nie może być potwierdzony bez Android SDK (`ANDROID_HOME`/`sdk.dir` brak), ADB/urządzenie niedostępne.
+- Ten wpis nie zatwierdza historycznych twierdzeń w raporcie niżej jako nowych testów runtime; szczegóły zakresu i ograniczeń są w `CHANGELOG-V3.0.1.md`.

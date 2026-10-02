@@ -1,12 +1,13 @@
-# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.0)
+# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.1)
 
-Niniejsza macierz przedstawia szczegółowy opis wszystkich obszarów testowych aplikacji, ich lokalizację, wyniki egzekucji oraz status weryfikacji w wersji 3.0.0. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
+Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.1. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
 
 ---
 
-## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.0)
-- **Łączna liczba testów jednostkowych i integracyjnych**: 88 / 88 (**PASS - 100%**)
-- **Testy serwera chmurowego Express / Google Cloud Run**: 11 / 11 (**PASS - 100%**)
+## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.1)
+- **Łączna liczba testów aplikacji**: 91 / 91 (**PASS - 100%**)
+- **Testy serwera/OIDC**: 15 / 15 (**PASS - 100%**)
+- **Testy UI Google i konfiguracji Androida**: 3 / 3 (**PASS - 100%**)
 - **Kompilacja TypeScript i Linter**: `tsc --noEmit` (**PASS - 0 błędów**)
 - **Błędy krytyczne**: 0 (**FAIL: 0**)
 
@@ -36,7 +37,9 @@ Niniejsza macierz przedstawia szczegółowy opis wszystkich obszarów testowych 
 | **Rozszerzona Analityka & Kalendarz** | `tests/enhanced-analysis-calendar.test.cjs` | 4 | `npm test` | **PASS** | Wskaźnik ACWR, intensywność na powtórzenie, 4 wzory 1RM, korelacja kalendarza |
 | **Autonomiczne Akcje Wykonawcze AI** | `tests/ai-agent-autonomous-actions.test.cjs` | 4 | `npm test` | **PASS** | Parsowanie intencji NLP, instalator planu, aplikowanie progresji +2.5kg |
 | **Autonomiczny Agent AI Pełnej Mocy** | `tests/ai-autonomous-features.test.cjs` | 6 | `npm test` | **PASS** | Multi-action batch JSON, deload -40%/-10%, makro, modyfikacje i usuwanie ćwiczeń |
-| **Serwer Google Cloud & Auth** | `tests/server.test.cjs` | 11 | `npm run test:server` | **PASS** | REST API `/api/*`, Google Sign-In, sesje Bearer, CORS dla Cloud Run, Rate Limit |
+| **Serwer Google Cloud & Auth** | `tests/server.test.cjs` | 11 | `npm run test:server` | **PASS** | REST API `/api/*`, logowanie lokalne, sesje Bearer, CORS i rate limit |
+| **Google ID Token/OIDC** | `tests/google-id-token.test.cjs` | 4 | `npm run test:server` | **PASS** | Podpis, audience, issuer, expiry, izolacja principal i blokada Cloud Run |
+| **Google UI bez fake success** | `tests/google-ui-no-fakes.test.cjs` | 3 | `npm run test:google-ui` | **PASS** | ID token, sesja tylko w pamięci, brak fake identity i Android cleartext/mixed content |
 
 ---
 

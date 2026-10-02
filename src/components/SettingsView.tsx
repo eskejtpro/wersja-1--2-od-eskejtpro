@@ -49,6 +49,8 @@ import { TurboPowerSettingsPanel } from './TurboPowerSettingsPanel';
 
 interface SettingsViewProps {
   data: GymData;
+  googleSession: { token: string; serverUrl: string } | null;
+  onGoogleSessionChange: (session: { token: string; serverUrl: string } | null) => void;
   onUpdateSettings: (settings: Partial<AppSettings>) => void;
   onExportJson: () => void;
   onImportJson: (imported: GymData) => void;
@@ -96,6 +98,8 @@ const GoogleGIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   data,
+  googleSession,
+  onGoogleSessionChange,
   onUpdateSettings,
   onExportJson,
   onImportJson,
@@ -197,8 +201,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       id: 'google' as SettingsCategory,
       title: 'Serwer Google & Logowanie',
       shortTitle: 'Serwer Google',
-      description: 'Chmura Google Cloud Run 24/7 (europe-west2), konto Google, synchronizacja i instrukcje',
-      badge: data.settings.googleUser ? `● ${data.settings.googleUser.displayName}` : 'Google Cloud Run 24/7',
+      description: 'Logowanie przez Google i skonfigurowany serwer API',
+      badge: data.settings.googleUser ? `● ${data.settings.googleUser.displayName}` : 'Google OAuth',
       badgeColor: data.settings.googleUser ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30' : 'text-sky-300 bg-sky-500/15 border-sky-500/30',
       icon: GoogleGIcon,
       accentColor: 'from-sky-500 to-blue-600',
@@ -411,22 +415,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-black text-slate-100 uppercase tracking-wider">
-                    Infrastruktura Google Cloud Run
+                    Logowanie Google
                   </span>
                   {data.settings.googleUser ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
                       <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Zautoryzowano: {data.settings.googleUser.displayName}
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[10px] font-bold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" /> 24/7 Dostępny
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[10px] font-bold">
+                      OAuth wymaga konfiguracji
                     </span>
                   )}
                 </div>
                 <p className="text-[11px] text-slate-400 mt-0.5">
                   {data.settings.googleUser 
-                    ? `Połączono z kontem: ${data.settings.googleUser.email} • Region europe-west2 (Londyn) • Szyfrowanie TLS 1.3 / HTTPS`
-                    : 'Zaloguj się kontem Google, aby włączyć natychmiastową synchronizację 24/7 i kopię danych w chmurze.'}
+                    ? `Połączono z kontem: ${data.settings.googleUser.email} • ID token zweryfikowany przez API`
+                    : 'Połącz konto Google z serwerem API po skonfigurowaniu OAuth.'}
                 </p>
               </div>
             </div>
@@ -570,6 +574,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <AppUpdateServerPanel
           settings={data.settings}
           onUpdateSettings={onUpdateSettings}
+          googleSession={googleSession}
+          onGoogleSessionChange={onGoogleSessionChange}
         />
       </div>
 

@@ -7,15 +7,21 @@ const config: CapacitorConfig = {
   backgroundColor: '#000000',
   server: {
     androidScheme: 'https',
-    cleartext: true
   },
   android: {
-    allowMixedContent: true,
     captureInput: true,
     webContentsDebuggingEnabled: false,
     backgroundColor: '#000000'
   },
   plugins: {
+    SocialLogin: {
+      providers: {
+        google: true,
+        facebook: false,
+        apple: false,
+        twitter: false
+      }
+    },
     CapacitorHttp: {
       enabled: true
     }

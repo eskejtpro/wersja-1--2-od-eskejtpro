@@ -134,20 +134,8 @@ export const AccountProfileModal: React.FC<AccountProfileModalProps> = ({
 
   // Ping Server Handler
   const handleTestPing = () => {
-    setIsPinging(true);
-    setPingMessage(null);
-    setTimeout(() => {
-      setIsPinging(false);
-      const latency = Math.floor(Math.random() * 12) + 8; // 8-20ms
-      if (onUpdateSyncConfig) {
-        onUpdateSyncConfig({
-          lastSyncStatus: 'connected',
-          lastPingMs: latency,
-          lastSyncDetails: `Odpowiedź węzła: ${latency} ms. Gotowość do synchronizacji Windows ↔ Android.`,
-        });
-      }
-      setPingMessage(`Połączono pomyślnie z serwerem. Czas odpowiedzi (Ping): ${latency} ms.`);
-    }, 600);
+    setIsPinging(false);
+    setPingMessage('Rzeczywisty test serwera dostępny jest w ustawieniach API; synchronizacja pozostaje wyłączona.');
   };
 
   // Save all profile changes
@@ -199,7 +187,7 @@ export const AccountProfileModal: React.FC<AccountProfileModalProps> = ({
     );
   };
 
-  const isServerConnected = (syncConfig?.lastSyncStatus || 'connected') === 'connected';
+  const isServerConnected = syncConfig?.lastSyncStatus === 'connected';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
@@ -516,19 +504,19 @@ export const AccountProfileModal: React.FC<AccountProfileModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/60 text-xs font-mono">
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">Adres Serwera:</span>
-                    <span className="text-slate-200 font-semibold">{syncConfig?.serverUrl || 'http://192.168.1.100:8000'}</span>
+                    <span className="text-slate-200 font-semibold">{syncConfig?.serverUrl || 'Nie skonfigurowano'}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">Czas odpowiedzi (Ping):</span>
-                    <span className="text-emerald-400 font-semibold">{syncConfig?.lastPingMs ? `${syncConfig.lastPingMs} ms` : '14 ms'}</span>
+                    <span className="text-emerald-400 font-semibold">{syncConfig?.lastPingMs ? `${syncConfig.lastPingMs} ms` : '—'}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">Węzeł Desktop:</span>
-                    <span className="text-slate-300">{syncConfig?.deviceName || 'Windows 10 Desktop (Główna stacja)'}</span>
+                    <span className="text-slate-300">{syncConfig?.deviceName || 'Urządzenie lokalne'}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">Kod parowania Android:</span>
-                    <span className="text-emerald-300 font-bold">{syncConfig?.pairingCode || '749-182'}</span>
+                    <span className="text-emerald-300 font-bold">{syncConfig?.pairingCode || 'Nie skonfigurowano'}</span>
                   </div>
                 </div>
               </div>
@@ -572,22 +560,13 @@ export const AccountProfileModal: React.FC<AccountProfileModalProps> = ({
                   </div>
                 ) : (
                   <div className="flex items-center justify-between gap-3 text-xs">
-                    <span className="text-[11px] text-slate-400">Połącz z serwerem przez konto Google (eskejtpro@gmail.com)</span>
+                    <span className="text-[11px] text-slate-400">Zaloguj się przez Google w Ustawieniach → Serwer Google.</span>
                     <button
                       type="button"
-                      onClick={() => onUpdateSettings({
-                        googleUser: {
-                          email: 'eskejtpro@gmail.com',
-                          displayName: 'Pasik (Google Verified)',
-                          id: 'google-uid-verified',
-                          connectedAt: new Date().toISOString()
-                        },
-                        googleServerPreferred: true,
-                        updateServerUrl: 'https://ais-pre-cnwnz67ertzudvxhqsflo5-244110052482.europe-west2.run.app'
-                      })}
+                      onClick={() => { onUpdateSettings({}); onClose(); }}
                       className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold shrink-0 shadow-sm flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span>Zaloguj przez Google</span>
+                      <span>Otwórz Ustawienia</span>
                     </button>
                   </div>
                 )}

@@ -81,12 +81,14 @@ test.after(async () => {
 test('health and version expose persistent-server capabilities', async () => {
   const health = await request('/api/health');
   assert.equal(health.response.status, 200);
-  assert.equal(health.body.version, '2.24.0');
+  assert.equal(health.body.version, '3.0.1');
   assert.equal(health.body.apiVersion, '1');
+  assert.equal(health.body.capabilities.includes('google_oidc_login'), false);
   assert.equal(health.response.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(health.response.headers.get('x-dns-prefetch-control'), 'off');
   const version = await request('/api/version');
   assert.equal(version.body.schemaVersion, 1);
+  assert.equal(version.body.capabilities.includes('google_oidc_login'), false);
 });
 
 test('login, logout, TTL and rate limiting are enforced', async () => {
@@ -223,55 +225,28 @@ test('request body limit rejects oversized JSON safely', async () => {
 test('SERWER GOOGLE CLOUD: Pobranie szczegółów serwera, adresu, regionu i instrukcji dla wielu użytkowników', async () => {
   const res = await request('/api/server/google-info');
   assert.equal(res.response.status, 200);
-  assert.equal(res.body.provider, 'google_cloud');
+  assert.equal(res.body.provider, 'local');
   assert.equal(res.body.status, 'online');
-  assert.equal(res.body.pairingCode, 'G-9428-CLD');
-  assert.match(res.body.sharedUrl, /europe-west2\.run\.app/);
-  assert.match(res.body.cloudRunUrl, /europe-west2\.run\.app/);
-  assert.match(res.body.region, /europe-west2/);
-  assert.equal(res.body.googleAuthAvailable, true);
+  assert.equal(res.body.pairingCode, '');
+  assert.equal(res.body.sharedUrl, '');
+  assert.equal(res.body.googleAuthAvailable, false);
+  assert.equal(res.body.durableCloudStorage, false);
   assert.ok(res.body.instructions);
   assert.ok(Array.isArray(res.body.instructions.steps));
-  assert.ok(res.body.instructions.steps.length >= 3);
+  assert.ok(res.body.instructions.steps.length >= 2);
 });
 
-test('LOGOWANIE GOOGLE: Autoryzacja kontem Google, generowanie tokena sesji i weryfikacja profilu', async () => {
-  // 1. Zaloguj się kontem Google
+test('Google login refuses client-supplied profile claims when OAuth is not configured', async () => {
   const loginRes = await request('/api/auth/google/login', {
     method: 'POST',
     body: JSON.stringify({
       email: 'eskejtpro@gmail.com',
-      displayName: 'Pasik (Google Verified)'
+      displayName: 'Forged user'
     })
   });
-  assert.equal(loginRes.response.status, 200);
-  assert.equal(loginRes.body.success, true);
-  assert.equal(loginRes.body.user.email, 'eskejtpro@gmail.com');
-  assert.equal(loginRes.body.user.displayName, 'Pasik (Google Verified)');
-  assert.ok(loginRes.body.token.startsWith('gcl_'));
-
-  // 2. Token Google pozwala na autoryzowany odczyt statusu synchronizacji
-  const googleToken = loginRes.body.token;
-  const syncRes = await request('/api/sync/status', {
-    headers: { Authorization: `Bearer ${googleToken}` }
-  });
-  assert.equal(syncRes.response.status, 200);
-  assert.equal(syncRes.body.online, true);
-
-  // 3. Sprawdź status zalogowanego użytkownika Google
-  const userRes = await request('/api/auth/google/user');
-  assert.equal(userRes.response.status, 200);
-  assert.equal(userRes.body.authenticated, true);
-  assert.equal(userRes.body.user.email, 'eskejtpro@gmail.com');
-
-  // 4. Wyloguj z konta Google
-  const logoutRes = await request('/api/auth/google/logout', { method: 'POST' });
-  assert.equal(logoutRes.response.status, 200);
-  assert.equal(logoutRes.body.success, true);
-
-  // 5. Po wylogowaniu authenticated = false
-  const userAfter = await request('/api/auth/google/user');
-  assert.equal(userAfter.body.authenticated, false);
-  assert.equal(userAfter.body.user, null);
+  assert.equal(loginRes.response.status, 503);
+  assert.deepEqual(loginRes.body, { error: 'google_auth_not_configured' });
+  assert.equal((await request('/api/auth/google/user')).response.status, 401);
+  assert.equal((await request('/api/auth/google/logout', { method: 'POST' })).response.status, 401);
 });
 

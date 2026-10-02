@@ -974,14 +974,14 @@ export const initialGymData: GymData = {
     deviceId: 'WIN10-PASIK92-DESKTOP-MAIN',
     deviceName: 'Windows 10 Desktop (Główna stacja)',
     deviceType: 'windows_desktop',
-    pairingCode: '749-182',
-    authToken: 'gtp_win_sec_89df204e9c1',
+    pairingCode: '',
+    authToken: '',
     autoSync: false,
     conflictResolution: 'ask',
-    lastSyncStatus: 'connected',
+    lastSyncStatus: 'offline',
     lastSyncAt: '2026-09-17 08:30',
     lastSyncDetails: 'Połączono z węzłem lokalnym. Gotowość do przesyłania danych.',
-    lastPingMs: 14
+    lastPingMs: undefined
   },
   syncLogs: [
     {

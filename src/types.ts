@@ -245,7 +245,6 @@ export interface AppSettings {
     photoURL?: string;
     id: string;
     connectedAt: string;
-    token?: string;
   } | null;
 }
 

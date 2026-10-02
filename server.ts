@@ -8,10 +8,11 @@ import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import { GoogleGenAI } from '@google/genai';
+import { GoogleIdentityError, type GoogleIdTokenVerifier, verifyGoogleIdToken } from './server/auth/googleIdentity.ts';
 
 dotenv.config();
 
-export const APP_VERSION = '2.24.0';
+export const APP_VERSION = '3.0.1';
 export const API_VERSION = '1';
 export const SCHEMA_VERSION = 1;
 
@@ -34,17 +35,34 @@ interface ServerConfig {
   tlsCertFile?: string;
   tlsKeyFile?: string;
   allowInsecureLocalhost: boolean;
+  googleClientIds: string[];
+  allowedOrigins: string[];
+  isCloudRun: boolean;
 }
 
 interface AppOptions {
   config?: Partial<ServerConfig>;
   now?: () => number;
+  verifyGoogleIdToken?: GoogleIdTokenVerifier;
 }
 
 interface Session {
   tokenHash: string;
   expiresAt: number;
   createdAt: number;
+  principalId: string;
+  googleUser?: {
+    id: string;
+    sub: string;
+    email: string;
+    displayName: string;
+    photoURL?: string;
+    connectedAt: string;
+  };
+}
+
+interface AuthenticatedRequest extends Request {
+  authSession?: Session;
 }
 
 interface LoginAttempt {
@@ -70,7 +88,7 @@ const defaultConfig = (env: NodeJS.ProcessEnv): ServerConfig => ({
   loginWindowMs: boundedInt(env.GYMTRACKER_LOGIN_WINDOW_MS, 15 * 60 * 1000, 10_000, 24 * 60 * 60 * 1000),
   maxLoginAttempts: boundedInt(env.GYMTRACKER_MAX_LOGIN_ATTEMPTS, 5, 1, 100),
   maxBodyBytes: env.GYMTRACKER_MAX_BODY || '256kb',
-  bindHost: '0.0.0.0',
+  bindHost: env.GYMTRACKER_BIND || '127.0.0.1',
   port: 3000,
   deviceId: env.GYMTRACKER_DEVICE_ID || 'local-server',
   dataFile: env.GYMTRACKER_DATA_FILE || defaultDataFile(),
@@ -78,7 +96,10 @@ const defaultConfig = (env: NodeJS.ProcessEnv): ServerConfig => ({
   httpsEnabled: env.GYMTRACKER_HTTPS === '1',
   tlsCertFile: env.GYMTRACKER_TLS_CERT_FILE || undefined,
   tlsKeyFile: env.GYMTRACKER_TLS_KEY_FILE || undefined,
-  allowInsecureLocalhost: true,
+  allowInsecureLocalhost: env.GYMTRACKER_ALLOW_INSECURE_LOCALHOST === '1',
+  googleClientIds: (env.GOOGLE_CLIENT_IDS || env.GOOGLE_CLIENT_ID || '').split(',').map((value) => value.trim()).filter(Boolean),
+  allowedOrigins: (env.GYMTRACKER_ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean),
+  isCloudRun: Boolean(env.K_SERVICE),
 });
 
 function defaultDataFile(): string {
@@ -336,13 +357,39 @@ export function createApp(options: AppOptions = {}) {
   const app = express();
   const sessions = new Map<string, Session>();
   const attempts = new Map<string, LoginAttempt>();
-  let storedState: StoredState | null = null;
-  let dataStoreError: (Error & { status: number }) | null = null;
-  try {
-    storedState = readStoredState(config.dataFile);
-  } catch (error) {
-    dataStoreError = error as Error & { status: number };
-  }
+  const googleAttempts = new Map<string, LoginAttempt>();
+  const dataStores = new Map<string, { filePath: string; state: StoredState | null; error: boolean }>();
+  const localPrincipalId = `local:${config.username}`;
+  const dataStoreFor = (principalId: string) => {
+    if (config.isCloudRun) return null;
+    const isLocalAccount = principalId === localPrincipalId;
+    const accountDigest = crypto.createHash('sha256').update(principalId).digest('hex');
+    const filePath = isLocalAccount
+      ? config.dataFile
+      : path.join(path.dirname(config.dataFile), 'accounts', `${accountDigest}.json`);
+    const cached = dataStores.get(filePath);
+    if (cached) return cached;
+
+    try {
+      const store = { filePath, state: readStoredState(filePath), error: false };
+      dataStores.set(filePath, store);
+      return store;
+    } catch {
+      const store = { filePath, state: null, error: true };
+      dataStores.set(filePath, store);
+      return store;
+    }
+  };
+  const localStore = dataStoreFor(localPrincipalId);
+  const verifyIdToken = options.verifyGoogleIdToken || verifyGoogleIdToken;
+  const allowedOrigins = new Set([
+    'capacitor://localhost',
+    'https://localhost',
+    'http://localhost',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    ...config.allowedOrigins,
+  ]);
 
   if (config.bindHost !== '127.0.0.1' && config.bindHost !== 'localhost' && !config.httpsEnabled) {
     console.warn('[server] LAN bind selected without HTTPS; use only on a trusted network.');
@@ -360,24 +407,14 @@ export function createApp(options: AppOptions = {}) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
     const origin = req.headers.origin;
-    // Zezwól na zapytania z chmury Google Cloud Run, AI Studio, Android Capacitor, localhost oraz sieci lokalnej
-    const isAllowedOrigin = !origin || (
-      origin === 'http://localhost:3000' ||
-      origin === 'https://localhost' ||
-      origin === 'http://localhost' ||
-      origin === 'capacitor://localhost' ||
-      origin.includes('.run.app') ||
-      origin.includes('.google.com') ||
-      origin.includes('.googleusercontent.com') ||
-      /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin)
-    );
+    const isAllowedOrigin = !origin || allowedOrigins.has(origin);
     if (origin && isAllowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Vary', 'Origin');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     }
-    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    if (req.method === 'OPTIONS') return res.sendStatus(isAllowedOrigin ? 204 : 403);
     next();
   });
 
@@ -389,15 +426,22 @@ export function createApp(options: AppOptions = {}) {
       if (session) sessions.delete(session.tokenHash);
       return res.status(401).json({ error: 'unauthorized' });
     }
+    (req as AuthenticatedRequest).authSession = session;
     next();
   };
 
+  const requireAiSession = (req: Request, res: Response, next: NextFunction) => {
+    const loopback = config.bindHost === '127.0.0.1' || config.bindHost === 'localhost' || config.bindHost === '::1';
+    if (!config.isCloudRun && loopback) return next();
+    return requireSession(req, res, next);
+  };
+
   app.get('/api/health', (_req, res) => res.json({
-    status: dataStoreError ? 'degraded' : 'ok',
+    status: config.isCloudRun || !localStore || localStore.error ? 'degraded' : 'ok',
     app: 'GymTracker Pro',
     version: APP_VERSION,
     apiVersion: API_VERSION,
-    capabilities,
+    capabilities: [...capabilities, ...(config.googleClientIds.length && !config.isCloudRun ? ['google_oidc_login'] : [])],
     timestamp: new Date(now()).toISOString(),
   }));
   app.get('/api/version', (_req, res) => res.json({
@@ -405,10 +449,11 @@ export function createApp(options: AppOptions = {}) {
     apiVersion: API_VERSION,
     schemaVersion: SCHEMA_VERSION,
     status: 'ok',
-    capabilities,
+    capabilities: [...capabilities, ...(config.googleClientIds.length && !config.isCloudRun ? ['google_oidc_login'] : [])],
   }));
 
   app.post('/api/auth/login', (req, res) => {
+    if (config.isCloudRun) return res.status(503).json({ error: 'session_store_not_configured' });
     const ip = req.ip || 'unknown';
     const current = attempts.get(ip) || { count: 0, windowStartedAt: now(), blockedUntil: 0 };
     if (current.blockedUntil > now()) return res.status(429).json({ error: 'too_many_attempts' });
@@ -429,7 +474,7 @@ export function createApp(options: AppOptions = {}) {
     attempts.delete(ip);
     const token = crypto.randomBytes(32).toString('base64url');
     const tokenHash = tokenDigest(token);
-    sessions.set(tokenHash, { tokenHash, createdAt: now(), expiresAt: now() + config.sessionTtlMs });
+    sessions.set(tokenHash, { tokenHash, createdAt: now(), expiresAt: now() + config.sessionTtlMs, principalId: `local:${username}` });
     return res.json({ token, tokenType: 'Bearer', expiresIn: config.sessionTtlMs });
   });
   app.post('/api/auth/logout', requireSession, (req, res) => {
@@ -442,147 +487,166 @@ export function createApp(options: AppOptions = {}) {
   // GOOGLE CLOUD SERVER & GOOGLE SIGN-IN INTEGRATION
   // ==========================================
   const GOOGLE_CLOUD_INFO = {
-    provider: 'google_cloud',
-    name: 'PlanPasika Google Cloud Hub',
-    cloudRunUrl: 'https://ais-dev-cnwnz67ertzudvxhqsflo5-244110052482.europe-west2.run.app',
-    sharedUrl: 'https://ais-pre-cnwnz67ertzudvxhqsflo5-244110052482.europe-west2.run.app',
-    region: 'europe-west2 (London / Google Cloud Run)',
-    ssl: 'Google Trust Services (TLS 1.3 / HTTPS / Port 443)',
-    uptimeStatus: '24/7 Always-On Cloud Container',
-    pairingCode: 'G-9428-CLD',
-    googleAuthAvailable: true,
-    protocol: 'HTTPS / TLS 1.3',
-    port: 443,
-    host: 'ais-pre-cnwnz67ertzudvxhqsflo5-244110052482.europe-west2.run.app',
+    provider: config.isCloudRun ? 'google_cloud_run' : 'local',
+    name: 'PlanPasika API',
+    cloudRunUrl: process.env.PUBLIC_SERVER_URL || '',
+    sharedUrl: '',
+    region: process.env.GOOGLE_CLOUD_REGION || '',
+    ssl: config.httpsEnabled ? 'HTTPS skonfigurowany' : 'TLS końcowy niepotwierdzony przez proces',
+    uptimeStatus: 'Czas dostępności nie jest mierzony',
+    pairingCode: '',
+    googleAuthAvailable: config.googleClientIds.length > 0 && !config.isCloudRun,
+    protocol: config.httpsEnabled ? 'HTTPS' : 'HTTP',
+    port: config.port,
+    host: config.bindHost,
     instructions: {
-      quickSummary: 'Oficjalny serwer w chmurze Google Cloud Run dla wszystkich użytkowników aplikacji.',
-      howToConnect: 'Aby połączyć inne urządzenie (telefon, drugi komputer), wklej oficjalny adres serwera w Ustawieniach Serwera i kliknij "Zaloguj się przez Google".',
+      quickSummary: 'Metadane tej instancji API; nie stanowią potwierdzenia trwałości ani dostępności wdrożenia.',
+      howToConnect: config.googleClientIds.length
+        ? 'Logowanie wymaga prawdziwego Google ID tokenu dla skonfigurowanego OAuth Client ID.'
+        : 'Logowanie Google jest wyłączone do skonfigurowania GOOGLE_CLIENT_ID.',
       steps: [
-        '1. Otwórz aplikację na drugim urządzeniu (telefonie lub PC)',
-        '2. Przejdź do Ustawienia -> Serwer & Aktualizacja',
-        '3. Wpisz oficjalny adres: https://ais-pre-cnwnz67ertzudvxhqsflo5-244110052482.europe-west2.run.app',
-        '4. Kliknij przycisk "Zaloguj się przez konto Google"',
-        '5. Wszystkie dane treningowe i plany będą synchronizowane w czasie rzeczywistym'
+        'Status online oznacza wyłącznie, że proces odpowiedział na żądanie.',
+        'Trwałość danych, synchronizacja wielourządzeniowa i uptime wymagają osobnej konfiguracji i weryfikacji.',
       ]
     }
   };
 
-  let activeGoogleUser: {
-    email: string;
-    displayName: string;
-    photoURL?: string;
-    id: string;
-    sub: string;
-    connectedAt: string;
-  } | null = null;
-
   app.get('/api/server/google-info', (_req, res) => {
     res.json({
-      status: 'online',
+      status: config.isCloudRun || !localStore || localStore.error ? 'degraded' : 'online',
       ...GOOGLE_CLOUD_INFO,
-      activeUser: activeGoogleUser ? { email: activeGoogleUser.email, displayName: activeGoogleUser.displayName, photoURL: activeGoogleUser.photoURL } : null,
+      activeUser: null,
+      durableCloudStorage: false,
       timestamp: new Date(now()).toISOString()
     });
   });
 
-  app.post('/api/auth/google/login', (req, res) => {
-    const email = typeof req.body?.email === 'string' && req.body.email.trim() ? req.body.email.trim() : 'eskejtpro@gmail.com';
-    const displayName = typeof req.body?.displayName === 'string' && req.body.displayName.trim() ? req.body.displayName.trim() : 'Pasik (Google Verified)';
-    const photoURL = typeof req.body?.photoURL === 'string' ? req.body.photoURL : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
-    const id = `google-uid-${crypto.randomBytes(8).toString('hex')}`;
+  app.post('/api/auth/google/login', async (req, res) => {
+    if (config.isCloudRun) return res.status(503).json({ error: 'session_store_not_configured' });
+    if (!config.googleClientIds.length) return res.status(503).json({ error: 'google_auth_not_configured' });
+    const ip = req.ip || 'unknown';
+    const attempt = googleAttempts.get(ip) || { count: 0, windowStartedAt: now(), blockedUntil: 0 };
+    if (attempt.blockedUntil > now()) return res.status(429).json({ error: 'too_many_attempts' });
+    if (now() - attempt.windowStartedAt > config.loginWindowMs) {
+      attempt.count = 0;
+      attempt.windowStartedAt = now();
+      attempt.blockedUntil = 0;
+    }
+    const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken : '';
+    if (!idToken) {
+      attempt.count += 1;
+      if (attempt.count >= config.maxLoginAttempts) attempt.blockedUntil = now() + config.loginWindowMs;
+      googleAttempts.set(ip, attempt);
+      return res.status(400).json({ error: 'google_id_token_required' });
+    }
 
-    activeGoogleUser = {
-      email,
-      displayName,
-      photoURL,
-      id,
-      sub: id,
-      connectedAt: new Date(now()).toISOString()
+    let identity;
+    try {
+      identity = await verifyIdToken(idToken, config.googleClientIds);
+    } catch (error) {
+      attempt.count += 1;
+      if (attempt.count >= config.maxLoginAttempts) attempt.blockedUntil = now() + config.loginWindowMs;
+      googleAttempts.set(ip, attempt);
+      if (error instanceof GoogleIdentityError) return res.status(error.status).json({ error: error.message });
+      return res.status(401).json({ error: 'invalid_google_id_token' });
+    }
+
+    googleAttempts.delete(ip);
+    const googleUser = {
+      id: identity.sub,
+      sub: identity.sub,
+      email: identity.email,
+      displayName: identity.displayName,
+      ...(identity.photoURL ? { photoURL: identity.photoURL } : {}),
+      connectedAt: new Date(now()).toISOString(),
     };
-
-    // Wygeneruj bezpieczny token sesji Bearer dla użytkownika Google
     const token = `gcl_${crypto.randomBytes(32).toString('base64url')}`;
     const tokenHash = tokenDigest(token);
-    sessions.set(tokenHash, { tokenHash, createdAt: now(), expiresAt: now() + 30 * 24 * 60 * 60 * 1000 });
-
-    return res.json({
-      success: true,
-      token,
-      tokenType: 'Bearer',
-      expiresIn: 30 * 24 * 60 * 60 * 1000,
-      user: activeGoogleUser,
-      serverInfo: GOOGLE_CLOUD_INFO
+    sessions.set(tokenHash, {
+      tokenHash,
+      createdAt: now(),
+      expiresAt: now() + config.sessionTtlMs,
+      principalId: `google:${identity.sub}`,
+      googleUser,
     });
+    return res.json({ success: true, token, tokenType: 'Bearer', expiresIn: config.sessionTtlMs, user: googleUser, serverInfo: GOOGLE_CLOUD_INFO });
   });
 
-  app.get('/api/auth/google/user', (_req, res) => {
-    res.json({
-      authenticated: Boolean(activeGoogleUser),
-      user: activeGoogleUser
-    });
+  app.get('/api/auth/google/user', requireSession, (req, res) => {
+    const session = (req as AuthenticatedRequest).authSession;
+    return res.json({ authenticated: Boolean(session?.googleUser), user: session?.googleUser || null });
   });
 
-  app.post('/api/auth/google/logout', (_req, res) => {
-    activeGoogleUser = null;
-    res.json({ success: true, message: 'Wylogowano z konta Google.' });
+  app.post('/api/auth/google/logout', requireSession, (req, res) => {
+    const token = (req.header('authorization') || '').slice(7);
+    sessions.delete(tokenDigest(token));
+    res.status(204).send();
   });
 
-  app.get('/api/data', requireSession, (_req, res) => {
-    if (dataStoreError) return res.status(503).json({ error: 'data_store_unavailable' });
-    if (!storedState) return res.status(404).json({ error: 'data_unavailable' });
-    res.json(storedState);
+  app.get('/api/data', requireSession, (req, res) => {
+    const session = (req as AuthenticatedRequest).authSession as Session;
+    const store = dataStoreFor(session.principalId);
+    if (!store) return res.status(503).json({ error: 'cloud_store_not_configured' });
+    if (store.error) return res.status(503).json({ error: 'data_store_unavailable' });
+    if (!store.state) return res.status(404).json({ error: 'data_unavailable' });
+    res.json(store.state);
   });
   app.post('/api/data', requireSession, (req, res) => {
+    const session = (req as AuthenticatedRequest).authSession as Session;
+    const store = dataStoreFor(session.principalId);
+    if (!store) return res.status(503).json({ error: 'cloud_store_not_configured' });
+    if (store.error) return res.status(503).json({ error: 'data_store_unavailable' });
     const body = req.body as JsonObject;
     if (body.schemaVersion !== SCHEMA_VERSION || !('data' in body)) {
       return res.status(400).json({ error: 'unsupported_schema_version', expected: SCHEMA_VERSION });
     }
     const errors = validateGymData(body.data);
     if (errors.length) return res.status(422).json({ error: 'invalid_gym_data', details: errors });
-    if (dataStoreError) return res.status(503).json({ error: 'data_store_unavailable' });
     const expectedRevision = body.revision;
     const expectedHash = body.contentHash;
-    if (storedState && (!Number.isInteger(expectedRevision) || typeof expectedHash !== 'string')) {
+    if (store.state && (!Number.isInteger(expectedRevision) || typeof expectedHash !== 'string')) {
       return res.status(409).json({
         error: 'conflict',
         reason: 'revision_required',
-        revision: storedState.revision,
-        contentHash: storedState.contentHash,
+        revision: store.state.revision,
+        contentHash: store.state.contentHash,
       });
     }
-    if (storedState && (expectedRevision !== storedState.revision || expectedHash !== storedState.contentHash)) {
+    if (store.state && (expectedRevision !== store.state.revision || expectedHash !== store.state.contentHash)) {
       return res.status(409).json({
         error: 'conflict',
         reason: 'stale_revision',
-        revision: storedState.revision,
-        contentHash: storedState.contentHash,
+        revision: store.state.revision,
+        contentHash: store.state.contentHash,
       });
     }
     const nextState: StoredState = {
       schemaVersion: SCHEMA_VERSION,
-      revision: (storedState?.revision || 0) + 1,
+      revision: (store.state?.revision || 0) + 1,
       updatedAt: new Date(now()).toISOString(),
       contentHash: contentHash(body.data),
       data: body.data as GymData,
     };
     try {
-      writeAtomically(config.dataFile, nextState);
-      storedState = nextState;
+      writeAtomically(store.filePath, nextState);
+      store.state = nextState;
       return res.status(201).json(nextState);
     } catch {
       return res.status(503).json({ error: 'data_store_unavailable' });
     }
   });
 
-  app.get('/api/sync/status', requireSession, (_req, res) => res.json({
-    status: 'online',
-    revision: storedState?.revision || 0,
-    updatedAt: storedState?.updatedAt || null,
-    contentHash: storedState?.contentHash || null,
-    deviceId: config.deviceId,
-    offline: false,
-    online: true,
-  }));
+  app.get('/api/sync/status', requireSession, (req, res) => {
+    const session = (req as AuthenticatedRequest).authSession as Session;
+    const store = dataStoreFor(session.principalId);
+    if (!store) return res.status(503).json({ error: 'cloud_store_not_configured' });
+    if (store.error) return res.status(503).json({ error: 'data_store_unavailable' });
+    return res.json({
+      status: 'online', revision: store.state?.revision || 0,
+      updatedAt: store.state?.updatedAt || null, contentHash: store.state?.contentHash || null,
+      deviceId: config.deviceId, offline: false, online: true,
+    });
+  });
 
   app.get('/api/update/check', (req, res) => {
     const currentVersion = typeof req.query.currentVersion === 'string' ? req.query.currentVersion : APP_VERSION;
@@ -668,7 +732,7 @@ export function createApp(options: AppOptions = {}) {
 Na obecnym etapie (${currentWeekName}) kluczem jest żelazna powtarzalność techniki, kontrolowanie przerw między seriami (minimum 90-120s w bojach wielostawowych) oraz dbanie o odpowiednią regenerację i sen. Zarejestruj dzisiejsze serie robocze w aplikacji, aby zachować ciągłość danych analitycznych.`;
   }
 
-  app.post(['/api/ai/coach/chat', '/api/ai/chat'], async (req, res) => {
+  app.post(['/api/ai/coach/chat', '/api/ai/chat'], requireAiSession, async (req, res) => {
     try {
       const { message, context, history, persona = 'head_coach' } = req.body || {};
       if (!message || typeof message !== 'string') {
@@ -847,7 +911,7 @@ ZASADY ODPOWIEDZI:
   });
 
   // Generator Planu Treningowego AI
-  app.post('/api/ai/coach/generate-plan', async (req, res) => {
+  app.post('/api/ai/coach/generate-plan', requireAiSession, async (req, res) => {
     try {
       const { goal = 'hypertrophy', daysPerWeek = 4, split = 'ppl', experience = 'intermediate', focusMuscle = 'general' } = req.body || {};
       const ai = getAi();
@@ -894,7 +958,7 @@ Podaj dla każdego dnia:
   });
 
   // Audytor Zdrowia & Badań Krwi AI
-  app.post('/api/ai/coach/audit-health', async (req, res) => {
+  app.post('/api/ai/coach/audit-health', requireAiSession, async (req, res) => {
     try {
       const { bloodTests = [], notes = [], bodyWeight = 85 } = req.body || {};
       const ai = getAi();
@@ -940,7 +1004,7 @@ Zadanie:
   });
 
   // Generator Planu Żywieniowego & Makroskładników AI
-  app.post('/api/ai/coach/nutrition-plan', async (req, res) => {
+  app.post('/api/ai/coach/nutrition-plan', requireAiSession, async (req, res) => {
     try {
       const { bodyWeight = 85, goal = 'masa', height = 180, age = 28, activity = 'aktywny' } = req.body || {};
       const ai = getAi();
@@ -1003,7 +1067,7 @@ Podaj:
   });
 
   // Dobór zamienników ćwiczeń (Biomechaniczny Exercise Swapper)
-  app.post('/api/ai/coach/swap-exercise', async (req, res) => {
+  app.post('/api/ai/coach/swap-exercise', requireAiSession, async (req, res) => {
     try {
       const { exerciseName, category = 'klatka', reason = 'equipment_busy' } = req.body || {};
       const ai = getAi();
@@ -1048,7 +1112,7 @@ Dla każdego zamiennika podaj:
   });
 
   // Synteza Mowy Trenera AI (Gemini 3.8 Flash Lite TTS)
-  app.post('/api/ai/coach/tts', async (req, res) => {
+  app.post('/api/ai/coach/tts', requireAiSession, async (req, res) => {
     try {
       const { text, voice = 'Puck' } = req.body || {};
       if (!text || typeof text !== 'string') {
@@ -1098,7 +1162,7 @@ Dla każdego zamiennika podaj:
   });
 
   // NLP Parser Poleceń Agenta (Automatyczne Wykrywanie Akcji Aplikacji)
-  app.post('/api/ai/agent/parse-command', async (req, res) => {
+  app.post('/api/ai/agent/parse-command', requireAiSession, async (req, res) => {
     try {
       const { command, gymData } = req.body || {};
       if (!command || typeof command !== 'string') {
@@ -1164,7 +1228,7 @@ Zwróć wyłącznie prawidłowy format JSON:
     }
   });
 
-  app.post('/api/ai/coach/analyze', async (req, res) => {
+  app.post('/api/ai/coach/analyze', requireAiSession, async (req, res) => {
     try {
       const { gymData } = req.body || {};
       const ai = getAi();

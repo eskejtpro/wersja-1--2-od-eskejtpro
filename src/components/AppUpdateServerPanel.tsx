@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { SocialLogin } from "@capgo/capacitor-social-login";
 import {
   RefreshCw, CheckCircle2, AlertCircle, ShieldCheck,
   Server, Globe, Zap, Info, ChevronDown, ChevronUp,
@@ -13,40 +14,48 @@ import {
   loginWithGoogleAccount, 
   logoutGoogleAccount, 
   getGoogleAuthStatus,
-  GOOGLE_CLOUD_SERVER_URL,
   GOOGLE_CLOUD_SHARED_URL,
+  getServerCapabilities,
   GoogleServerInfo
 } from "../utils/serverApi";
 
 interface AppUpdateServerPanelProps {
   settings: AppSettings;
   onUpdateSettings: (newSettings: Partial<AppSettings>) => void;
+  googleSession: { token: string; serverUrl: string } | null;
+  onGoogleSessionChange: (session: { token: string; serverUrl: string } | null) => void;
 }
 
 type ServerLiveStatus = "idle" | "checking" | "online" | "offline" | "degraded";
 
-const GOOGLE_PAIRING_CODE = "G-9428-CLD";
-
 const ENDPOINTS = [
-  { method: "GET",  path: "/api/server/google-info", auth: false, desc: "Status i metadane serwera Google Cloud: adres Cloud Run, region, SSL, instrukcje." },
-  { method: "POST", path: "/api/auth/google/login",  auth: false, desc: "Logowanie kontem Google: { email, displayName } -> token Bearer 30-dniowy." },
-  { method: "GET",  path: "/api/auth/google/user",   auth: false, desc: "Pobranie profilu aktualnie zalogowanego użytkownika Google." },
-  { method: "POST", path: "/api/auth/google/logout", auth: false, desc: "Wylogowanie z aktywnej sesji konta Google." },
-  { method: "GET",  path: "/api/health",             auth: false, desc: "Status serwera — sprawdzenie żywotności procesu Node.js / kontenera Cloud Run." },
+  { method: "GET",  path: "/api/server/google-info", auth: false, desc: "Status i metadane skonfigurowanej instancji API." },
+  { method: "POST", path: "/api/auth/google/login",  auth: false, desc: "Weryfikacja podpisanego Google ID tokenu i utworzenie sesji." },
+  { method: "GET",  path: "/api/auth/google/user",   auth: true, desc: "Pobranie profilu z autoryzowanej sesji." },
+  { method: "POST", path: "/api/auth/google/logout", auth: true, desc: "Unieważnienie własnej sesji Bearer." },
+  { method: "GET",  path: "/api/health",             auth: false, desc: "Status serwera i capabilities." },
   { method: "GET",  path: "/api/version",            auth: false, desc: "Wersja aplikacji, apiVersion, schemaVersion i aktywne capabilities." },
   { method: "GET",  path: "/api/data",                auth: true,  desc: "Pobranie magazynu serwera: { schemaVersion, revision, contentHash, data }." },
   { method: "POST", path: "/api/data",                auth: true,  desc: "Atomowy zapis GymData z weryfikacją revision i contentHash." },
   { method: "GET",  path: "/api/sync/status",         auth: true,  desc: "Status synchronizacji: revision, hash, online/offline." },
   { method: "POST", path: "/api/agent/analyze",       auth: true,  desc: "Analiza heurystyczna: tonaż, e1RM, regularność sesji." },
+  { method: "POST", path: "/api/ai/coach/chat", auth: true, desc: "AI chat — loopback tylko lokalnie, Bearer przy nasłuchu sieciowym." },
+  { method: "POST", path: "/api/ai/coach/generate-plan", auth: true, desc: "Generowanie planu AI — uwierzytelnienie przy nasłuchu sieciowym." },
+  { method: "POST", path: "/api/ai/coach/nutrition-plan", auth: true, desc: "Plan żywieniowy AI — uwierzytelnienie przy nasłuchu sieciowym." },
+  { method: "POST", path: "/api/ai/coach/swap-exercise", auth: true, desc: "Zamiana ćwiczenia AI — uwierzytelnienie przy nasłuchu sieciowym." },
+  { method: "POST", path: "/api/ai/coach/audit-health", auth: true, desc: "Audyt zdrowia AI — uwierzytelnienie przy nasłuchu sieciowym." },
+  { method: "POST", path: "/api/ai/coach/tts", auth: true, desc: "TTS — uwierzytelnienie przy nasłuchu sieciowym." },
+  { method: "POST", path: "/api/ai/agent/parse-command", auth: true, desc: "Parsowanie komend AI — uwierzytelnienie przy nasłuchu sieciowym." },
 ];
 
 const CAPABILITIES_INFO: Record<string, string> = {
-  google_cloud_server:    "Oficjalny serwer Google Cloud Run (europe-west2) dla wszystkich użytkowników 24/7",
-  google_account_auth:    "Logowanie kontem Google z bezpiecznym tokenem Bearer i synchronizacją profili",
+  google_cloud_server:    "Metadane skonfigurowanej instancji; trwałość zależy od rzeczywistego magazynu",
+  google_account_auth:    "Logowanie Google OIDC po weryfikacji podpisanego ID tokenu",
   auth_session:           "Sesje Bearer z TTL i brute-force lockout (5 prób / 15 min)",
   gymdata_validation:     "Walidacja schematu GymData przy każdym zapisie (schemaVersion 1)",
   sync_status:            "Śledzenie revision + contentHash dla bezpiecznej synchronizacji bez konfliktów",
   heuristic_local_agent:  "Lokalny analityk heurystyczny: e1RM, tonaż, periodyzacja",
+  google_oidc_login:     "Dostępne tylko z OAuth client IDs i obsługiwanym session store.",
 };
 
 /** Oficjalna 4-kolorowa ikona Google 'G' */
@@ -103,6 +112,8 @@ function ServerStatusBadge({ status }: { status: ServerLiveStatus }) {
 export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
   settings,
   onUpdateSettings,
+  googleSession,
+  onGoogleSessionChange,
 }) => {
   const currentVersion = settings.installedAppVersion || CURRENT_APP_VERSION;
   const [notification, setNotification] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
@@ -112,11 +123,8 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
   const [googleServerLive, setGoogleServerLive] = useState<ServerLiveStatus>("idle");
   const [googlePingMs, setGooglePingMs] = useState<number | null>(null);
   const [isLoggingInGoogle, setIsLoggingInGoogle] = useState(false);
-  const [showCustomGoogleInput, setShowCustomGoogleInput] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState("");
-  const [customGoogleName, setCustomGoogleName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [showConnectionGuide, setShowConnectionGuide] = useState(true);
+  const [showConnectionGuide, setShowConnectionGuide] = useState(false);
   const [showEndpoints, setShowEndpoints] = useState(false);
   const [showCapabilities, setShowCapabilities] = useState(false);
   
@@ -124,28 +132,33 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
 
   // Zalogowany użytkownik Google
   const activeGoogleUser = settings.googleUser;
+  const configuredServerUrl = (settings.updateServerUrl || GOOGLE_CLOUD_SHARED_URL).trim().replace(/\/+$/, '');
 
   // Sprawdzenie stanu serwera Google Cloud
   const checkGoogleServer = useCallback(async () => {
     setGoogleServerLive("checking");
     const t0 = Date.now();
     try {
-      const info = await getGoogleCloudServerInfo();
+      if (!configuredServerUrl) throw new Error("Wpisz adres HTTPS serwera API.");
+      const targetUrl = configuredServerUrl;
+      const [info, api] = await Promise.all([getGoogleCloudServerInfo(targetUrl), getServerCapabilities(targetUrl)]);
       const ms = Date.now() - t0;
       setGooglePingMs(ms);
-      setGoogleServerInfo(info);
-      setGoogleServerLive("online");
-
-      // Sprawdź stan sesji Google na backendzie
-      const auth = await getGoogleAuthStatus();
-      if (auth.authenticated && auth.user && !settings.googleUser) {
-        onUpdateSettings({ googleUser: auth.user });
+      setGoogleServerInfo({ ...info, googleAuthAvailable: info.googleAuthAvailable && api.capabilities.includes("google_oidc_login") });
+      setGoogleServerLive(info.status === "online" ? "online" : "degraded");
+      if (googleSession) {
+        try {
+          await getGoogleAuthStatus(googleSession.serverUrl, googleSession.token);
+        } catch {
+          onGoogleSessionChange(null);
+          onUpdateSettings({ googleUser: null });
+        }
       }
     } catch {
       setGoogleServerLive("offline");
       setGooglePingMs(null);
     }
-  }, [settings.googleUser, onUpdateSettings]);
+  }, [googleSession, onGoogleSessionChange, onUpdateSettings, configuredServerUrl]);
 
   useEffect(() => {
     checkGoogleServer();
@@ -164,15 +177,21 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
     }, 2500);
   };
 
-  const handleGoogleLogin = async (emailToUse?: string, nameToUse?: string) => {
+  const handleGoogleLogin = async () => {
     setIsLoggingInGoogle(true);
     setNotification({ type: "info", text: "Łączenie z serwerem i autoryzacja konta Google..." });
     try {
-      const email = emailToUse || customGoogleEmail.trim() || "eskejtpro@gmail.com";
-      const displayName = nameToUse || customGoogleName.trim() || (email === "eskejtpro@gmail.com" ? "Pasik (Konto Google)" : email.split("@")[0]);
-      const photoURL = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
-
-      const res = await loginWithGoogleAccount({ email, displayName, photoURL });
+      const webClientId = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID?.trim();
+      if (!webClientId) throw new Error("Brak konfiguracji VITE_GOOGLE_WEB_CLIENT_ID.");
+      if (!googleServerInfo?.googleAuthAvailable) throw new Error("Serwer nie zgłasza aktywnego logowania Google.");
+      const targetUrl = configuredServerUrl;
+      await SocialLogin.initialize({ google: { webClientId, mode: "online" } });
+      const googleResult = await SocialLogin.login({ provider: "google", options: { scopes: ["email", "profile"] } });
+      const idToken = googleResult.result.responseType === "online" ? googleResult.result.idToken : null;
+      if (!idToken) throw new Error("Google nie zwrócił tokenu ID.");
+      const res = await loginWithGoogleAccount({ idToken, targetUrl });
+      if (!res.user.id || res.user.id.startsWith("google-uid-")) throw new Error("Serwer nie zwrócił zweryfikowanego identyfikatora Google.");
+      onGoogleSessionChange({ token: res.token, serverUrl: targetUrl });
       
       onUpdateSettings({
         googleUser: {
@@ -181,14 +200,12 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
           photoURL: res.user.photoURL,
           id: res.user.id,
           connectedAt: res.user.connectedAt,
-          token: res.token
         },
         googleServerPreferred: true,
-        updateServerUrl: GOOGLE_CLOUD_SHARED_URL
+        updateServerUrl: targetUrl
       });
 
       setNotification({ type: "success", text: `Pomyślnie połączono z kontem Google: ${res.user.email}!` });
-      setShowCustomGoogleInput(false);
       checkGoogleServer();
     } catch (err: any) {
       setNotification({ type: "error", text: `Błąd autoryzacji Google: ${err.message || "Błąd połączenia z serwerem"}` });
@@ -199,11 +216,13 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
 
   const handleGoogleLogout = async () => {
     try {
-      await logoutGoogleAccount();
+      if (googleSession) await logoutGoogleAccount(googleSession.serverUrl, googleSession.token);
+      onGoogleSessionChange(null);
       onUpdateSettings({ googleUser: null });
       setNotification({ type: "info", text: "Wylogowano z sesji konta Google." });
       checkGoogleServer();
     } catch {
+      onGoogleSessionChange(null);
       onUpdateSettings({ googleUser: null });
       setNotification({ type: "info", text: "Wylogowano lokalnie." });
     }
@@ -254,9 +273,9 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-extrabold text-slate-100 flex items-center gap-2">
-                  <span>Serwer w Chmurze Google</span>
-                  <span className="text-xs px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 font-mono font-semibold">
-                    Google Cloud Run 24/7
+                  <span>Serwer API i logowanie Google</span>
+                <span className="text-xs px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 font-mono font-semibold">
+                    {googleServerInfo?.name || "API GymTracker"}
                   </span>
                 </h3>
                 <ServerStatusBadge status={googleServerLive} />
@@ -268,12 +287,12 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
               </div>
               <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5 text-sky-400" />
-                <span>Region: europe-west2 (London) • Szyfrowanie: TLS 1.3 / HTTPS (Port 443)</span>
+                <span>{googleServerInfo?.protocol || "API"} • {googleServerInfo?.host || ""}:{googleServerInfo?.port || ""}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               type="button"
               onClick={checkGoogleServer}
@@ -292,6 +311,20 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
 
         {/* Zawartość: Karta Logowania Google + Informacje */}
         <div className="p-5 space-y-5">
+          <label className="block space-y-1.5">
+            <span className="text-xs font-bold text-slate-300">Adres serwera API (HTTPS)</span>
+            <input
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              value={settings.updateServerUrl || GOOGLE_CLOUD_SHARED_URL}
+              onChange={(event) => onUpdateSettings({ updateServerUrl: event.target.value.trim() })}
+              placeholder="https://twoj-serwer.example"
+              aria-label="Adres serwera API HTTPS"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-sm font-mono focus:border-sky-500 focus:outline-none"
+            />
+            <span className="text-[11px] text-slate-400">Bez zapisanego adresu serwer nie jest sprawdzany. HTTP dozwolone jest wyłącznie dla localhost.</span>
+          </label>
           
           {/* A. STATUS LOGOWANIA NA KONTO GOOGLE */}
           <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 sm:p-5">
@@ -338,8 +371,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                       </div>
                       <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 font-mono">
                         <span>ID: {activeGoogleUser.id.slice(0, 16)}...</span>
-                        <span>•</span>
-                        <span>Sesja Bearer aktywna (30 dni)</span>
+                        {googleSession ? <><span>•</span><span>Sesja bieżąca</span></> : <><span>•</span><span>Zaloguj ponownie</span></>}
                       </div>
                     </div>
                   ) : (
@@ -359,8 +391,8 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                   <>
                     <button
                       type="button"
-                      onClick={() => handleGoogleLogin(activeGoogleUser.email, activeGoogleUser.displayName)}
-                      disabled={isLoggingInGoogle}
+                      onClick={handleGoogleLogin}
+                      disabled={isLoggingInGoogle || !googleServerInfo?.googleAuthAvailable}
                       className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isLoggingInGoogle ? "animate-spin" : ""}`} />
@@ -369,6 +401,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                     <button
                       type="button"
                       onClick={handleGoogleLogout}
+                      disabled={!googleSession}
                       className="px-3.5 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 text-red-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
@@ -380,78 +413,18 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                     {/* Główny przycisk Google Sign In */}
                     <button
                       type="button"
-                      onClick={() => handleGoogleLogin("eskejtpro@gmail.com", "Pasik (Google Verified)")}
-                      disabled={isLoggingInGoogle}
+                      onClick={handleGoogleLogin}
+                      disabled={isLoggingInGoogle || !googleServerInfo?.googleAuthAvailable}
                       className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-extrabold flex items-center gap-2.5 shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                       id="btn-google-login-primary"
                     >
                       <GoogleGIcon className="w-4 h-4" />
-                      <span>{isLoggingInGoogle ? "Logowanie..." : "Zaloguj z kontem Google (eskejtpro@gmail.com)"}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowCustomGoogleInput(v => !v)}
-                      className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                      title="Wpisz inny adres @gmail.com"
-                    >
-                      <Users className="w-3.5 h-3.5" />
-                      <span>Inne konto</span>
+                      <span>{isLoggingInGoogle ? "Logowanie..." : "Zaloguj się przez Google"}</span>
                     </button>
                   </>
                 )}
               </div>
             </div>
-
-            {/* Opcjonalny formularz wpisania innego adresu Google */}
-            {showCustomGoogleInput && !activeGoogleUser && (
-              <div className="mt-4 pt-4 border-t border-slate-800/80 space-y-3">
-                <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Logowanie dowolnym kontem Google:</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] text-slate-400 block mb-1">Adres e-mail (@gmail.com):</label>
-                    <input
-                      type="email"
-                      value={customGoogleEmail}
-                      onChange={e => setCustomGoogleEmail(e.target.value)}
-                      placeholder="twoj-login@gmail.com"
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs font-mono focus:border-sky-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-slate-400 block mb-1">Nazwa użytkownika:</label>
-                    <input
-                      type="text"
-                      value={customGoogleName}
-                      onChange={e => setCustomGoogleName(e.target.value)}
-                      placeholder="np. Trener Jan"
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:border-sky-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomGoogleInput(false)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-semibold"
-                  >
-                    Anuluj
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleGoogleLogin(customGoogleEmail, customGoogleName)}
-                    disabled={!customGoogleEmail.trim() || isLoggingInGoogle}
-                    className="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <GoogleGIcon className="w-3.5 h-3.5" />
-                    <span>Zaloguj tym kontem</span>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* B. NOTATKA INFORMACYJNA & PRZEWODNIK DLA INNYCH UŻYTKOWNIKÓW */}
@@ -481,7 +454,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                 <div className="space-y-2">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Oficjalne Adresy Serwera Google Cloud (Dla wszystkich urządzeń):</span>
+                    <span>Adresy serwera zwrócone przez API:</span>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -489,17 +462,17 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Główny Adres Serwera (Zalecany):
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Adres API:
                         </span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
-                          HTTPS / Port 443
+                          Protokół skonfigurowany
                         </span>
                       </div>
                       <div className="font-mono text-[11px] text-slate-100 bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800 break-all select-all flex items-center justify-between gap-2">
-                        <span>{GOOGLE_CLOUD_SHARED_URL}</span>
+                        <span>{googleServerInfo?.sharedUrl || "Nie skonfigurowano serwera"}</span>
                         <button
                           type="button"
-                          onClick={() => handleCopy(GOOGLE_CLOUD_SHARED_URL, "shared_url")}
+                          onClick={() => googleServerInfo?.sharedUrl && handleCopy(googleServerInfo.sharedUrl, "shared_url")}
                           className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold flex items-center gap-1 shrink-0 cursor-pointer"
                         >
                           {copiedKey === "shared_url" ? <CheckCheck className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
@@ -507,7 +480,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                         </button>
                       </div>
                       <p className="text-[10px] text-slate-400">
-                        Ten adres jest dostępny publicznie z każdego telefonu, tabletu i komputera na świecie.
+                        Dostępność adresu zależy od konfiguracji wdrożenia i nie jest tu zakładana.
                       </p>
                     </div>
 
@@ -515,17 +488,17 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-sky-400 flex items-center gap-1">
-                          <Code className="w-3.5 h-3.5" /> Adres Instancji Bezpośredniej (Dev):
+                          <Code className="w-3.5 h-3.5" /> Adres skonfigurowanej instancji:
                         </span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20 font-mono">
                           Direct Container
                         </span>
                       </div>
                       <div className="font-mono text-[11px] text-slate-100 bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800 break-all select-all flex items-center justify-between gap-2">
-                        <span>{GOOGLE_CLOUD_SERVER_URL}</span>
+                        <span>{googleServerInfo?.cloudRunUrl || "Lokalna instancja / brak adresu publicznego"}</span>
                         <button
                           type="button"
-                          onClick={() => handleCopy(GOOGLE_CLOUD_SERVER_URL, "dev_url")}
+                          onClick={() => googleServerInfo?.cloudRunUrl && handleCopy(googleServerInfo.cloudRunUrl, "dev_url")}
                           className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold flex items-center gap-1 shrink-0 cursor-pointer"
                         >
                           {copiedKey === "dev_url" ? <CheckCheck className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
@@ -533,7 +506,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                         </button>
                       </div>
                       <p className="text-[10px] text-slate-400">
-                        Dedykowany punkt wejścia Google Cloud Run dla programistów i podglądu testowego.
+                        Adres zwracany przez skonfigurowaną instancję API.
                       </p>
                     </div>
                   </div>
@@ -544,10 +517,10 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                   <div className="bg-slate-900/70 border border-slate-800 rounded-lg p-2.5">
                     <span className="text-[10px] text-slate-400 block font-semibold uppercase">Kod Parowania:</span>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="font-mono font-bold text-emerald-400 text-xs">{GOOGLE_PAIRING_CODE}</span>
+                      <span className="font-mono font-bold text-emerald-400 text-xs">Brak — OAuth</span>
                       <button
                         type="button"
-                        onClick={() => handleCopy(GOOGLE_PAIRING_CODE, "pairing_code")}
+                        onClick={() => setNotification({ type: "info", text: "Logowanie używa OAuth; kod parowania nie jest stosowany." })}
                         className="text-slate-400 hover:text-slate-200 text-[10px] p-1 cursor-pointer"
                         title="Kopiuj kod"
                       >
@@ -558,17 +531,17 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
 
                   <div className="bg-slate-900/70 border border-slate-800 rounded-lg p-2.5">
                     <span className="text-[10px] text-slate-400 block font-semibold uppercase">Region Serwera:</span>
-                    <span className="font-mono font-bold text-slate-200 text-xs mt-0.5 block truncate">europe-west2</span>
+                    <span className="font-mono font-bold text-slate-200 text-xs mt-0.5 block truncate">{googleServerInfo?.region || "Nieustalony"}</span>
                   </div>
 
                   <div className="bg-slate-900/70 border border-slate-800 rounded-lg p-2.5">
                     <span className="text-[10px] text-slate-400 block font-semibold uppercase">Port HTTPS:</span>
-                    <span className="font-mono font-bold text-sky-400 text-xs mt-0.5 block">443 (Zaufany SSL)</span>
+                    <span className="font-mono font-bold text-sky-400 text-xs mt-0.5 block">{googleServerInfo?.protocol === "HTTPS" ? "HTTPS" : "Niepotwierdzony"}</span>
                   </div>
 
                   <div className="bg-slate-900/70 border border-slate-800 rounded-lg p-2.5">
                     <span className="text-[10px] text-slate-400 block font-semibold uppercase">Certyfikat SSL:</span>
-                    <span className="font-mono font-bold text-emerald-300 text-xs mt-0.5 block truncate">Google Trust Services</span>
+                    <span className="font-mono font-bold text-emerald-300 text-xs mt-0.5 block truncate">{googleServerInfo?.ssl || "Nieustalony"}</span>
                   </div>
                 </div>
 
@@ -583,8 +556,8 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                     <li className="flex items-start gap-2">
                       <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono font-bold text-[10px]">KROK 1</span>
                       <span>
-                        Otwórz przeglądarkę na telefonie i wejdź pod adres:{" "}
-                        <strong className="text-slate-100 font-mono select-all bg-slate-950 px-1 py-0.5 rounded">{GOOGLE_CLOUD_SHARED_URL}</strong>.
+                        Skonfiguruj adres serwera API przez VITE_GYMTRACKER_SERVER_URL. Aktualny adres: {" "}
+                        <strong className="text-slate-100 font-mono select-all bg-slate-950 px-1 py-0.5 rounded">{GOOGLE_CLOUD_SHARED_URL || "brak"}</strong>.
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
@@ -596,13 +569,13 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                     <li className="flex items-start gap-2">
                       <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono font-bold text-[10px]">KROK 3</span>
                       <span>
-                        Kliknij biały przycisk <strong>„Zaloguj z kontem Google”</strong> i autoryzuj swoje konto.
+                        Kliknij przycisk logowania i zatwierdź konto Google (wymagany poprawny OAuth Client ID).
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">KROK 4</span>
                       <span>
-                        <strong>Gotowe!</strong> Wszystkie serie, plany, tonaż i waga synchronizują się z chmurą Google w czasie rzeczywistym.
+                        Połączenie konta nie oznacza samo w sobie aktywnej synchronizacji ani trwałego magazynu w chmurze.
                       </span>
                     </li>
                   </ol>
@@ -613,7 +586,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleCopy(GOOGLE_CLOUD_SHARED_URL, "copy_full_link")}
+                      onClick={() => GOOGLE_CLOUD_SHARED_URL && handleCopy(GOOGLE_CLOUD_SHARED_URL, "copy_full_link")}
                       className="px-3 py-1.5 rounded-lg bg-sky-600/30 hover:bg-sky-600/50 border border-sky-500/40 text-sky-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Share2 className="w-3.5 h-3.5" />
@@ -621,7 +594,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleCopy(`Oficjalny serwer GymTracker Pro: ${GOOGLE_CLOUD_SHARED_URL} (Kod parowania: ${GOOGLE_PAIRING_CODE})`, "copy_instruction")}
+                      onClick={() => handleCopy(`Serwer GymTracker Pro: ${GOOGLE_CLOUD_SHARED_URL || "nie skonfigurowano"}`, "copy_instruction")}
                       className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Copy className="w-3.5 h-3.5" />
@@ -629,7 +602,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                     </button>
                   </div>
                   <span className="text-[11px] text-slate-400 italic">
-                    Wszyscy użytkownicy łączą się przez szyfrowany protokół SSL TLS 1.3
+                    Połączenie używa HTTPS, gdy skonfigurowano publiczny serwer API.
                   </span>
                 </div>
 
@@ -677,7 +650,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
           <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
             <span className="text-[10px] text-slate-500 uppercase font-bold">Autoryzacja:</span>
             <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Google OAuth Bearer Token
+              <CheckCircle2 className="w-3.5 h-3.5" /> Sesja API (tylko w pamięci aplikacji)
             </div>
           </div>
         </div>
@@ -693,7 +666,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
         >
           <div className="flex items-center gap-2.5 text-sm font-bold text-slate-200">
             <Zap className="w-4 h-4 text-amber-400" />
-            <span>Usługi i Moduły Serwera Google Cloud</span>
+            <span>Możliwości serwera API</span>
             <span className="px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold">
               {Object.keys(CAPABILITIES_INFO).length} modułów
             </span>
@@ -712,7 +685,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                   <div className="text-xs font-bold font-mono mb-0.5 text-emerald-300">{cap}</div>
                   <div className="text-[11px] text-slate-400">{desc}</div>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full shrink-0">ACTIVE</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${googleServerInfo && (cap !== "google_oidc_login" || googleServerInfo.googleAuthAvailable) ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" : "text-slate-400 bg-slate-800 border border-slate-700"}`}>{googleServerInfo && (cap !== "google_oidc_login" || googleServerInfo.googleAuthAvailable) ? "API" : "NOT CONFIGURED"}</span>
               </div>
             ))}
           </div>
@@ -729,7 +702,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
         >
           <div className="flex items-center gap-2.5 text-sm font-bold text-slate-200">
             <Code className="w-4 h-4 text-sky-400" />
-            <span>Endpointy REST API Google Cloud Hub</span>
+            <span>Endpointy REST API</span>
             <span className="px-1.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold">{ENDPOINTS.length}</span>
           </div>
           {showEndpoints ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
