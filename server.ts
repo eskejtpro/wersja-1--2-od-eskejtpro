@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import { GoogleGenAI } from '@google/genai';
 import { GoogleIdentityError, type GoogleIdTokenVerifier, verifyGoogleIdToken } from './server/auth/googleIdentity.ts';
+import { CloudConflictError, CloudStoreError, FirestoreStore, type CloudSession } from './server/data/firestoreStore.ts';
 import { validateHealthAuditInput } from './server/validation/healthAudit.ts';
 
 dotenv.config();
@@ -39,12 +40,16 @@ interface ServerConfig {
   googleClientIds: string[];
   allowedOrigins: string[];
   isCloudRun: boolean;
+  cloudStoreEnabled: boolean;
+  firestoreProjectId: string;
+  firestoreDatabaseId: string;
 }
 
 interface AppOptions {
   config?: Partial<ServerConfig>;
   now?: () => number;
   verifyGoogleIdToken?: GoogleIdTokenVerifier;
+  firestoreStore?: FirestoreStore;
 }
 
 interface Session {
@@ -99,6 +104,9 @@ const defaultConfig = (env: NodeJS.ProcessEnv): ServerConfig => ({
   googleClientIds: (env.GOOGLE_CLIENT_IDS || env.GOOGLE_CLIENT_ID || '').split(',').map((value) => value.trim()).filter(Boolean),
   allowedOrigins: (env.GYMTRACKER_ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean),
   isCloudRun: Boolean(env.K_SERVICE),
+  cloudStoreEnabled: env.GYMTRACKER_CLOUD_STORE === 'firestore',
+  firestoreProjectId: env.GYMTRACKER_FIRESTORE_PROJECT_ID || '',
+  firestoreDatabaseId: env.GYMTRACKER_FIRESTORE_DATABASE_ID || '(default)',
 });
 
 function defaultDataFile(): string {
@@ -354,6 +362,16 @@ export function createApp(options: AppOptions = {}) {
   const now = options.now || Date.now;
   const config = { ...defaultConfig(process.env), ...options.config };
   const app = express();
+  const cloudStore = config.isCloudRun
+    ? options.firestoreStore || (config.cloudStoreEnabled && config.firestoreProjectId
+      ? new FirestoreStore({
+          projectId: config.firestoreProjectId,
+          databaseId: config.firestoreDatabaseId,
+          validateData: (data) => validateGymData(data).length === 0,
+          now,
+        })
+      : null)
+    : null;
   const sessions = new Map<string, Session>();
   const attempts = new Map<string, LoginAttempt>();
   const googleAttempts = new Map<string, LoginAttempt>();
@@ -381,6 +399,16 @@ export function createApp(options: AppOptions = {}) {
   };
   const localStore = dataStoreFor(localPrincipalId);
   const verifyIdToken = options.verifyGoogleIdToken || verifyGoogleIdToken;
+  const availableCapabilities = config.isCloudRun && !cloudStore ? ['update_metadata_only'] : capabilities;
+  let cloudStoreVerified = false;
+  const sendCloudError = (res: Response, error: unknown) => {
+    cloudStoreVerified = false;
+    if (error instanceof CloudConflictError) {
+      return res.status(409).json({ error: 'conflict', reason: error.reason, revision: error.revision, contentHash: error.contentHash });
+    }
+    if (error instanceof CloudStoreError) return res.status(error.status).json({ error: error.code });
+    return res.status(503).json({ error: 'cloud_store_unavailable' });
+  };
   const allowedOrigins = new Set([
     'capacitor://localhost',
     'https://localhost',
@@ -399,7 +427,7 @@ export function createApp(options: AppOptions = {}) {
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: false,
-    hsts: config.httpsEnabled ? undefined : false,
+    hsts: config.isCloudRun || config.httpsEnabled ? undefined : false,
   }));
   app.use(express.json({ limit: config.maxBodyBytes, strict: true }));
   app.use((req, res, next) => {
@@ -417,12 +445,20 @@ export function createApp(options: AppOptions = {}) {
     next();
   });
 
-  const requireSession = (req: Request, res: Response, next: NextFunction) => {
+  const requireSession = async (req: Request, res: Response, next: NextFunction) => {
     const header = req.header('authorization') || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-    const session = token ? sessions.get(tokenDigest(token)) : undefined;
+    if (!token) return res.status(401).json({ error: 'unauthorized' });
+    let session: Session | null | undefined;
+    try {
+      session = config.isCloudRun ? await cloudStore?.readSession(tokenDigest(token)) : sessions.get(tokenDigest(token));
+      if (config.isCloudRun && session) cloudStoreVerified = true;
+    } catch {
+      cloudStoreVerified = false;
+      return res.status(503).json({ error: 'session_store_unavailable' });
+    }
     if (!session || session.expiresAt <= now()) {
-      if (session) sessions.delete(session.tokenHash);
+      if (session && !config.isCloudRun) sessions.delete(session.tokenHash);
       return res.status(401).json({ error: 'unauthorized' });
     }
     (req as AuthenticatedRequest).authSession = session;
@@ -436,11 +472,11 @@ export function createApp(options: AppOptions = {}) {
   };
 
   app.get('/api/health', (_req, res) => res.json({
-    status: config.isCloudRun || !localStore || localStore.error ? 'degraded' : 'ok',
+    status: config.isCloudRun ? (cloudStoreVerified ? 'ok' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'ok'),
     app: 'GymTracker Pro',
     version: APP_VERSION,
     apiVersion: API_VERSION,
-    capabilities: [...capabilities, ...(config.googleClientIds.length && !config.isCloudRun ? ['google_oidc_login'] : [])],
+    capabilities: [...availableCapabilities, ...(config.googleClientIds.length && (!config.isCloudRun || cloudStore) ? ['google_oidc_login'] : [])],
     timestamp: new Date(now()).toISOString(),
   }));
   app.get('/api/version', (_req, res) => res.json({
@@ -448,7 +484,7 @@ export function createApp(options: AppOptions = {}) {
     apiVersion: API_VERSION,
     schemaVersion: SCHEMA_VERSION,
     status: 'ok',
-    capabilities: [...capabilities, ...(config.googleClientIds.length && !config.isCloudRun ? ['google_oidc_login'] : [])],
+    capabilities: [...availableCapabilities, ...(config.googleClientIds.length && (!config.isCloudRun || cloudStore) ? ['google_oidc_login'] : [])],
   }));
 
   app.post('/api/auth/login', (req, res) => {
@@ -476,9 +512,14 @@ export function createApp(options: AppOptions = {}) {
     sessions.set(tokenHash, { tokenHash, createdAt: now(), expiresAt: now() + config.sessionTtlMs, principalId: `local:${username}` });
     return res.json({ token, tokenType: 'Bearer', expiresIn: config.sessionTtlMs });
   });
-  app.post('/api/auth/logout', requireSession, (req, res) => {
+  app.post('/api/auth/logout', requireSession, async (req, res) => {
     const token = (req.header('authorization') || '').slice(7);
-    sessions.delete(tokenDigest(token));
+    try {
+      if (config.isCloudRun) await cloudStore?.deleteSession(tokenDigest(token));
+      else sessions.delete(tokenDigest(token));
+    } catch (error) {
+      return sendCloudError(res, error);
+    }
     res.status(204).send();
   });
 
@@ -494,7 +535,7 @@ export function createApp(options: AppOptions = {}) {
     ssl: config.isCloudRun ? 'HTTPS na wejściu Cloud Run' : config.httpsEnabled ? 'HTTPS skonfigurowany' : 'TLS końcowy niepotwierdzony przez proces',
     uptimeStatus: 'Czas dostępności nie jest mierzony',
     pairingCode: '',
-    googleAuthAvailable: config.googleClientIds.length > 0 && !config.isCloudRun,
+    googleAuthAvailable: config.googleClientIds.length > 0 && (!config.isCloudRun || Boolean(cloudStore)),
     protocol: config.isCloudRun || config.httpsEnabled ? 'HTTPS' : 'HTTP',
     port: config.port,
     host: config.bindHost,
@@ -512,45 +553,67 @@ export function createApp(options: AppOptions = {}) {
 
   app.get('/api/server/google-info', (_req, res) => {
     res.json({
-      status: config.isCloudRun || !localStore || localStore.error ? 'degraded' : 'online',
+      status: config.isCloudRun ? (cloudStoreVerified ? 'online' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'online'),
       ...GOOGLE_CLOUD_INFO,
       activeUser: null,
-      durableCloudStorage: false,
+      durableCloudStorage: cloudStoreVerified,
       timestamp: new Date(now()).toISOString()
     });
   });
 
   app.post('/api/auth/google/login', async (req, res) => {
-    if (config.isCloudRun) return res.status(503).json({ error: 'session_store_not_configured' });
+    if (config.isCloudRun && !cloudStore) return res.status(503).json({ error: 'session_store_not_configured' });
     if (!config.googleClientIds.length) return res.status(503).json({ error: 'google_auth_not_configured' });
     const ip = req.ip || 'unknown';
     const attempt = googleAttempts.get(ip) || { count: 0, windowStartedAt: now(), blockedUntil: 0 };
-    if (attempt.blockedUntil > now()) return res.status(429).json({ error: 'too_many_attempts' });
-    if (now() - attempt.windowStartedAt > config.loginWindowMs) {
-      attempt.count = 0;
-      attempt.windowStartedAt = now();
-      attempt.blockedUntil = 0;
+    if (config.isCloudRun) {
+      try {
+        if (await cloudStore!.isLoginBlocked(ip)) return res.status(429).json({ error: 'too_many_attempts' });
+      } catch (error) {
+        return sendCloudError(res, error);
+      }
+    } else {
+      if (attempt.blockedUntil > now()) return res.status(429).json({ error: 'too_many_attempts' });
+      if (now() - attempt.windowStartedAt > config.loginWindowMs) {
+        attempt.count = 0;
+        attempt.windowStartedAt = now();
+        attempt.blockedUntil = 0;
+      }
     }
-    const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken : '';
-    if (!idToken) {
+    const registerFailure = async (status: number, errorCode: string) => {
+      if (config.isCloudRun) {
+        try {
+          const blocked = await cloudStore!.recordLoginFailure(ip, config.maxLoginAttempts, config.loginWindowMs);
+          return res.status(blocked ? 429 : status).json({ error: blocked ? 'too_many_attempts' : errorCode });
+        } catch (error) {
+          return sendCloudError(res, error);
+        }
+      }
       attempt.count += 1;
       if (attempt.count >= config.maxLoginAttempts) attempt.blockedUntil = now() + config.loginWindowMs;
       googleAttempts.set(ip, attempt);
-      return res.status(400).json({ error: 'google_id_token_required' });
+      return res.status(attempt.blockedUntil > now() ? 429 : status).json({ error: attempt.blockedUntil > now() ? 'too_many_attempts' : errorCode });
+    };
+    const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken : '';
+    if (!idToken) {
+      return registerFailure(400, 'google_id_token_required');
     }
 
     let identity;
     try {
       identity = await verifyIdToken(idToken, config.googleClientIds);
     } catch (error) {
-      attempt.count += 1;
-      if (attempt.count >= config.maxLoginAttempts) attempt.blockedUntil = now() + config.loginWindowMs;
-      googleAttempts.set(ip, attempt);
-      if (error instanceof GoogleIdentityError) return res.status(error.status).json({ error: error.message });
-      return res.status(401).json({ error: 'invalid_google_id_token' });
+      if (error instanceof GoogleIdentityError) return registerFailure(error.status, error.message);
+      return registerFailure(401, 'invalid_google_id_token');
     }
 
-    googleAttempts.delete(ip);
+    if (config.isCloudRun) {
+      try {
+        await cloudStore!.clearLoginFailures(ip);
+      } catch (error) {
+        return sendCloudError(res, error);
+      }
+    }
     const googleUser = {
       id: identity.sub,
       sub: identity.sub,
@@ -561,13 +624,23 @@ export function createApp(options: AppOptions = {}) {
     };
     const token = `gcl_${crypto.randomBytes(32).toString('base64url')}`;
     const tokenHash = tokenDigest(token);
-    sessions.set(tokenHash, {
+    const session: CloudSession = {
       tokenHash,
       createdAt: now(),
       expiresAt: now() + config.sessionTtlMs,
       principalId: `google:${identity.sub}`,
       googleUser,
-    });
+    };
+    try {
+      if (config.isCloudRun) {
+        await cloudStore?.saveSession(session);
+        cloudStoreVerified = true;
+      }
+      else sessions.set(tokenHash, session);
+    } catch (error) {
+      return sendCloudError(res, error);
+    }
+    if (!config.isCloudRun) googleAttempts.delete(ip);
     return res.json({ success: true, token, tokenType: 'Bearer', expiresIn: config.sessionTtlMs, user: googleUser, serverInfo: GOOGLE_CLOUD_INFO });
   });
 
@@ -576,26 +649,41 @@ export function createApp(options: AppOptions = {}) {
     return res.json({ authenticated: Boolean(session?.googleUser), user: session?.googleUser || null });
   });
 
-  app.post('/api/auth/google/logout', requireSession, (req, res) => {
+  app.post('/api/auth/google/logout', requireSession, async (req, res) => {
     const token = (req.header('authorization') || '').slice(7);
-    sessions.delete(tokenDigest(token));
+    try {
+      if (config.isCloudRun) await cloudStore?.deleteSession(tokenDigest(token));
+      else sessions.delete(tokenDigest(token));
+    } catch (error) {
+      return sendCloudError(res, error);
+    }
     res.status(204).send();
   });
 
-  app.get('/api/data', requireSession, (req, res) => {
+  app.get('/api/data', requireSession, async (req, res) => {
     const session = (req as AuthenticatedRequest).authSession as Session;
+    if (config.isCloudRun) {
+      if (!cloudStore) return res.status(503).json({ error: 'cloud_store_not_configured' });
+      try {
+        const state = await cloudStore.readData(session.principalId);
+        cloudStoreVerified = true;
+        return state ? res.json(state) : res.status(404).json({ error: 'data_unavailable' });
+      } catch (error) {
+        return sendCloudError(res, error);
+      }
+    }
     const store = dataStoreFor(session.principalId);
     if (!store) return res.status(503).json({ error: 'cloud_store_not_configured' });
     if (store.error) return res.status(503).json({ error: 'data_store_unavailable' });
     if (!store.state) return res.status(404).json({ error: 'data_unavailable' });
     res.json(store.state);
   });
-  app.post('/api/data', requireSession, (req, res) => {
+  app.post('/api/data', requireSession, async (req, res) => {
     const session = (req as AuthenticatedRequest).authSession as Session;
+    if (config.isCloudRun && !cloudStore) return res.status(503).json({ error: 'cloud_store_not_configured' });
     const store = dataStoreFor(session.principalId);
-    if (!store) return res.status(503).json({ error: 'cloud_store_not_configured' });
-    if (store.error) return res.status(503).json({ error: 'data_store_unavailable' });
-    const body = req.body as JsonObject;
+    if (!config.isCloudRun && store?.error) return res.status(503).json({ error: 'data_store_unavailable' });
+    const body = isObject(req.body) ? req.body : {};
     if (body.schemaVersion !== SCHEMA_VERSION || !('data' in body)) {
       return res.status(400).json({ error: 'unsupported_schema_version', expected: SCHEMA_VERSION });
     }
@@ -603,6 +691,21 @@ export function createApp(options: AppOptions = {}) {
     if (errors.length) return res.status(422).json({ error: 'invalid_gym_data', details: errors });
     const expectedRevision = body.revision;
     const expectedHash = body.contentHash;
+    if (config.isCloudRun) {
+      try {
+        const next = await cloudStore!.saveData(
+          session.principalId,
+          body.data as GymData,
+          typeof expectedRevision === 'number' ? expectedRevision : undefined,
+          typeof expectedHash === 'string' ? expectedHash : undefined,
+        );
+        cloudStoreVerified = true;
+        return res.status(201).json(next);
+      } catch (error) {
+        return sendCloudError(res, error);
+      }
+    }
+    if (!store) return res.status(503).json({ error: 'data_store_unavailable' });
     if (store.state && (!Number.isInteger(expectedRevision) || typeof expectedHash !== 'string')) {
       return res.status(409).json({
         error: 'conflict',
@@ -635,8 +738,22 @@ export function createApp(options: AppOptions = {}) {
     }
   });
 
-  app.get('/api/sync/status', requireSession, (req, res) => {
+  app.get('/api/sync/status', requireSession, async (req, res) => {
     const session = (req as AuthenticatedRequest).authSession as Session;
+    if (config.isCloudRun) {
+      if (!cloudStore) return res.status(503).json({ error: 'cloud_store_not_configured' });
+      try {
+        const state = await cloudStore.readData(session.principalId);
+        cloudStoreVerified = true;
+        return res.json({
+          status: 'online', revision: state?.revision || 0,
+          updatedAt: state?.updatedAt || null, contentHash: state?.contentHash || null,
+          deviceId: config.deviceId, offline: false, online: true,
+        });
+      } catch (error) {
+        return sendCloudError(res, error);
+      }
+    }
     const store = dataStoreFor(session.principalId);
     if (!store) return res.status(503).json({ error: 'cloud_store_not_configured' });
     if (store.error) return res.status(503).json({ error: 'data_store_unavailable' });
@@ -1339,7 +1456,7 @@ export async function startServer() {
   if (!hasTlsFiles && !config.allowInsecureLocalhost && !config.isCloudRun) {
     console.warn('[server] Running in HTTP mode without TLS credentials.');
   }
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && !config.isCloudRun) {
     const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
     app.use(vite.middlewares);
   } else {

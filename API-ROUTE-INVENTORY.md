@@ -1,4 +1,4 @@
-# API route inventory — GymTracker Pro 3.0.8
+# API route inventory — GymTracker Pro 3.0.8 + unreleased Cloud store work
 
 Read-only inventory checked against Express route declarations in `server.ts` and first-party requests in `src/`. “AI auth” means `requireAiSession`: loopback-only local servers bypass Bearer auth; network-bound servers require a session. Cloud Run does not get the loopback bypass. “Local file” is process-local server storage, not durable Cloud Run storage.
 
@@ -7,14 +7,14 @@ Read-only inventory checked against Express route declarations in `server.ts` an
 | GET | `/api/health` | Public | none → process/app/API versions, capabilities, timestamp | none | Implemented; status is not uptime/durability proof |
 | GET | `/api/version` | Public | none → app/API/schema versions, capabilities | none | Implemented |
 | POST | `/api/auth/login` | Public | `{username,password}` → short-lived Bearer token | Session and rate-limit counters in memory | Local only; Cloud Run returns 503 |
-| POST | `/api/auth/logout` | Bearer session | Authorization header → 204 | Removes current in-memory session | Implemented |
+| POST | `/api/auth/logout` | Bearer session | Authorization header → 204 | Removes local session or Firestore session | Implemented |
 | GET | `/api/server/google-info` | Public | none → process/OAuth metadata | none | Implemented; never proves Cloud durability or uptime |
-| POST | `/api/auth/google/login` | Public + Google ID token | `{idToken}` → internal Bearer session and verified `sub` profile | Verifies Google token; session in memory | Local only; Cloud Run returns 503 without durable session store |
-| GET | `/api/auth/google/user` | Bearer session | none → authenticated flag and session profile | Reads in-memory session | Implemented |
-| POST | `/api/auth/google/logout` | Bearer session | none → 204 | Removes current in-memory session | Implemented |
-| GET | `/api/data` | Bearer session | none → `{schemaVersion,revision,updatedAt,contentHash,data}` | Reads per-principal JSON file | Local persistent file; Cloud Run returns 503 (`cloud_store_not_configured`) |
-| POST | `/api/data` | Bearer session | `{schemaVersion,revision,contentHash,data}` → stored envelope or validation/conflict error | Validates data and revision/hash; temp-file + rename | Local persistent file; Cloud Run unavailable; no cloud DB |
-| GET | `/api/sync/status` | Bearer session | none → revision/hash/status/device fields | Reads per-principal store | Server status only; Cloud Run store unavailable; not a complete multi-device sync engine |
+| POST | `/api/auth/google/login` | Public + Google ID token | `{idToken}` → internal Bearer session and verified `sub` profile | Verifies Google token; local memory or opt-in Firestore session | Cloud Run returns 503 without configured store; live Firestore UNVERIFIED |
+| GET | `/api/auth/google/user` | Bearer session | none → authenticated flag and session profile | Reads local or Firestore session | Implemented; live Firestore UNVERIFIED |
+| POST | `/api/auth/google/logout` | Bearer session | none → 204 | Removes current local or Firestore session | Implemented; live Firestore UNVERIFIED |
+| GET | `/api/data` | Bearer session | none → `{schemaVersion,revision,updatedAt,contentHash,data}` | Reads per-principal JSON file or Firestore document | Cloud Run requires opt-in Firestore; live storage UNVERIFIED |
+| POST | `/api/data` | Bearer session | `{schemaVersion,revision,contentHash,data}` → stored envelope or validation/conflict error | Local atomic file or Firestore conditional write | Cloud Run requires opt-in Firestore; concurrent fake-transport test PASS, live storage UNVERIFIED |
+| GET | `/api/sync/status` | Bearer session | none → revision/hash/status/device fields | Reads per-principal local or Firestore store | Server status only; not a complete multi-device sync engine |
 | GET | `/api/update/check` | Public | query `currentVersion`, `channel` → release metadata or unconfigured status | Reads optional local release manifest | Implemented for manifest metadata; client does not install packages |
 | GET | `/api/update/history` | Public | none → releases from manifest | Reads optional local release manifest | Server endpoint implemented; first-party update history is local storage, no client call found |
 | GET | `/api/update/download/:version` | Public | version path → 503 | none | Disabled, explicit 503 |
@@ -46,4 +46,4 @@ Read-only inventory checked against Express route declarations in `server.ts` an
 - This inventory is source inspection, not a claim that each route was exercised end-to-end. Test files provide route-level evidence for Google OIDC, server auth/data, health-audit fail-closed, update unavailability, and local-agent behavior; the AI route set does not yet have complete success/validation/unauthorized/rate-limit coverage.
 - `/api/ai/coach/nutrition-plan` and `/api/ai/coach/swap-exercise` interpolate request values into prompts and need dedicated schema/range/length validation before being considered robust against malformed or oversized semantic input.
 - `/api/ai/agent/parse-command` returns unvalidated model-produced action objects; it must not be treated as an executable action contract until whitelist/schema/permission/preview/confirmation checks are verified in the consuming code.
-- Local server JSON files are not a durable Cloud Run backend. Cloud Run deliberately rejects login/data features rather than claiming persistence.
+- Local server JSON files are not a durable Cloud Run backend. Cloud Run rejects login/data features until the opt-in Firestore adapter is configured. The adapter's persistence, isolation, conflict and restart tests use a simulated Firestore transport, not a real Google project.

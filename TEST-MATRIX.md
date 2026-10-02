@@ -53,6 +53,14 @@ Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.8. Tes
 
 ---
 
+## Prace nad opcjonalnym Firestore po 3.0.8
+
+- `tests/firestore-store.test.cjs`: 8/8 PASS z symulowanym transportem Firestore — restart procesu, izolacja `sub`, atomowy konflikt dwóch zapisów, trwałość i wygaśnięcie sesji, logout, współdzielony limit prób logowania, błędy magazynu oraz pełna ścieżka HTTP Cloud Run.
+- `npm run test:server`: 26/26 PASS; `npm test`: 110/110 PASS; `npm run test:update`: 4/4 PASS; `npm run test:google-ui`: 3/3 PASS; `npm run lint` i `npm run build`: PASS. Główny chunk JS pozostaje 1,633.75 kB (gzip 421.40 kB) z ostrzeżeniem Vite o rozmiarze.
+- Prawdziwy projekt Firestore, uprawnienia IAM, uruchomienie w Cloud Run i zachowanie na telefonie: **UNVERIFIED**. Test z symulowanym transportem nie dowodzi działania usługi Google.
+
+---
+
 ## 🛠️ Instrukcja dla Przyszłych Agentów AI:
 1. Przed oddaniem jakiejkolwiek zmiany uruchom:
    ```bash

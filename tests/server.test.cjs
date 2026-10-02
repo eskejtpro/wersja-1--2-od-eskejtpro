@@ -138,8 +138,11 @@ test('Cloud Run reports HTTPS ingress without advertising unavailable cloud stor
     assert.equal(info.durableCloudStorage, false);
     const health = await (await fetch(`${url}/api/health`)).json();
     assert.equal(health.status, 'degraded');
+    assert.match((await fetch(`${url}/api/health`)).headers.get('strict-transport-security') || '', /max-age=/);
     assert.equal(health.capabilities.includes('google_cloud_server'), false);
     assert.equal(health.capabilities.includes('google_account_auth'), false);
+    assert.equal(health.capabilities.includes('auth_session'), false);
+    assert.equal(health.capabilities.includes('sync_status'), false);
   } finally {
     await new Promise((resolve) => cloudServer.close(resolve));
   }

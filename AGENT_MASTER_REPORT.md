@@ -246,3 +246,9 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - Cloud Run nasłuchuje na `0.0.0.0` i `PORT`; lokalny serwer zachowuje `127.0.0.1:3000`. Test uruchomieniowy skompilowanego serwera potwierdził odpowiedź `degraded` na `/api/health`.
 - Metadane Cloud Run pokazują HTTPS na wejściu usługi, lecz nie reklamują niedostępnego magazynu ani logowania jako aktywnych możliwości.
 - Weryfikacja bieżących zmian: app 110/110, server/OIDC 18/18, Google UI 3/3, updater 4/4, lint i web/server build PASS. Android 3.0.8, telefon i chmurowa trwałość danych pozostają UNVERIFIED. Szczegóły: `CHANGELOG-V3.0.8.md`.
+
+## Prace nad magazynem Cloud Run po 3.0.8
+
+- Opcjonalny adapter `server/data/firestoreStore.ts` przechowuje stan i sesje w oddzielnych dokumentach Firestore, indeksowanych skrótem identyfikatora konta `sub` lub skrótem tokenu. Warunkowy zapis po `updateTime` zapobiega cichej utracie równoległych zmian. Adapter jest wyłączony bez `GYMTRACKER_CLOUD_STORE=firestore` i `GYMTRACKER_FIRESTORE_PROJECT_ID`.
+- Limit prób logowania Google korzysta w trybie Cloud Run z dokumentu Firestore i warunkowego zapisu; nie opiera się na pamięci pojedynczej instancji. Wybór adresu klienta za proxy Cloud Run wymaga jeszcze weryfikacji na żywej usłudze.
+- Testy serwera 26/26, aplikacji 110/110, updatera 4/4, Google UI 3/3, lint i web/server build PASS. Testy Firestore korzystają z symulowanego transportu; nie wykonano żadnego żądania do prawdziwego projektu Google Cloud.

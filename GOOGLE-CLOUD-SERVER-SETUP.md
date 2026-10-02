@@ -1,6 +1,6 @@
 # PlanPasika — serwer Google Cloud: stan i instrukcja
 
-Stan sprawdzony lokalnie 2026-10-02 dla kodu 3.0.8. Usługa Google Cloud **nie została utworzona**. Nie ma potwierdzonego projektu, sesji konta Google Cloud ani zgody na potencjalne koszty.
+Stan sprawdzony lokalnie 2026-10-02 dla kodu 3.0.8 i niewydanych prac nad magazynem Cloud. Usługa Google Cloud **nie została utworzona**. Nie ma potwierdzonego projektu, sesji konta Google Cloud ani zgody na potencjalne koszty.
 
 ## Jak ma działać
 
@@ -8,8 +8,8 @@ Telefon wysyła żądania HTTPS do usługi Cloud Run. Google kończy TLS i przek
 
 ## Stan obecnego kodu
 
-- `server.ts` ma trasy API, lokalne sesje i lokalne pliki JSON. W trybie Cloud Run (`K_SERVICE`) nasłuchuje na `0.0.0.0` i `PORT`; sprawdzono testem i uruchomieniem skompilowanego serwera.
-- W trybie Cloud Run logowanie i chmurowe dane zwracają 503, ponieważ nie ma trwałych sesji i magazynu. `/api/health` zwraca `degraded`. To jest jawna blokada, nie gotowa synchronizacja.
+- `server.ts` ma trasy API, lokalne sesje i lokalne pliki JSON. W trybie Cloud Run (`K_SERVICE`) nasłuchuje na `0.0.0.0` i `PORT` oraz używa produkcyjnych plików statycznych także bez `NODE_ENV=production`; sprawdzono uruchomieniem skompilowanego serwera.
+- W trybie Cloud Run bez konfiguracji magazynu logowanie i chmurowe dane zwracają 503. Adapter Firestore istnieje w kodzie i jest domyślnie wyłączony; testy z symulowanym transportem obejmują restart, izolację kont, konflikt zapisu, limit prób logowania i wylogowanie. Prawdziwy Firestore nie został przetestowany. Metadane `durableCloudStorage` stają się prawdziwe dopiero po udanej operacji magazynu w danym procesie.
 - Google ID token jest kryptograficznie sprawdzany w lokalnym trybie serwera. Samo skonfigurowanie OAuth Client ID nie włącza logowania w Cloud Run.
 - Nie ma wdrożenia ani zweryfikowanego adresu usługi. Aplikacja Android nie została podłączona do nowej usługi.
 
@@ -17,14 +17,14 @@ Telefon wysyła żądania HTTPS do usługi Cloud Run. Google kończy TLS i przek
 
 1. Istniejący identyfikator projektu Google Cloud i konto z uprawnieniem do wdrożenia Cloud Run. Konto Chrome `ai.eskejtpro` musi być dostępne dla tej sesji.
 2. Wybór regionu i potwierdzenie stanu rozliczeń. Cloud Run ma bezpłatny limit, ale może naliczać opłaty za użycie ponad limit; budowanie ze źródeł korzysta również z Cloud Build i Artifact Registry. Włączenie rozliczeń lub wdrożenie należy zatwierdzić świadomie.
-3. Decyzja, czy powstać ma jedynie prywatna usługa diagnostyczna Cloud Run, czy działający backend z trwałymi danymi i logowaniem. W drugim wariancie trzeba zaimplementować i przetestować magazyn, np. Firestore Standard, a także cykl życia sesji. Firestore ma bezpłatną pulę, lecz ponad nią również może kosztować. Alternatywa bez nowego magazynu to pozostawienie trybu lokalnego; nie daje synchronizacji między telefonami.
+3. Decyzja, czy powstać ma jedynie prywatna usługa diagnostyczna Cloud Run, czy backend z trwałymi danymi i logowaniem. Kod obsługuje opcjonalny Firestore Standard, ale wymaga jeszcze testu z prawdziwą bazą i decyzji o kosztach. Firestore ma bezpłatną pulę, lecz ponad nią również może kosztować. Alternatywa bez nowego magazynu to pozostawienie trybu lokalnego; nie daje synchronizacji między telefonami.
 4. Przed udostępnieniem serwera aplikacji: test restartu procesu, równoległych zapisów, konfliktu rewizji, izolacji kont i wygasania sesji.
 
 ## Kolejność konfiguracji po podaniu projektu i decyzji kosztowej
 
 1. Otworzyć [Cloud Run w Google Cloud Console](https://console.cloud.google.com/run), zweryfikować konto, projekt, uprawnienia i rozliczenia.
 2. Wybrać region. `europe-central2` to Warszawa, ale należy porównać cenę i lokalizację magazynu; ten region jest w cenniku Cloud Run Tier 2.
-3. Przygotować wybrany trwały magazyn i bezpieczny dostęp usługi, jeśli celem jest rzeczywiste logowanie i synchronizacja. Nie umieszczać kluczy ani haseł w repozytorium.
+3. Przygotować wybrany trwały magazyn i bezpieczny dostęp usługi, jeśli celem jest rzeczywiste logowanie i synchronizacja. Dla istniejącej bazy Firestore ustawić `GYMTRACKER_CLOUD_STORE=firestore`, `GYMTRACKER_FIRESTORE_PROJECT_ID` i `GOOGLE_CLIENT_ID`; `GYMTRACKER_FIRESTORE_DATABASE_ID` jest opcjonalne. Nie umieszczać kluczy ani haseł w repozytorium.
 4. Wdrożyć usługę Cloud Run ze źródeł repozytorium lub gotowego obrazu. Google Cloud buildpack potrafi uruchomić skrypt `build` z `package.json`; skrypt `start` uruchamia `dist/server.cjs`. Nie otwierać publicznego dostępu, dopóki uwierzytelnianie i magazyn nie przejdą testów.
 5. Odczytać nadany HTTPS URL; sprawdzić `/api/health`, `/api/version`, logowanie Google, zapis/odczyt danych i scenariusze restartu. Dopiero po PASS skonfigurować URL w aplikacji i sprawdzić telefon.
 

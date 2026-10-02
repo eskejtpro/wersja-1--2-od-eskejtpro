@@ -17,7 +17,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test": "node --test tests/storage.test.cjs tests/circumference.test.cjs tests/body-measurements.test.cjs tests/body-weight-subcategories.test.cjs tests/domain-mappers.test.cjs tests/database-migration.test.cjs tests/room-database.test.cjs tests/workout-timer.test.cjs tests/workout-session-state.test.cjs tests/health-audit-safety.test.cjs tests/health-audit-validation.test.cjs tests/room-initialization-flow.test.cjs tests/startup-data-recovery.test.cjs tests/android-apk-compatibility.test.cjs tests/app-knowledge-guide.test.cjs tests/ai-coach-online.test.cjs tests/ai-privacy-fail-closed.test.cjs tests/card-density.test.cjs tests/full-e2e-application-suite.test.cjs tests/gemini-pro-intelligent-audit.test.cjs tests/quick-access-dashboard.test.cjs tests/turbo-power-features.test.cjs tests/enhanced-analysis-calendar.test.cjs tests/ai-agent-autonomous-actions.test.cjs tests/ai-autonomous-features.test.cjs tests/google-ui-no-fakes.test.cjs",
-    "test:server": "node --import tsx --test tests/server.test.cjs tests/google-id-token.test.cjs",
+    "test:server": "node --import tsx --test tests/server.test.cjs tests/google-id-token.test.cjs tests/firestore-store.test.cjs",
     "test:google-ui": "node --test tests/google-ui-no-fakes.test.cjs",
     "test:update": "node --import tsx --test tests/app-update-service.test.mjs",
     "test:circumferences": "node tests/circumference-desktop-smoke.cjs",

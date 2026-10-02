@@ -1,8 +1,8 @@
-# GymTracker Pro 3.0.8 — kontrakt lokalnego serwera
+# GymTracker Pro 3.0.8 + niewydany adapter Cloud — kontrakt serwera
 
 `server.ts` jest jedynym serwerem Node/Express projektu. Domyślnie nasłuchuje wyłącznie na `127.0.0.1:3000`; LAN można włączyć ręcznie przez `GYMTRACKER_BIND`, np. po świadomym ustawieniu adresu interfejsu. Serwer przechowuje własny magazyn poza repozytorium i nigdy nie dotyka `workout_data.json` aplikacji desktopowej.
 
-W środowisku Cloud Run (`K_SERVICE`) proces nasłuchuje na `0.0.0.0` i używa portu z `PORT` (domyślnie 8080, jeśli wartość jest niepoprawna). TLS kończy się na wejściu Cloud Run, a proces obsługuje HTTP wewnątrz kontenera. To spełnia kontrakt sieciowy kontenera, ale nie dodaje trwałego magazynu ani sesji w chmurze; odpowiednie operacje nadal zwracają 503.
+W środowisku Cloud Run (`K_SERVICE`) proces nasłuchuje na `0.0.0.0` i używa portu z `PORT` (domyślnie 8080, jeśli wartość jest niepoprawna). TLS kończy się na wejściu Cloud Run, a proces obsługuje HTTP wewnątrz kontenera. Adapter Firestore jest opcjonalny i domyślnie wyłączony. Włączenie wymaga `GYMTRACKER_CLOUD_STORE=firestore`, `GYMTRACKER_FIRESTORE_PROJECT_ID` oraz istniejącej bazy z dostępem dla tożsamości usługi; bez tego logowanie i dane chmurowe nadal zwracają 503. Adapter przechowuje też limit prób logowania w dokumencie Firestore. Testy używają symulowanego transportu; prawdziwa usługa Google Cloud pozostaje UNVERIFIED.
 
 Pełna mapa każdej trasy Express, auth/input/output/persistence/status oraz first-party caller coverage znajduje się w [`API-ROUTE-INVENTORY.md`](API-ROUTE-INVENTORY.md); ta umowa podaje tylko najczęściej używane kontrakty.
 
@@ -20,7 +20,7 @@ Hash hasła można wygenerować przez eksport `createPasswordHash` z `server.ts`
 
 - `GET /api/health` i `GET /api/version` — status, wersje, schema version i capabilities.
 - `POST /api/auth/login` — body `{ "username", "password" }`; zwraca krótkotrwały token Bearer. `POST /api/auth/logout` unieważnia bieżącą sesję.
-- `POST /api/auth/google/login` — body `{ "idToken" }`; serwer sprawdza podpis, audience, issuer i expiry tokenu Google oraz używa `sub` jako principal. Wymaga `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_IDS`; Cloud Run blokuje logowanie bez trwałego magazynu.
+- `POST /api/auth/google/login` — body `{ "idToken" }`; serwer sprawdza podpis, audience, issuer i expiry tokenu Google oraz używa `sub` jako principal. Wymaga `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_IDS`; Cloud Run blokuje logowanie bez skonfigurowanego adaptera trwałego magazynu.
 - `GET /api/auth/google/user` i `POST /api/auth/google/logout` — wymagają Bearer; profil pochodzi z własnej sesji, logout unieważnia tę sesję.
 - `GET /api/server/google-info` — metadane procesu; odpowiedź nie potwierdza trwałości danych ani dostępności 24/7.
 - `GET /api/data` — autoryzowany odczyt `{ schemaVersion, revision, updatedAt, contentHash, data }` z trwałego magazynu.
