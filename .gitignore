@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+coverage/
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+.env*
+!.env.example
+release/
+*.exe
+*.apk
+*.zip

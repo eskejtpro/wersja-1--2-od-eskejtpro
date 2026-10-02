@@ -1,0 +1,221 @@
+﻿╔════════════════════════════════════════════════════════════════════════════╗
+║                    RAPORT SERWERA GymTracker Pro 2.24.0                     ║
+║                         Rozpakowany z Backup Dysk A:                        ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+1. LOKALIZACJA ROZPAKOWANEGO SERWERA
+   - Katalog:        A:\GymTracker-server-ready
+   - Archiwum:       A:\PLAN-TRENINGOWY\backups\GymTracker-2.24.0-server-integration-2026-09-18-080547.zip
+   - Rozmiar:        388,469 bajtów
+   - Data backup:    2026-09-18 08:05:48
+
+2. ZAWARTOŚĆ ROZPAKOWANEJ KOPII
+   ✓ server.ts               (23,080 B)      — główny serwer Express
+   ✓ tests/server.test.cjs   (9,362 B)       — izolowane testy serwera
+   ✓ src/utils/serverApi.ts  (2,499 B)       — adapter UI → server
+   ✓ package-lock.json       (181,054 B)     — zablokowane wersje zależności
+   ✓ .env.example            (1,107 B)       — szablon zmiennych
+   ✓ Kompletne źródła kodu desktopowego (React/Electron)
+
+3. INSTALACJA I PRZYGOTOWANIE
+   ✓ npm install             — 485 pakietów zainstalowano
+   ✓ Hash hasła wygenerowany: scrypt$16384$8$1$...
+   ✓ .env skonfigurowany z hasłem i ścieżkami
+
+4. TESTY SERWERA (URUCHOMIONO)
+   ✓ npm run test:server     — 9/9 TESTÓW PRZECHODZI
+
+   Przeprowadzone testy:
+   ✔ health and version expose persistent-server capabilities
+   ✔ login, logout, TTL and rate limiting are enforced
+   ✔ data writes atomically, preserve fields and survive app restart
+   ✔ corrupt data file returns controlled unavailable responses
+   ✔ revision and content hash prevent stale overwrites
+   ✔ agent is local heuristic and makes no outgoing request
+   ✔ invalid update manifest is unavailable and no simulated success
+   ✔ malformed JSON and localhost binding are handled
+   ✔ request body limit rejects oversized JSON safely
+
+   WNIOSEK: Serwer jest STABILNY i FUNKCJONALNY.
+
+5. ZMIENNE ŚRODOWISKA (.env)
+   GYMTRACKER_USERNAME=local
+   GYMTRACKER_PASSWORD_HASH=scrypt$16384$8$1$009725426ba2174c7eed6187805f7849$b90226494fc4a230f8dd0682b7a01540e59fd300f37ec40d369837a2934948ee
+   GYMTRACKER_SESSION_TTL_MS=28800000                  (8 godzin)
+   GYMTRACKER_MAX_LOGIN_ATTEMPTS=5
+   GYMTRACKER_LOGIN_WINDOW_MS=900000                   (15 minut)
+   GYMTRACKER_MAX_BODY=256kb
+   GYMTRACKER_BIND=127.0.0.1                           (localhost tylko)
+   PORT=3000
+   GYMTRACKER_DEVICE_ID=local-server
+   GYMTRACKER_DATA_FILE=A:\GymTracker-server-ready\server_data.json
+   GYMTRACKER_HTTPS=0                                  (HTTP localhost)
+   GYMTRACKER_ALLOW_INSECURE_LOCALHOST=0
+
+6. JAK DZIAŁA SERWER (KRÓTKO)
+
+   a) BINDING I BEZPIECZEŃSTWO
+      - Domyślnie słucha tylko na 127.0.0.1:3000 (localhost)
+      - Dostępny WYŁĄCZNIE z tego samego komputera
+      - TLS opcjonalny (do LAN wymaga certyfikatu)
+      - Wysyła kontrolowany błąd przy LAN bez TLS
+      - Nie wysyła żadnych danych poza komputer
+
+   b) AUTENTYKACJA
+      - Single-user (jedna konto: "local")
+      - Hasło haszowane scrypt (secure KDF)
+      - Login zwraca token Bearer z TTL 8h
+      - Brute-force limitowany (5 prób / 15 min)
+      - Logout unieważnia sesję
+
+   c) ENDPOINTY
+      Publiczne (bez auth):
+      - GET /api/health          — status & wersja serwera
+      - GET /api/version         — info o aplikacji
+      - POST /api/auth/login     — logowanie → token
+
+      Wymaga sesji (nagłówek: Authorization: Bearer <token>):
+      - GET /api/data            — pobierz dane
+      - POST /api/data           — zapisz dane atomowo
+      - GET /api/sync/status     — revision + hash
+      - POST /api/auth/logout    — wylogowanie
+      - POST /api/agent/analyze  — lokalna analiza
+
+      Aktualizacje (bez auth; zwracają "unavailable" bez manifestu):
+      - GET /api/update/check
+      - GET /api/update/history
+      - GET /api/update/download/:version
+      - POST /api/update/apply (wyłączone)
+      - POST /api/update/rollback (wyłączone)
+
+   d) MAGAZYN DANYCH
+      - Ścieżka: A:\GymTracker-server-ready\server_data.json
+      - Tworzony dopiero przy pierwszym POST /api/data
+      - Zapisy atomowe (temp file → rename)
+      - Przechowuje: schemaVersion, revision, updatedAt, contentHash, data
+      - Po restarcie proces czyta i przywraca stan
+
+   e) AGENT LOKALNY
+      - Tryb: heuristic_local (bez AI/generative)
+      - Nie wysyła danych na zewnątrz
+      - Analizuje: progres, stagnacja, tonaż, e1RM, regularność
+      - Zwraca: recommendations, warnings, confidence
+
+   f) UI DESKTOP
+      - Nie zmienił się wygląd ani komponenty
+      - Dodane opcjonalne przyciski: "Health Check" + "Push to Server"
+      - Desktop pamiętuje dane w workout_data.json (bez zmian)
+      - Serwer trzyma osobny magazyn
+
+7. KOMENDY URUCHOMIENIA
+
+   Tryb developerski (z tsx):
+   > npm run dev
+
+   Tryb produkcyjny:
+   > npm run build
+   > npm start
+
+   Testy serwera:
+   > npm run test:server
+
+   Linting:
+   > npm run lint
+
+8. PRZYKŁAD: LOGOWANIE I ZAPIS DANYCH (curl)
+
+   1. Zaloguj się:
+   curl -X POST http://127.0.0.1:3000/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username":"local","password":"test123"}'
+   -> {"token":"eyJhb...", "expiresAt":"2026-09-19T03:34:00Z"}
+
+   2. Pobierz dane:
+   curl -H "Authorization: Bearer eyJhb..." \
+     http://127.0.0.1:3000/api/data
+   -> {"schemaVersion":"2.24","revision":1,"updatedAt":"...", "data":{...}}
+
+   3. Zapisz dane (ze sprawdzeniem rewizji):
+   curl -X POST http://127.0.0.1:3000/api/data \
+     -H "Authorization: Bearer eyJhb..." \
+     -H "Content-Type: application/json" \
+     -d '{"schemaVersion":"2.24","revision":1,"contentHash":"abc123","data":{...}}'
+   -> Jeśli revision pasuje: {"success":true}
+   -> Jeśli konflikt: {"error":"conflict","current":2} (409)
+
+   4. Sprawdzenie statusu:
+   curl -H "Authorization: Bearer eyJhb..." \
+     http://127.0.0.1:3000/api/sync/status
+   -> {"revision":1,"updatedAt":"...","contentHash":"abc123","deviceId":"local-server","online":true}
+
+9. BACKUP I PRZYWRACANIE
+
+   Backup już wykonany na dysk A:
+   - ZIP archiwum zawiera cały projekt + server.ts + testy
+
+   Aby przywrócić:
+   1. Rozpakuj plik (już to zrobiłem → A:\GymTracker-server-ready)
+   2. npm install
+   3. Skonfiguruj .env
+   4. npm run dev
+   5. Dane serwera zamiast recreate: wymagane ręczne skopiowanie
+      z kopii zapasowej server_data.json do lokacji GYMTRACKER_DATA_FILE
+
+10. OGRANICZENIA I OSTRZEŻENIA
+
+    ⚠ Serwer żyje WYŁĄCZNIE w pamięci procesu lub w pliku server_data.json
+    ⚠ Po restarcie procesu dane z pamięci giną (czyta z server_data.json)
+    ⚠ Aby synchronizować z Android: wymaga osobnego API/adapter (jeszcze nieimplementowane)
+    ⚠ Aktualizacje są wyłączone (zwracają unavailable) bez manifestu
+    ⚠ Agent nie ma dostępu do pełnego GymData; UI musi wysłać subset
+    ⚠ Nie wysyła haseł, tokenów czy wrażliwych danych do logów
+    ⚠ LAN dostęp wymaga TLS (zmienne: GYMTRACKER_TLS_CERT_FILE, GYMTRACKER_TLS_KEY_FILE)
+
+11. NEXTSTEPS - CO DALEJ?
+
+    Jeśli chcesz synchronizować z Android:
+    - Przygotować dedykowany endpoint do pull/merge danych
+    - Obsłużyć konflikt wersji między urządzeniami
+    - Dodać autentykację dla Android (może być inny token/device ID)
+    - Zapewnić bezpieczne połączenie (TLS)
+
+    Jeśli chcesz przesłać do produkcji:
+    - Certyfikat TLS (HTTPS)
+    - Backup policy (rotacja, archiwa)
+    - Monitoring i alerting
+    - Dokumentacja deployment'u
+
+    Jeśli chcesz ulepszyć UI:
+    - Dodać login/logout UI
+    - Przycisk do skonfigurowania port/adres serwera
+    - Historia zmian danych (revision log)
+    - Conflict resolver UI
+
+12. PLIKI ODNIESIENIA
+
+    Dokumentacja:
+    - A:\GymTracker-server-ready\README-server.md (pełny poradnik)
+    - A:\GymTracker-server-ready\.env.example
+
+    Kod serwera:
+    - A:\GymTracker-server-ready\server.ts
+    - A:\GymTracker-server-ready\src\utils\serverApi.ts (klient)
+
+    Testy:
+    - A:\GymTracker-server-ready\tests\server.test.cjs
+
+    Backup:
+    - A:\PLAN-TRENINGOWY\backups\GymTracker-2.24.0-server-integration-2026-09-18-080547.zip
+    - SHA-256: 5A1E1F8266AD7B6424B2C03FF3EBB3549ACD097720E02914257C5E7E7DC37AAD
+
+═══════════════════════════════════════════════════════════════════════════════
+
+PODSUMOWANIE:
+✓ Serwer rozpakowany i działający
+✓ Testy: 9/9 przechodzą
+✓ Bezpieczeństwo: localhost bind, scrypt hash, token TTL, brute-force limit
+✓ Magazyn: atomowy zapis, kontrola rewizji
+✓ Agent: tylko lokalny, bez zewnętrznych połączeń
+✓ Aktualizacje: wyłączone bez manifestu (bezpieczne)
+
+Data: 2026-09-19 03:34 CET
