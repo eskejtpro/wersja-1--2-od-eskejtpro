@@ -1,6 +1,6 @@
-# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.2)
+# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.3)
 > **DOKUMENTACJA ARCHITEKTONICZNA, SYSTEMOWA I PROCEDURA TESTOWA DLA AGENTÓW AI**
-> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.2 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
+> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.3 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
 >
 > **Ważne:** starsze opisy architektury poniżej zawierają deklaracje odziedziczone z wcześniejszych wersji. Zweryfikowany stan wykonawczy i jawne ograniczenia są zapisane w sekcji „Aktualizacja stanu 3.0.2” na końcu; w szczególności aktywny Android data store nie jest Room SQLite.
 
@@ -203,3 +203,11 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - Usunięto fałszywy sukces przy przycisku „optymalizacji” — teraz przedstawia wyłącznie podsumowanie liczby lokalnych encji.
 - Wersja package/UI/API/Android: 3.0.2, Android `versionCode=302`.
 - Fresh verification i limity środowiskowe: `CHANGELOG-V3.0.2.md`.
+
+## Aktualizacja stanu 3.0.3 (2026-10-02)
+
+- Serwis aktualizacji przestał fabrykować wydanie 2.25.0, postęp pobierania, wynik checksum i sukces instalacji/rollbacku. Funkcje nieobsługiwane zwracają jawny brak wsparcia.
+- Historia aktualizacji jest pusta, dopóki nie ma rzeczywistych wpisów; nie wpisuje fikcyjnej instalacji 2.24.0.
+- Panel serwera został skorygowany: nie deklaruje automatycznego update, atomowego zapisu ani cloud replication.
+- Package/API/UI/Android: 3.0.3, `versionCode=303`. Szczegóły świeżej weryfikacji: `CHANGELOG-V3.0.3.md`.
+- Weryfikacja 3.0.3: update service 4/4, aplikacja 95/95, serwer 15/15, Google UI 3/3, lint/build/Capacitor sync/Android assembleDebug PASS. APK debug hash i brak device runtime testu zapisane w changelogu.

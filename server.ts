@@ -12,7 +12,7 @@ import { GoogleIdentityError, type GoogleIdTokenVerifier, verifyGoogleIdToken } 
 
 dotenv.config();
 
-export const APP_VERSION = '3.0.2';
+export const APP_VERSION = '3.0.3';
 export const API_VERSION = '1';
 export const SCHEMA_VERSION = 1;
 

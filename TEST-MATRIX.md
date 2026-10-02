@@ -1,15 +1,16 @@
-# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.2)
+# TEST-MATRIX: Macierz Testów i Pokrycia PlanPasika.v2 (GymTracker Pro v3.0.3)
 
-Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.2. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
+Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.3. Testy opisujące warstwę `RoomDatabase` w TypeScript używają mockowanego localStorage i nie dowodzą działania natywnej Room SQLite. Pełny opis architektoniczny znajduje się w pliku `AGENT_MASTER_REPORT.md`.
 
 ---
 
-## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.2)
+## 📊 Podsumowanie Egzekucji Testów (Stan na v3.0.3)
 - **Łączna liczba testów aplikacji**: 95 / 95 (**PASS - 100%**)
 - **Testy serwera/OIDC**: 15 / 15 (**PASS - 100%**)
 - **Testy UI Google i konfiguracji Androida**: 3 / 3 (**PASS - 100%**)
+- **Testy serwisu aktualizacji**: 4 / 4 (**PASS**, `npm run test:update`)
 - **Kompilacja TypeScript i Linter**: `tsc --noEmit` (**PASS - 0 błędów**)
-- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug `3.0.2` zbudowany, instalacja na urządzeniu **UNVERIFIED**
+- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug `3.0.3` zbudowany, instalacja na urządzeniu **UNVERIFIED**
 - **Błędy krytyczne**: 0 (**FAIL: 0**)
 
 ---
@@ -42,6 +43,7 @@ Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.2. Tes
 | **Serwer Google Cloud & Auth** | `tests/server.test.cjs` | 11 | `npm run test:server` | **PASS** | REST API `/api/*`, logowanie lokalne, sesje Bearer, CORS i rate limit |
 | **Google ID Token/OIDC** | `tests/google-id-token.test.cjs` | 4 | `npm run test:server` | **PASS** | Podpis, audience, issuer, expiry, izolacja principal i blokada Cloud Run |
 | **Google UI bez fake success** | `tests/google-ui-no-fakes.test.cjs` | 3 | `npm run test:google-ui` | **PASS** | ID token, sesja tylko w pamięci, brak fake identity i Android cleartext/mixed content |
+| **Serwis aktualizacji bez fikcyjnego sukcesu** | `tests/app-update-service.test.mjs` | 4 | `npm run test:update` | **PASS** | Unconfigured/network/http failure, no fake download/checksum/install/rollback/history |
 
 ---
 

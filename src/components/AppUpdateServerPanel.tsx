@@ -624,7 +624,7 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
               <span>Status Aplikacji i Wersja</span>
             </h4>
             <p className="text-xs text-slate-400 mt-0.5">
-              Środowisko chmurowe z automatyczną aktualizacją kodu PWA i schematem danych GymData v1.
+              Status serwera i wersji aplikacji. Automatyczna instalacja aktualizacji nie jest obecnie obsługiwana.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -638,13 +638,13 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
           <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
             <span className="text-[10px] text-slate-500 uppercase font-bold">Magazyn Danych:</span>
             <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Atomowy Zapis &amp; Hash SHA-256
+              <CheckCircle2 className="w-3.5 h-3.5" /> Magazyn lokalny; zapis chmurowy wymaga konfiguracji
             </div>
           </div>
           <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
             <span className="text-[10px] text-slate-500 uppercase font-bold">Tryb Offline-First:</span>
             <div className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Baza Lokalna + Replikacja w Chmurze
+              <CheckCircle2 className="w-3.5 h-3.5" /> Podstawowy trening działa lokalnie
             </div>
           </div>
           <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
