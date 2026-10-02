@@ -230,4 +230,4 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - `RoomStorageDriver.writeTable` propaguje błędy `localStorage`; pamięć podręczna aktualizuje się dopiero po udanym zapisie trwałym.
 - Autosave może teraz zgłosić awarię trwałego zapisu zamiast fałszywego „Zapis lokalny OK”. Test regresyjny wymusza `QuotaExceededError`.
 - Zapis nadal obejmuje wiele partycji bez ACID/rollbacku; to ograniczenie jest jawne.
-- Weryfikacja i artefakt: `CHANGELOG-V3.0.6.md`.
+- Weryfikacja 3.0.6: app 103/103, server 16/16, Google UI 3/3, updater 4/4, lint/build/Cap sync/Android assembleDebug PASS. APK 3.0.6 zbudowany i podpis debug zweryfikowany; brak podłączonego telefonu, runtime UNVERIFIED. Szczegóły: `CHANGELOG-V3.0.6.md`.

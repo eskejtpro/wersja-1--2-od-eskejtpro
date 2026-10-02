@@ -10,7 +10,7 @@ Niniejsza macierz przedstawia aktualny zakres i wyniki testów wersji 3.0.6. Tes
 - **Testy UI Google i konfiguracji Androida**: 3 / 3 (**PASS - 100%**)
 - **Testy serwisu aktualizacji**: 4 / 4 (**PASS**, `npm run test:update`)
 - **Kompilacja TypeScript i Linter**: `tsc --noEmit` (**PASS - 0 błędów**)
-- **Web build / Capacitor sync**: (**PASS**). Android assembleDebug/APK 3.0.6: **UNVERIFIED** — dostępny JDK 17 nie obsługuje źródeł Java 21 wymaganych przez zależność Android.
+- **Web build / Capacitor sync / Android assembleDebug**: (**PASS**); APK debug 3.0.6 zweryfikowany; instalacja na urządzeniu **UNVERIFIED** (brak podłączonego telefonu, emulator nieuruchomiony przy 1.63 GB wolnej RAM).
 - **Błędy krytyczne**: 0 (**FAIL: 0**)
 
 ---
