@@ -1,6 +1,6 @@
-# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.4)
+# AGENT MASTER REPORT: PlanPasika.v2 (GymTracker Pro v3.0.5)
 > **DOKUMENTACJA ARCHITEKTONICZNA, SYSTEMOWA I PROCEDURA TESTOWA DLA AGENTÓW AI**
-> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.4 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
+> *Ostatnia aktualizacja: 2026-10-02 | Wersja aplikacji: v3.0.5 | Środowisko: Web / PWA / Android (Capacitor) / Windows Desktop (Electron)*
 >
 > **Ważne:** starsze opisy architektury poniżej zawierają deklaracje odziedziczone z wcześniejszych wersji. Zweryfikowany stan wykonawczy i jawne ograniczenia są zapisane w sekcji „Aktualizacja stanu 3.0.2” na końcu; w szczególności aktywny Android data store nie jest Room SQLite.
 
@@ -217,3 +217,10 @@ Kiedy jakikolwiek Agent AI przejmuje pracę nad projektem, **MÓSI BEZWZGLĘDNIE
 - Timer nie jest domyślnie aktywny. Start/wznowienie jest jawne; potwierdzenie zakończenia zapisuje inactive, a ukończenie serii automatycznie rozpoczyna sesję, jeśli nie została rozpoczęta wcześniej.
 - WakeLock jest scentralizowany i warunkowany ustawieniem, aktywną/niewstrzymaną sesją oraz widokiem planu; zwalniany przy ukryciu strony i wznowieniu zarządzany po powrocie. Realne zachowanie Android/Xiaomi pozostaje UNVERIFIED.
 - Testy: app 100/100, server 15/15, Google UI 3/3, update service 4/4, lint/build/Capacitor sync/assembleDebug PASS. APK 3.0.4 i SHA-256: `CHANGELOG-V3.0.4.md`.
+
+## Aktualizacja stanu 3.0.5 (2026-10-02)
+
+- Bez działającego Gemini serwer nie tworzy już fikcyjnej oceny badań jako „w normie”; zwraca 503 `ai_unavailable`. UI pokazuje jasno, że wyniki nie zostały ocenione.
+- Usunięto z żądania do audytu zdrowia niewykorzystywane notatki kalendarza. Prompt ogranicza wynik do edukacyjnego omówienia, nie diagnozy/leczenia.
+- Wersja package/API/UI/Android: 3.0.5, Android `versionCode=305`; testy i artefakt w `CHANGELOG-V3.0.5.md`.
+- Weryfikacja 3.0.5: app 102/102, server 16/16, Google UI 3/3, updater 4/4, lint/build/Cap sync/Android assembleDebug PASS. Urządzenie fizyczne UNVERIFIED.

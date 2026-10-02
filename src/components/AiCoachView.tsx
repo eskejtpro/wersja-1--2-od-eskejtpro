@@ -798,16 +798,19 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bloodTests,
-          notes: calendarNotes,
           bodyWeight: currentWeight
         })
       });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+      if (typeof data.auditText !== 'string' || !data.auditText.trim()) {
+        throw new Error('Brak wyniku analizy zdrowotnej.');
+      }
       setHealthAuditText(data.auditText);
       soundService.playSuccess();
     } catch (e) {
       console.error(e);
-      setHealthAuditText(`## Raport Zdrowotny & Regeneracji (Offline)\nWszystkie zarejestrowane parametry są stabilne. Pamiętaj o regularnej kontroli prób wątrobowych i lipidogramu.`);
+      setHealthAuditText('## Analiza zdrowotna niedostępna\nNie oceniono wyników. Sprawdź połączenie lub konfigurację AI i spróbuj ponownie. W razie wątpliwości omów wyniki z lekarzem.');
     } finally {
       setIsAuditingHealth(false);
     }

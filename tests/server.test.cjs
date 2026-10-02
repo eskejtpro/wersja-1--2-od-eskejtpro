@@ -81,7 +81,7 @@ test.after(async () => {
 test('health and version expose persistent-server capabilities', async () => {
   const health = await request('/api/health');
   assert.equal(health.response.status, 200);
-  assert.equal(health.body.version, '3.0.4');
+  assert.equal(health.body.version, '3.0.5');
   assert.equal(health.body.apiVersion, '1');
   assert.equal(health.body.capabilities.includes('google_oidc_login'), false);
   assert.equal(health.response.headers.get('x-content-type-options'), 'nosniff');
@@ -89,6 +89,33 @@ test('health and version expose persistent-server capabilities', async () => {
   const version = await request('/api/version');
   assert.equal(version.body.schemaVersion, 1);
   assert.equal(version.body.capabilities.includes('google_oidc_login'), false);
+});
+
+test('health audit is explicitly unavailable without AI and never claims normal results', async () => {
+  const oldGeminiKey = process.env.GEMINI_API_KEY;
+  const oldApiKey = process.env.API_KEY;
+  delete process.env.GEMINI_API_KEY;
+  delete process.env.API_KEY;
+  try {
+    const result = await request('/api/ai/coach/audit-health', {
+      method: 'POST',
+      body: JSON.stringify({ bloodTests: [{ name: 'ALT', value: 900, unit: 'U/L' }], bodyWeight: 80 }),
+    });
+    assert.equal(result.response.status, 503);
+    assert.equal(result.body.error, 'ai_unavailable');
+    assert.equal('auditText' in result.body, false);
+    assert.doesNotMatch(JSON.stringify(result.body), /normach|stabilne|mieszczą się/i);
+    const invalid = await request('/api/ai/coach/audit-health', {
+      method: 'POST', body: JSON.stringify({ bloodTests: 'not-an-array', bodyWeight: 80 }),
+    });
+    assert.equal(invalid.response.status, 400);
+    assert.equal(invalid.body.error, 'invalid_health_audit_input');
+  } finally {
+    if (oldGeminiKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = oldGeminiKey;
+    if (oldApiKey === undefined) delete process.env.API_KEY;
+    else process.env.API_KEY = oldApiKey;
+  }
 });
 
 test('login, logout, TTL and rate limiting are enforced', async () => {

@@ -12,7 +12,7 @@ import { GoogleIdentityError, type GoogleIdTokenVerifier, verifyGoogleIdToken } 
 
 dotenv.config();
 
-export const APP_VERSION = '3.0.4';
+export const APP_VERSION = '3.0.5';
 export const API_VERSION = '1';
 export const SCHEMA_VERSION = 1;
 
@@ -960,15 +960,14 @@ Podaj dla każdego dnia:
   // Audytor Zdrowia & Badań Krwi AI
   app.post('/api/ai/coach/audit-health', requireAiSession, async (req, res) => {
     try {
-      const { bloodTests = [], notes = [], bodyWeight = 85 } = req.body || {};
+      const { bloodTests = [], bodyWeight = 85 } = req.body || {};
+      if (!Array.isArray(bloodTests) || !Number.isFinite(bodyWeight) || bodyWeight <= 0) {
+        return res.status(400).json({ error: 'invalid_health_audit_input' });
+      }
       const ai = getAi();
 
       if (!ai) {
-        return res.json({
-          auditText: `## Podsumowanie Zdrowotne (Tryb Offline)\n- Zarejestrowanych parametrów krwi: ${bloodTests.length}\n- Waga ciała: ${bodyWeight} kg\n\nWszystkie podstawowe wskaźniki mieszczą się w normach referencyjnych. Pamiętaj o regularnej kontroli lipidogramu i prób wątrobowych.`,
-          model: 'local_heuristic',
-          timestamp: new Date().toISOString()
-        });
+        return res.status(503).json({ error: 'ai_unavailable', message: 'Analiza zdrowotna AI jest niedostępna. Wyników nie oceniono.' });
       }
 
       const testsList = bloodTests.map((b: any) => `- ${b.testName || b.name}: ${b.value} ${b.unit || ''} (Norma ref: ${b.minNormal || '-'}-${b.maxNormal || '-'}, Data: ${b.date || '-'})`).join('\n');
@@ -978,22 +977,28 @@ Waga ciała: ${bodyWeight} kg
 Wyniki badań laboratoryjnych:
 ${testsList || 'Brak wprowadzonych parametrów'}
 
-Zadanie:
-1. Przeanalizuj odchylenia od norm referencyjnych.
-2. Wskaż parametry wymagające uwagi (np. profil lipidowy, enzymy wątrobowe ALT/AST, morfologia, hormony).
-3. Zaproponuj konkretne zalecenia dietetyczne, suplementacyjne i lifestyle'owe wspierające regenerację narządową.`;
+Zasady i zadanie:
+1. To wyłącznie edukacyjny opis, nie diagnoza ani porada medyczna.
+2. Omawiaj zakres referencyjny tylko wtedy, gdy użytkownik podał go jawnie; przy jego braku nie nazywaj wyniku prawidłowym ani nieprawidłowym.
+3. Możesz wskazać, które wyniki warto omówić z lekarzem. Nie zalecaj leczenia, leków, dawek ani zmian protokołu.
+4. Nie wyciągaj wniosków z brakujących danych; jasno opisz ograniczenia.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
-          systemInstruction: 'Jesteś Doświadczonym Konsultantem Medycyny Sportowej. Przeprowadzasz precyzyjną ocenę profilaktyczną parametrów krwi u zawodników sportów siłowych, formułując wnioski edukacyjno-profilaktyczne.',
+          systemInstruction: 'Przygotowujesz wyłącznie edukacyjne, nie-diagnostyczne omówienie danych zdrowotnych. Nie diagnozujesz, nie ustalasz leczenia ani dawek. Nie deklarujesz normy bez podanego zakresu referencyjnego. Zachęcaj do konsultacji z wykwalifikowanym pracownikiem ochrony zdrowia.',
           temperature: 0.5,
         }
       });
 
+      const auditText = response.text?.trim();
+      if (!auditText) {
+        return res.status(502).json({ error: 'ai_response_unavailable', message: 'Nie otrzymano wyniku analizy; dane nie zostały ocenione.' });
+      }
+
       return res.json({
-        auditText: response.text,
+        auditText,
         model: 'gemini-3.8-flash',
         timestamp: new Date().toISOString()
       });
