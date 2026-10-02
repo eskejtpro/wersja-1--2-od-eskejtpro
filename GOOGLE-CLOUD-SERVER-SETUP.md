@@ -20,6 +20,12 @@ Telefon wysyła żądania HTTPS do usługi Cloud Run. Google kończy TLS i przek
 3. Decyzja, czy powstać ma jedynie prywatna usługa diagnostyczna Cloud Run, czy backend z trwałymi danymi i logowaniem. Kod obsługuje opcjonalny Firestore Standard, ale wymaga jeszcze testu z prawdziwą bazą i decyzji o kosztach. Firestore ma bezpłatną pulę, lecz ponad nią również może kosztować. Alternatywa bez nowego magazynu to pozostawienie trybu lokalnego; nie daje synchronizacji między telefonami.
 4. Przed udostępnieniem serwera aplikacji: test restartu procesu, równoległych zapisów, konfliktu rewizji, izolacji kont i wygasania sesji.
 
+## Kontrola kosztów przed wdrożeniem
+
+- Dla pierwszej usługi wybrać rozliczanie za żądania, minimalną liczbę instancji `0` i małą maksymalną liczbę instancji (np. `1`). Zerowe minimum pozwala wygaszać bezczynne instancje; limit maksimum ogranicza skalowanie, ale według Google może zostać chwilowo przekroczony, więc nie jest gwarancją zerowego kosztu.
+- Ustawić budżet i alerty dla projektu, lecz nie traktować zwykłego budżetu jako twardego ograniczenia: alerty nie zatrzymują automatycznie naliczania opłat. Jeśli dostępne jest ograniczenie wydatków Cloud Run (funkcja preview), sprawdzić osobno jego zakres; nie obejmuje automatycznie każdego kosztu projektu.
+- Przed użyciem Firestore, Cloud Build i Artifact Registry sprawdzić ich osobne limity i koszty. Nie włączać rozliczeń, nie tworzyć bazy ani nie wdrażać usługi, dopóki właściciel projektu nie wybierze akceptowalnego zakresu kosztów.
+
 ## Kolejność konfiguracji po podaniu projektu i decyzji kosztowej
 
 1. Otworzyć [Cloud Run w Google Cloud Console](https://console.cloud.google.com/run), zweryfikować konto, projekt, uprawnienia i rozliczenia.
@@ -35,3 +41,5 @@ Telefon wysyła żądania HTTPS do usługi Cloud Run. Google kończy TLS i przek
 - [Buildpack Node.js](https://docs.cloud.google.com/docs/buildpacks/nodejs) — skrypty `build` i `start`.
 - [Cennik Cloud Run](https://cloud.google.com/run/pricing) oraz [cennik Firestore](https://cloud.google.com/firestore/pricing) — bezpłatne pule i opłaty ponad limit.
 - [Regiony Cloud Run](https://cloud.google.com/run/docs/locations) — dostępność Warszawy.
+- [Maksymalna liczba instancji](https://docs.cloud.google.com/run/docs/configuring/max-instances), [minimalna liczba instancji](https://docs.cloud.google.com/run/docs/configuring/min-instances) i [rozliczanie Cloud Run](https://docs.cloud.google.com/run/docs/configuring/billing-settings) — ustawienia skali i płatności.
+- [Budżety Google Cloud](https://docs.cloud.google.com/billing/docs/how-to/budgets) i [ograniczenia wydatków](https://docs.cloud.google.com/billing/docs/how-to/budgets-spend-caps) — alerty a ograniczenia, w tym zakres funkcji preview.
