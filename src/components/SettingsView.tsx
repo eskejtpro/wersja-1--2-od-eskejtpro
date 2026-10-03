@@ -48,6 +48,7 @@ import { CloudTrainingSyncPanel } from './CloudTrainingSyncPanel';
 import type { CloudTrainingSync } from '../utils/useCloudTrainingSync';
 import { AppKnowledgeGuide } from './AppKnowledgeGuide';
 import { TurboPowerSettingsPanel } from './TurboPowerSettingsPanel';
+import { GOOGLE_CLOUD_SHARED_URL } from '../utils/serverApi';
 
 interface SettingsViewProps {
   data: GymData;
@@ -118,6 +119,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [activeCategory, setActiveCategory] = useState<SettingsCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const configuredGoogleServer = (data.settings.updateServerUrl || GOOGLE_CLOUD_SHARED_URL).trim().replace(/\/+$/, '');
+  const hasGoogleSession = Boolean(data.settings.googleUser && googleSession?.token &&
+    googleSession.serverUrl.trim().replace(/\/+$/, '') === configuredGoogleServer);
   const [copied, setCopied] = useState(false);
   const [importError, setImportError] = useState('');
 
@@ -206,8 +210,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       title: 'Serwer Google & Logowanie',
       shortTitle: 'Serwer Google',
       description: 'Logowanie przez Google i skonfigurowany serwer API',
-      badge: data.settings.googleUser ? `● ${data.settings.googleUser.displayName}` : 'Google OAuth',
-      badgeColor: data.settings.googleUser ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30' : 'text-sky-300 bg-sky-500/15 border-sky-500/30',
+      badge: hasGoogleSession ? `● ${data.settings.googleUser?.displayName}` : data.settings.googleUser ? 'Zaloguj ponownie' : 'Google OAuth',
+      badgeColor: hasGoogleSession ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30' : 'text-sky-300 bg-sky-500/15 border-sky-500/30',
       icon: GoogleGIcon,
       accentColor: 'from-sky-500 to-blue-600',
       iconBg: 'bg-white text-slate-900 border-slate-300 shadow-sm',
@@ -297,7 +301,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       iconBg: 'bg-amber-500/10 text-amber-400 border-amber-500/25',
       keywords: ['poradnik', 'wzory', 'wiedza', 'instrukcja', 'przewodnik', 'dokumentacja', 'kalkulator']
     }
-  ], [data.settings, backups.length]);
+  ], [data.settings, backups.length, hasGoogleSession]);
 
   // Filtrowanie kafelków według zapytania wyszukiwania
   const filteredCategories = useMemo(() => {
@@ -421,20 +425,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="text-xs font-black text-slate-100 uppercase tracking-wider">
                     Logowanie Google
                   </span>
-                  {data.settings.googleUser ? (
+                  {hasGoogleSession ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Zautoryzowano: {data.settings.googleUser.displayName}
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Sesja API aktywna: {data.settings.googleUser?.displayName}
                     </span>
                   ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[10px] font-bold">
-                      OAuth wymaga konfiguracji
+                      {data.settings.googleUser ? 'Konto zapamiętane — zaloguj ponownie' : 'Niezalogowany'}
                     </span>
                   )}
                 </div>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  {data.settings.googleUser 
-                    ? `Połączono z kontem: ${data.settings.googleUser.email} • ID token zweryfikowany przez API`
-                    : 'Połącz konto Google z serwerem API po skonfigurowaniu OAuth.'}
+                  {hasGoogleSession
+                    ? `Połączono z kontem: ${data.settings.googleUser?.email}`
+                    : data.settings.googleUser
+                      ? 'Dane konta są zapamiętane. Zaloguj się ponownie, aby korzystać z serwera.'
+                      : 'Zaloguj się kontem Google, aby połączyć się z serwerem API.'}
                 </p>
               </div>
             </div>
