@@ -73,12 +73,13 @@ export function normalizeGymDataToRelational(gymData: GymData, defaultPlanId = '
           dayId: dayId,
           name: ex.name,
           category: ex.category || 'klatka',
-          sets: Number(ex.sets) || 3,
-          reps: Number(ex.reps) || 10,
-          weight: Number(ex.weight) || 0,
+          sets: Number.isFinite(ex.sets) ? ex.sets : 3,
+          reps: Number.isFinite(ex.reps) ? ex.reps : 10,
+          weight: Number.isFinite(ex.weight) ? ex.weight : 0,
           goalWeight: ex.goalWeight,
-          rpe: Number(ex.rpe) || 8,
+          rpe: Number.isFinite(ex.rpe) ? ex.rpe : 8,
           notes: ex.notes,
+          history: Array.isArray(ex.history) ? JSON.parse(JSON.stringify(ex.history)) : [],
           orderIndex: exIdx
         });
 
@@ -150,7 +151,7 @@ export function denormalizeRelationalToWeeks(schema: NormalizedDatabaseSchema, p
           goalWeight: ex.goalWeight,
           rpe: ex.rpe,
           notes: ex.notes || '',
-          history: [],
+          history: Array.isArray(ex.history) ? JSON.parse(JSON.stringify(ex.history)) : [],
           loggedSets: mappedSets
         };
       });

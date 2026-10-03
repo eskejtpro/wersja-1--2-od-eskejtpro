@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { requestAi, assertAiResponseCurrent } from '../utils/aiRemoteClient';
 import { 
   Bot, 
   Send, 
@@ -570,7 +571,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
     setPlayingAudioId(messageId);
 
     try {
-      const response = await fetch('/api/ai/coach/tts', {
+      const response = await requestAi('/api/ai/coach/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -581,6 +582,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
 
       if (response.ok) {
         const data = await response.json();
+        assertAiResponseCurrent(response);
         if (data.audioBase64) {
           const audio = new Audio(`data:audio/wav;base64,${data.audioBase64}`);
           audioRef.current = audio;
@@ -636,7 +638,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
 
     try {
       const context = buildAthleteContext();
-      const response = await fetch('/api/ai/coach/chat', {
+      const response = await requestAi('/api/ai/coach/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -652,7 +654,9 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
       }
 
       const data = await response.json();
-      const { cleanContent, action, actions } = parseAiResponseAction(data.reply || '', messageText);
+      assertAiResponseCurrent(response);
+      if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('Brak odpowiedzi AI.');
+      const { cleanContent, action, actions } = parseAiResponseAction(data.reply, messageText);
       const botMessage: AiChatMessage = {
         id: `msg-bot-${Date.now()}`,
         role: 'assistant',
@@ -696,7 +700,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
   const handleGeneratePlanTab = async () => {
     setIsGeneratingPlan(true);
     try {
-      const response = await fetch('/api/ai/coach/generate-plan', {
+      const response = await requestAi('/api/ai/coach/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -707,11 +711,13 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
         })
       });
       const data = await response.json();
+      assertAiResponseCurrent(response);
+      if (!response.ok || typeof data.planText !== 'string' || !data.planText.trim()) throw new Error('Brak planu AI.');
       setGeneratedPlanText(data.planText);
       soundService.playSuccess();
     } catch (e) {
       console.error(e);
-      setGeneratedPlanText(`## Wygenerowany Plan Treningowy (Tryb Offline)\n- Cel: ${planGoal}\n- Split: ${planSplit}\n- Dni: ${planDays}\n\n1. Dzień 1: Push\n2. Dzień 2: Pull\n3. Dzień 3: Legs\n4. Dzień 4: Upper Power`);
+      setGeneratedPlanText('## AI niedostępne\nNie wygenerowano planu. Sprawdź logowanie, połączenie i konfigurację AI na serwerze.');
     } finally {
       setIsGeneratingPlan(false);
     }
@@ -720,9 +726,10 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
   // Generator Makro Tab
   const handleGenerateNutritionTab = async () => {
     setIsGeneratingNutrition(true);
+    setGeneratedMacros(null);
     try {
       const currentWeight = bodyWeights.length > 0 ? bodyWeights[bodyWeights.length - 1].weight : (profile?.targetWeight || 84);
-      const response = await fetch('/api/ai/coach/nutrition-plan', {
+      const response = await requestAi('/api/ai/coach/nutrition-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -734,6 +741,8 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
         })
       });
       const data = await response.json();
+      assertAiResponseCurrent(response);
+      if (!response.ok || typeof data.planText !== 'string' || !data.planText.trim()) throw new Error('Brak planu żywieniowego AI.');
       setGeneratedNutritionText(data.planText);
       if (data.macros) {
         setGeneratedMacros(data.macros);
@@ -741,6 +750,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
       soundService.playSuccess();
     } catch (e) {
       console.error(e);
+      setGeneratedNutritionText('## AI niedostępne\nNie wygenerowano planu żywieniowego. Sprawdź logowanie i konfigurację serwera.');
     } finally {
       setIsGeneratingNutrition(false);
     }
@@ -750,7 +760,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
   const handleSwapExerciseTab = async () => {
     setIsSwapping(true);
     try {
-      const response = await fetch('/api/ai/coach/swap-exercise', {
+      const response = await requestAi('/api/ai/coach/swap-exercise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -760,11 +770,13 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
         })
       });
       const data = await response.json();
-      setSwapResultText(data.explanation || 'Znaleziono optymalne biomechaniczne zamienniki.');
+      assertAiResponseCurrent(response);
+      if (!response.ok || typeof data.explanation !== 'string' || !data.explanation.trim()) throw new Error('Brak wyniku AI.');
+      setSwapResultText(data.explanation);
       soundService.playSuccess();
     } catch (e) {
       console.error(e);
-      setSwapResultText(`## Rekomendowane Zamienniki Biomechaniczne (Offline)\n1. **${swapExerciseName} na hantlach** - lepszy profil oporu i naturalny tor ruchu stawu.\n2. **Wyciskanie na maszynie Hammer Strength** - izolacja i maksymalna stabilizacja.`);
+      setSwapResultText('## AI niedostępne\nNie dobrano zamienników. Sprawdź logowanie, połączenie i konfigurację AI na serwerze.');
     } finally {
       setIsSwapping(false);
     }
@@ -775,7 +787,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
     setIsAuditingHealth(true);
     try {
       const currentWeight = bodyWeights.length > 0 ? bodyWeights[bodyWeights.length - 1].weight : 85;
-      const response = await fetch('/api/ai/coach/audit-health', {
+      const response = await requestAi('/api/ai/coach/audit-health', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -785,6 +797,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+      assertAiResponseCurrent(response);
       if (typeof data.auditText !== 'string' || !data.auditText.trim()) {
         throw new Error('Brak wyniku analizy zdrowotnej.');
       }

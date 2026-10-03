@@ -557,6 +557,8 @@ export interface ExerciseEntity {
   goalWeight?: number;
   rpe: number;
   notes?: string;
+  /** Preserve completed historical workouts through structured JSON round trips. */
+  history?: ExerciseHistoryPoint[];
   orderIndex: number;
 }
 

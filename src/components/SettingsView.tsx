@@ -44,11 +44,14 @@ import { AgentSettingsPanel } from './AgentSettingsPanel';
 import { LayoutCustomizerSettings } from './LayoutCustomizerSettings';
 import { AppIntegrityDiagnosticRunner } from './AppIntegrityDiagnosticRunner';
 import { AppUpdateServerPanel } from './AppUpdateServerPanel';
+import { CloudTrainingSyncPanel } from './CloudTrainingSyncPanel';
+import type { CloudTrainingSync } from '../utils/useCloudTrainingSync';
 import { AppKnowledgeGuide } from './AppKnowledgeGuide';
 import { TurboPowerSettingsPanel } from './TurboPowerSettingsPanel';
 
 interface SettingsViewProps {
   data: GymData;
+  cloudSync: CloudTrainingSync;
   googleSession: { token: string; serverUrl: string } | null;
   onGoogleSessionChange: (session: { token: string; serverUrl: string } | null) => void;
   onUpdateSettings: (settings: Partial<AppSettings>) => void;
@@ -98,6 +101,7 @@ const GoogleGIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   data,
+  cloudSync,
   googleSession,
   onGoogleSessionChange,
   onUpdateSettings,
@@ -577,6 +581,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           googleSession={googleSession}
           onGoogleSessionChange={onGoogleSessionChange}
         />
+        <CloudTrainingSyncPanel data={data} sync={cloudSync} />
       </div>
 
       {/* ========================================================================= */}

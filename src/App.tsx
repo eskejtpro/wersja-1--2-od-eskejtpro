@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Preferences } from '@capacitor/preferences';
 import { ModernSidebar } from './components/ModernSidebar';
 import { ModernHeader } from './components/ModernHeader';
 import { AndroidBottomNav } from './components/AndroidBottomNav';
@@ -31,9 +32,24 @@ import { roomDatabase } from './data/db/RoomDatabase';
 import { initializeLocalDatabaseFlow } from './data/db/initializeLocalDatabase';
 import { normalizeGymDataToRelational } from './domain/mappers';
 import { shouldHoldWorkoutWakeLock } from './utils/workoutSessionStorage';
+import { useCloudTrainingSync } from './utils/useCloudTrainingSync';
+import { setAiRemoteSession } from './utils/aiRemoteClient';
+import { trainingFingerprint } from './utils/cloudTrainingData';
+import { beginCloudRestoreRecovery, finishCloudRestoreRecovery, readCloudRestoreRecovery, hasCloudRestoreRecovery } from './utils/cloudRestoreRecovery';
 
 const STORAGE_KEY = 'gymtracker_windows_data_v1';
 const BACKUPS_STORAGE_KEY = 'gymtracker_autobackups_v1';
+function verifyCompleteLocalSnapshot(snapshot: GymData): void {
+  const raw = JSON.stringify(snapshot);
+  if (window.gymDesktop) {
+    window.gymDesktop.setItem(STORAGE_KEY, raw);
+    if (window.gymDesktop.getItem(STORAGE_KEY) !== raw) throw new Error('Odczyt lokalnego zapisu nie zgadza się z kopią.');
+  } else {
+    localStorage.setItem(STORAGE_KEY, raw);
+    if (localStorage.getItem(STORAGE_KEY) !== raw) throw new Error('Odczyt lokalnego zapisu nie zgadza się z kopią.');
+  }
+  roomDatabase.verifyPersistedTables();
+}
 const normalizeGymData = (raw: GymData): GymData => {
   const rawSettings = raw.settings || {};
   const isMigrated = (rawSettings as { _analysisSectionsHiddenDefaultV2?: boolean })._analysisSectionsHiddenDefaultV2 === true;
@@ -73,6 +89,10 @@ export default function App() {
   const [data, setData] = useState<GymData>(() => {
     try {
       roomDatabase.initialize();
+      try {
+        const cloudRecovery = readCloudRestoreRecovery();
+        if (cloudRecovery) return normalizeGymData(cloudRecovery);
+      } catch { console.error('Kopia odzyskiwania wymaga sprawdzenia. Zachowano dane lokalne i dziennik.'); }
       if (roomDatabase.hasStructuredData()) {
         const fromRoom = roomDatabase.loadGymData();
         if (fromRoom && fromRoom.weeks && fromRoom.weeks.length > 0) {
@@ -197,12 +217,26 @@ export default function App() {
   // 1. Inicjalizacja podzielonego magazynu lokalnego z zachowaniem już wczytanych danych
   const [isDbReady, setIsDbReady] = useState<boolean>(false);
   const [googleSession, setGoogleSession] = useState<{ token: string; serverUrl: string } | null>(null);
+  const googleSessionRef = useRef<{ token: string; serverUrl: string } | null>(null);
+  const updateGoogleSession = useCallback((session: { token: string; serverUrl: string } | null) => {
+    googleSessionRef.current = session;
+    setAiRemoteSession(session);
+    setGoogleSession(session);
+  }, []);
+  useEffect(() => () => setAiRemoteSession(null), []);
 
   useEffect(() => {
     let isCancelled = false;
 
     async function initializeLocalDatabase() {
       try {
+        const interruptedRestore = readCloudRestoreRecovery();
+        if (interruptedRestore) {
+          const recovered = normalizeGymData(interruptedRestore);
+          await roomDatabase.atomicWriteFromGymData(recovered);
+          verifyCompleteLocalSnapshot(recovered);
+          finishCloudRestoreRecovery();
+        }
         const result = await initializeLocalDatabaseFlow(roomDatabase, data);
         if (!isCancelled) {
           setData(normalizeGymData(result.data));
@@ -214,8 +248,8 @@ export default function App() {
       } catch (err) {
         console.error('Błąd inicjalizacji lokalnego magazynu danych:', err);
         if (!isCancelled) {
-          setAutoSaveStatus('Tryb awaryjny offline');
-          setIsDbReady(true);
+          setAutoSaveStatus(hasCloudRestoreRecovery() ? 'Zapis wstrzymany: kopia odzyskiwania wymaga sprawdzenia' : 'Tryb awaryjny offline');
+          setIsDbReady(!hasCloudRestoreRecovery());
         }
       }
     }
@@ -330,6 +364,7 @@ export default function App() {
   // Pełny, automatyczny zapis przy dowolnej zmianie stanu Androida (lifecycle onPause/onStop/background)
   useEffect(() => {
     const flushDataToDisk = () => {
+      if (!isDbReady || isWritingRef.current || hasCloudRestoreRecovery()) return;
       const current = pendingDataRef.current || data;
       try {
         roomDatabase.runInTransaction(() => {
@@ -1339,6 +1374,58 @@ export default function App() {
     }
   };
 
+  const cloudSync = useCloudTrainingSync({
+    data,
+    session: googleSession,
+    userId: data.settings.googleUser?.id || '',
+    isSessionCurrent: (session) => googleSessionRef.current?.token === session.token && googleSessionRef.current?.serverUrl === session.serverUrl,
+    isWorkoutActive: workoutTimer.hasActiveSession || Boolean(data.activeSessionDraft),
+    backup: async (current) => {
+      createAutoBackup(current, 'manual');
+      // The general persistence helper can fall back to memory. Recovery must have a real disk copy.
+      const saved = window.gymDesktop ? window.gymDesktop.getItem(BACKUPS_STORAGE_KEY) : localStorage.getItem(BACKUPS_STORAGE_KEY);
+      const copies = saved ? JSON.parse(saved) as BackupEntry[] : [];
+      if (!copies[0]?.data || JSON.stringify(copies[0].data) !== JSON.stringify(current)) {
+        throw new Error('Nie udało się zapisać lokalnej kopii zapasowej. Przywracanie zostało zatrzymane.');
+      }
+      if (Capacitor.isNativePlatform()) await Preferences.set({ key: BACKUPS_STORAGE_KEY, value: saved! });
+    },
+    apply: async (restored, expectedFingerprint, ensureCurrent) => {
+      ensureCurrent();
+      if (workoutTimer.hasActiveSession || pendingDataRef.current.activeSessionDraft) {
+        throw new Error('Zakończ aktywny trening przed przywróceniem kopii.');
+      }
+      if (trainingFingerprint(pendingDataRef.current) !== expectedFingerprint) {
+        throw new Error('Dane lokalne zmieniły się. Sprawdź kopię ponownie.');
+      }
+      if (isWritingRef.current) throw new Error('Trwa zapis lokalny. Spróbuj ponownie za chwilę.');
+      if (writeTimeoutRef.current) clearTimeout(writeTimeoutRef.current);
+      const normalized = normalizeGymData(restored);
+      const previous = pendingDataRef.current;
+      beginCloudRestoreRecovery(previous);
+      isWritingRef.current = true;
+      try {
+        await roomDatabase.atomicWriteFromGymData(normalized);
+        ensureCurrent();
+        if (workoutTimer.hasActiveSession || pendingDataRef.current.activeSessionDraft) throw new Error('Rozpoczęto trening. Przywracanie cofnięto.');
+        verifyCompleteLocalSnapshot(normalized);
+        finishCloudRestoreRecovery();
+        pendingDataRef.current = normalized;
+        setData(normalized);
+        setSelectedWeekId(normalized.weeks[0]?.id || '');
+        setSelectedDayId(normalized.weeks[0]?.days[0]?.id || '');
+        setAutoSaveStatus('Przywrócono kopię chmurową i zapisano lokalnie');
+      } catch (error) {
+        try {
+          await roomDatabase.atomicWriteFromGymData(previous);
+          verifyCompleteLocalSnapshot(previous);
+          finishCloudRestoreRecovery();
+        } catch { /* Startup recovery keeps the original snapshot if rollback cannot finish. */ }
+        throw error;
+      } finally { isWritingRef.current = false; }
+    },
+  });
+
   const isDark = data.settings.theme === 'dark';
   const currentWeek = data.weeks.find((w) => w.id === selectedWeekId) || data.weeks[0];
   const currentDay = currentWeek?.days.find((d) => d.id === selectedDayId) || currentWeek?.days[0];
@@ -1637,9 +1724,10 @@ export default function App() {
           {activeView === 'settings' && (
             <SettingsView
               data={data}
+              cloudSync={cloudSync}
               onUpdateSettings={handleUpdateSettings}
               googleSession={googleSession}
-              onGoogleSessionChange={setGoogleSession}
+              onGoogleSessionChange={updateGoogleSession}
               onExportJson={handleExportJson}
               onImportJson={handleImportJson}
               onResetData={handleResetData}

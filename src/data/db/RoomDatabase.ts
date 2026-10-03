@@ -11,7 +11,7 @@ import {
   SessionDao,
   ActiveSessionDao
 } from './daos/index';
-import { roomStorage, RoomStorageDriver } from './storage/RoomStorageDriver';
+import { roomStorage, RoomStorageDriver, ROOM_TABLE_PREFIX, RoomTableName } from './storage/RoomStorageDriver';
 import {
   GymData,
   AppSettings,
@@ -19,7 +19,9 @@ import {
   CalendarDayNote,
   UserProfile,
   SyncServerConfig,
-  SyncLogEntry
+  SyncLogEntry,
+  AiChatMessage,
+  AiAgentMemory
 } from '../../types';
 import { initialGymData } from '../initialData';
 import { normalizeGymDataToRelational, denormalizeRelationalToWeeks } from '../../domain/mappers';
@@ -93,13 +95,17 @@ export class RoomDatabase {
     };
 
     const weeks = denormalizeRelationalToWeeks(relational);
-    const settings = this.storageDriver.readTable<AppSettings>('settings', initialGymData.settings);
-    const protocols = this.storageDriver.readTable<ProtocolEntry[]>('protocols', []);
-    const calendarNotes = this.storageDriver.readTable<CalendarDayNote[]>('calendar_notes' as any, initialGymData.calendarNotes || []);
-    const profile = this.storageDriver.readTable<UserProfile>('profiles', initialGymData.profile);
-    const profilesList = this.storageDriver.readTable<UserProfile[]>('profiles' as any, initialGymData.profilesList || []);
-    const syncConfig = this.storageDriver.readTable<SyncServerConfig>('settings' as any, initialGymData.syncConfig);
-    const syncLogs = this.storageDriver.readTable<SyncLogEntry[]>('settings' as any, []);
+    const legacy = this.readLegacyFullJson();
+    const settings = this.readTableWithLegacy('settings', initialGymData.settings, legacy?.settings, this.isObject);
+    const protocols = this.readTableWithLegacy('protocols', [], legacy?.protocolEntries, this.isArray);
+    const calendarNotes = this.readTableWithLegacy('calendar_notes', initialGymData.calendarNotes || [], legacy?.calendarNotes, this.isArray);
+    const profile = this.readTableWithLegacy('profiles', initialGymData.profile, legacy?.profile, this.isObject);
+    const profilesList = this.readTableWithLegacy('profiles_list', initialGymData.profilesList || [], legacy?.profilesList, this.isArray);
+    const syncConfig = this.readTableWithLegacy('sync_config', initialGymData.syncConfig, legacy?.syncConfig, this.isObject);
+    const syncLogs = this.readTableWithLegacy('sync_logs', [], legacy?.syncLogs, this.isArray);
+    const bloodTests = this.readTableWithLegacy('blood_tests', [], legacy?.bloodTests, this.isArray);
+    const aiChatHistory = this.readTableWithLegacy('ai_chat_history', [], legacy?.aiChatHistory, this.isArray);
+    const aiAgentMemories = this.readTableWithLegacy('ai_agent_memories', [], legacy?.aiAgentMemories, this.isArray);
     const bodyWeights = this.bodyWeightDao.getAll();
     const circumferences = this.circumferenceDao.getAll();
     const bodyPartMeasurements = this.bodyPartMeasurementDao.getAll();
@@ -120,6 +126,9 @@ export class RoomDatabase {
       profilesList,
       syncConfig,
       syncLogs,
+      bloodTests,
+      aiChatHistory,
+      aiAgentMemories,
       activeSessionDraft,
       workoutSessionsHistory
     };
@@ -156,18 +165,16 @@ export class RoomDatabase {
           }
 
           // 4. Zapis tabel konfiguracji i profili
-          if (gymData.settings) {
-            this.storageDriver.writeTable('settings', gymData.settings);
-          }
-          if (gymData.protocolEntries) {
-            this.storageDriver.writeTable('protocols', gymData.protocolEntries);
-          }
-          if (gymData.calendarNotes) {
-            this.storageDriver.writeTable('calendar_notes' as any, gymData.calendarNotes);
-          }
-          if (gymData.profile) {
-            this.storageDriver.writeTable('profiles', gymData.profile);
-          }
+          this.storageDriver.writeTable('settings', gymData.settings || initialGymData.settings);
+          this.storageDriver.writeTable('protocols', Array.isArray(gymData.protocolEntries) ? gymData.protocolEntries : []);
+          this.storageDriver.writeTable('calendar_notes', Array.isArray(gymData.calendarNotes) ? gymData.calendarNotes : []);
+          this.storageDriver.writeTable('profiles', gymData.profile || initialGymData.profile);
+          this.storageDriver.writeTable('profiles_list', Array.isArray(gymData.profilesList) ? gymData.profilesList : []);
+          this.storageDriver.writeTable('sync_config', gymData.syncConfig || initialGymData.syncConfig);
+          this.storageDriver.writeTable('sync_logs', Array.isArray(gymData.syncLogs) ? gymData.syncLogs : []);
+          this.storageDriver.writeTable('blood_tests', Array.isArray(gymData.bloodTests) ? gymData.bloodTests : []);
+          this.storageDriver.writeTable('ai_chat_history', Array.isArray(gymData.aiChatHistory) ? gymData.aiChatHistory : []);
+          this.storageDriver.writeTable('ai_agent_memories', Array.isArray(gymData.aiAgentMemories) ? gymData.aiAgentMemories : []);
         });
         resolve();
       } catch (err) {
@@ -175,6 +182,67 @@ export class RoomDatabase {
         reject(err);
       }
     });
+  }
+
+  /**
+   * Verifies the durable raw JSON partitions, never treating the driver's cache as proof.
+   * Every key is written by atomicWriteFromGymData, including an explicit `null` draft.
+   */
+  public verifyPersistedTables(): void {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      throw new Error('Brak trwałego localStorage do weryfikacji tabel Room.');
+    }
+
+    const tables: RoomTableName[] = [
+      'workout_plans', 'training_weeks', 'training_days', 'exercises', 'logged_sets',
+      'body_weights', 'circumferences', 'body_part_measurements', 'catalog_exercises',
+      'workout_sessions', 'active_session_draft', 'settings', 'protocols', 'calendar_notes',
+      'profiles', 'profiles_list', 'sync_config', 'sync_logs', 'blood_tests',
+      'ai_chat_history', 'ai_agent_memories'
+    ];
+
+    for (const table of tables) {
+      const key = `${ROOM_TABLE_PREFIX}${table}`;
+      const raw = window.localStorage.getItem(key);
+      if (raw === null) throw new Error(`Brak trwałej tabeli Room: ${table}.`);
+
+      const cachedRead = this.storageDriver.readTable<unknown>(table, undefined);
+      let expected: string | undefined;
+      try {
+        expected = JSON.stringify(cachedRead);
+      } catch {
+        throw new Error(`Nie można zserializować oczekiwanej tabeli Room: ${table}.`);
+      }
+      if (expected === undefined || raw !== expected) {
+        throw new Error(`Rozbieżność trwałej tabeli Room: ${table}.`);
+      }
+    }
+  }
+
+  private readLegacyFullJson(): Partial<GymData> | null {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return null;
+      const raw = window.localStorage.getItem('gymtracker_windows_data_v1');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as unknown;
+      return this.isObject(parsed) ? parsed as Partial<GymData> : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private readTableWithLegacy<T>(table: Parameters<RoomStorageDriver['readTable']>[0], fallback: T, legacy: unknown, valid: (value: unknown) => boolean): T {
+    const value = this.storageDriver.readTable<unknown>(table, undefined);
+    if (this.storageDriver.hasTable(table)) return valid(value) ? value as T : fallback;
+    return valid(legacy) ? legacy as T : fallback;
+  }
+
+  private isObject(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  private isArray<T>(value: unknown): value is T[] {
+    return Array.isArray(value);
   }
 
   /**

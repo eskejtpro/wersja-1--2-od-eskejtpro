@@ -22,7 +22,14 @@ export type RoomTableName =
   | 'active_session_draft'
   | 'settings'
   | 'protocols'
-  | 'profiles';
+  | 'calendar_notes'
+  | 'profiles'
+  | 'profiles_list'
+  | 'sync_config'
+  | 'sync_logs'
+  | 'blood_tests'
+  | 'ai_chat_history'
+  | 'ai_agent_memories';
 
 export class RoomStorageDriver {
   private inMemoryCache: Map<string, unknown> = new Map();
@@ -57,6 +64,16 @@ export class RoomStorageDriver {
 
     this.inMemoryCache.set(key, defaultValue);
     return defaultValue;
+  }
+
+  public hasTable(table: RoomTableName): boolean {
+    const key = this.getTableKey(table);
+    if (this.inMemoryCache.has(key)) return this.inMemoryCache.get(key) !== undefined;
+    try {
+      return typeof window !== 'undefined' && Boolean(window.localStorage?.getItem(key));
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -117,7 +134,14 @@ export class RoomStorageDriver {
       'active_session_draft',
       'settings',
       'protocols',
-      'profiles'
+      'calendar_notes',
+      'profiles',
+      'profiles_list',
+      'sync_config',
+      'sync_logs',
+      'blood_tests',
+      'ai_chat_history',
+      'ai_agent_memories'
     ];
 
     tables.forEach((t) => {

@@ -69,6 +69,7 @@ interface Session {
 
 interface AuthenticatedRequest extends Request {
   authSession?: Session;
+  requestId?: string;
 }
 
 interface LoginAttempt {
@@ -375,6 +376,7 @@ export function createApp(options: AppOptions = {}) {
   const sessions = new Map<string, Session>();
   const attempts = new Map<string, LoginAttempt>();
   const googleAttempts = new Map<string, LoginAttempt>();
+  const diagnosticsLastRun = new Map<string, number>();
   const dataStores = new Map<string, { filePath: string; state: StoredState | null; error: boolean }>();
   const localPrincipalId = `local:${config.username}`;
   const dataStoreFor = (principalId: string) => {
@@ -431,6 +433,10 @@ export function createApp(options: AppOptions = {}) {
   }));
   app.use(express.json({ limit: config.maxBodyBytes, strict: true }));
   app.use((req, res, next) => {
+    const suppliedRequestId = req.header('x-request-id');
+    const requestId = suppliedRequestId && /^[A-Za-z0-9._:-]{1,128}$/.test(suppliedRequestId) ? suppliedRequestId : crypto.randomUUID();
+    (req as AuthenticatedRequest).requestId = requestId;
+    res.setHeader('X-Request-Id', requestId);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
     const origin = req.headers.origin;
@@ -438,7 +444,8 @@ export function createApp(options: AppOptions = {}) {
     if (origin && isAllowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Vary', 'Origin');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Request-Id');
+      res.setHeader('Access-Control-Expose-Headers', 'X-Request-Id');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     }
     if (req.method === 'OPTIONS') return res.sendStatus(isAllowedOrigin ? 204 : 403);
@@ -738,6 +745,22 @@ export function createApp(options: AppOptions = {}) {
     }
   });
 
+  app.post('/api/diagnostics/firestore', requireSession, async (req, res) => {
+    const session = (req as AuthenticatedRequest).authSession as Session;
+    if (!config.isCloudRun || !cloudStore) return res.status(503).json({ error: 'cloud_store_not_configured' });
+    const lastRun = diagnosticsLastRun.get(session.principalId) || 0;
+    if (now() - lastRun < 60_000) return res.status(429).json({ error: 'diagnostics_throttled' });
+    diagnosticsLastRun.set(session.principalId, now());
+    try {
+      const result = await cloudStore.selfTest((req as AuthenticatedRequest).requestId);
+      cloudStoreVerified = result.status === 'pass';
+      return res.status(result.status === 'pass' ? 200 : 503).json(result);
+    } catch {
+      cloudStoreVerified = false;
+      return res.status(503).json({ status: 'fail', steps: [], error: 'cloud_store_unavailable' });
+    }
+  });
+
   app.get('/api/sync/status', requireSession, async (req, res) => {
     const session = (req as AuthenticatedRequest).authSession as Session;
     if (config.isCloudRun) {
@@ -874,6 +897,7 @@ Na obecnym etapie (${currentWeekName}) kluczem jest żelazna powtarzalność tec
 
       const ai = getAi();
       if (!ai) {
+        if (config.isCloudRun) return res.status(503).json({ error: 'ai_provider_not_configured', model: 'unavailable' });
         const heuristicReply = generateHeuristicCoachReply(message, athleteName, currentWeekName, lastWeight, persona);
         return res.json({
           reply: heuristicReply,
@@ -1001,6 +1025,7 @@ ZASADY ODPOWIEDZI:
 
       // Jeśli API Gemini jest niedostępne lub wyczerpał się limit zapytań (429), generujemy regułową odpowiedź zamiast HTTP 500
       if (!replyText) {
+        if (config.isCloudRun) return res.status(503).json({ error: 'ai_provider_unavailable', model: 'unavailable' });
         console.warn('[server] Wszystkie próby Gemini API nie powiodły się. Zastosowano inteligentną bazę wiedzy offline.');
         replyText = generateHeuristicCoachReply(message, athleteName, currentWeekName, lastWeight, persona);
         successfulModel = 'offline_knowledge_base';
@@ -1026,6 +1051,7 @@ ZASADY ODPOWIEDZI:
       const ai = getAi();
 
       if (!ai) {
+        if (config.isCloudRun) return res.status(503).json({ error: 'ai_provider_not_configured', model: 'unavailable' });
         return res.json({
           planText: `## Przykładowy Plan Treningowy (Tryb Offline)\n- **Cel**: ${goal}\n- **Dni w tygodniu**: ${daysPerWeek}\n- **Split**: ${split}\n\n1. Dzień 1: Push (Klatka, Barki, Triceps)\n2. Dzień 2: Pull (Plecy, Tył Barku, Biceps)\n3. Dzień 3: Legs (Czworogłowe, Dwugłowe, Łydki)\n4. Dzień 4: Upper Power (Siła góry ciała)`,
           model: 'local_heuristic',
@@ -1062,7 +1088,7 @@ Podaj dla każdego dnia:
       });
     } catch (err: any) {
       console.error('[server] Błąd generowania planu AI:', err);
-      return res.status(500).json({ error: 'plan_generation_failed', details: err?.message });
+      return res.status(500).json({ error: 'plan_generation_failed' });
     }
   });
 
@@ -1112,7 +1138,7 @@ Zasady i zadanie:
       });
     } catch (err: any) {
       console.error('[server] Błąd audytu zdrowia AI:', err);
-      return res.status(500).json({ error: 'health_audit_failed', details: err?.message });
+      return res.status(500).json({ error: 'health_audit_failed' });
     }
   });
 
@@ -1123,6 +1149,7 @@ Zasady i zadanie:
       const ai = getAi();
 
       if (!ai) {
+        if (config.isCloudRun) return res.status(503).json({ error: 'ai_provider_not_configured', model: 'unavailable' });
         // Kalkulacja offline wg wzoru Harrisa-Benedicta
         const bmr = 10 * bodyWeight + 6.25 * height - 5 * age + 5;
         const tdee = Math.round(bmr * (activity === 'bardzo_aktywny' ? 1.75 : 1.55));
@@ -1175,7 +1202,7 @@ Podaj:
       });
     } catch (err: any) {
       console.error('[server] Błąd generowania planu żywieniowego:', err);
-      return res.status(500).json({ error: 'nutrition_plan_failed', details: err?.message });
+      return res.status(500).json({ error: 'nutrition_plan_failed' });
     }
   });
 
@@ -1186,6 +1213,7 @@ Podaj:
       const ai = getAi();
 
       if (!ai) {
+        if (config.isCloudRun) return res.status(503).json({ error: 'ai_provider_not_configured', model: 'unavailable' });
         return res.json({
           substitutes: [
             { name: `${exerciseName} na hantlach`, sets: 3, reps: 8, reason: 'Lepszy profil oporu i zakres ruchu' },
@@ -1220,7 +1248,7 @@ Dla każdego zamiennika podaj:
       });
     } catch (err: any) {
       console.error('[server] Błąd swap-exercise:', err);
-      return res.status(500).json({ error: 'swap_exercise_failed', details: err?.message });
+      return res.status(500).json({ error: 'swap_exercise_failed' });
     }
   });
 
@@ -1270,7 +1298,7 @@ Dla każdego zamiennika podaj:
       });
     } catch (err: any) {
       console.warn('[server] Błąd Gemini TTS:', err?.message || err);
-      return res.status(500).json({ error: 'tts_failed', details: err?.message });
+      return res.status(500).json({ error: 'tts_failed' });
     }
   });
 
@@ -1286,6 +1314,7 @@ Dla każdego zamiennika podaj:
       const todayStr = new Date().toISOString().split('T')[0];
 
       if (!ai) {
+        if (config.isCloudRun) return res.status(503).json({ error: 'ai_provider_not_configured', model: 'unavailable' });
         return res.json({
           actions: [],
           model: 'local_heuristic',
@@ -1337,7 +1366,7 @@ Zwróć wyłącznie prawidłowy format JSON:
       }
     } catch (err: any) {
       console.error('[server] Błąd parse-command:', err);
-      return res.status(500).json({ error: 'parse_command_failed', details: err?.message });
+      return res.status(500).json({ error: 'parse_command_failed' });
     }
   });
 
@@ -1424,7 +1453,7 @@ Wygeneruj wyczerpujący i praktyczny raport trenerski.`;
       });
     } catch (err: any) {
       console.error('[server] Błąd generowania analizy AI:', err);
-      return res.status(500).json({ error: 'analysis_failed', details: err?.message });
+      return res.status(500).json({ error: 'analysis_failed' });
     }
   });
 

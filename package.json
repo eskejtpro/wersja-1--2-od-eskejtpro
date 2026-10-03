@@ -20,6 +20,8 @@
     "test:server": "node --import tsx --test tests/server.test.cjs tests/google-id-token.test.cjs tests/firestore-store.test.cjs",
     "test:google-ui": "node --test tests/google-ui-no-fakes.test.cjs",
     "test:update": "node --import tsx --test tests/app-update-service.test.mjs",
+    "test:ai-transport": "node --import tsx --test tests/ai-remote-client.test.cjs",
+    "test:cloud": "node --import tsx --test tests/cloud-training-sync.test.cjs tests/server-api-sync.test.mjs tests/cloud-diagnostics.test.cjs tests/cloud-diagnostics-client.test.cjs tests/room-database-optional-tables.test.cjs",
     "test:circumferences": "node tests/circumference-desktop-smoke.cjs",
     "desktop": "electron .",
     "dist": "npm run lint && npm test && npm run build && electron-builder --win nsis portable --x64"

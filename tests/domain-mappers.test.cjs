@@ -20,6 +20,23 @@ const { normalizeGymDataToRelational, denormalizeRelationalToWeeks } = loadTsMod
   path.join(__dirname, '../src/domain/mappers.ts')
 );
 
+test('structured round trip preserves history and explicit zero values without sharing mutable history', () => {
+  const history = [{ date: '2026-10-03', sets: 1, reps: 5, weight: 25, rpe: 0,
+    loggedSets: [{ setNumber: 1, reps: 5, weight: 25, completed: true }] }];
+  const data = { settings: {}, bodyWeights: [], weeks: [{ id: 'w', name: 'Week', number: 1,
+    days: [{ id: 'd', name: 'Day', completed: false, exercises: [{ id: 'e', name: 'Exercise',
+      sets: 0, reps: 0, weight: 0, rpe: 0, notes: '', history }] }] }] };
+  const schema = normalizeGymDataToRelational(data);
+  const restored = denormalizeRelationalToWeeks(schema)[0].days[0].exercises[0];
+  assert.equal(restored.rpe, 0);
+  assert.equal(restored.sets, 0);
+  assert.equal(restored.reps, 0);
+  assert.equal(JSON.stringify(restored.history), JSON.stringify(history));
+  restored.history[0].weight = 100;
+  assert.equal(history[0].weight, 25);
+  assert.equal(schema.exercises[0].history[0].weight, 25);
+});
+
 test('normalizeGymDataToRelational converts nested weeks into relational tables correctly', () => {
   const mockGymData = {
     settings: { unit: 'kg' },

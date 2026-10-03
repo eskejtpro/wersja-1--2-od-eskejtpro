@@ -5,6 +5,7 @@ const config: CapacitorConfig = {
   appName: 'PlanPasika.v2',
   webDir: 'dist',
   backgroundColor: '#000000',
+  loggingBehavior: 'none',
   server: {
     androidScheme: 'https',
   },

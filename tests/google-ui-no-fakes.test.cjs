@@ -14,6 +14,8 @@ test('Google settings use a real ID token and keep the bearer session in React m
   assert.match(panel, /SocialLogin\.login\(\{ provider: "google"/);
   assert.match(panel, /loginWithGoogleAccount\(\{ idToken, targetUrl \}\)/);
   assert.match(panel, /googleSession\.token/);
+  assert.match(panel, /activeGoogleUser && googleSession \? \(/);
+  assert.match(panel, /Konto zapamiętane — zaloguj ponownie/);
   assert.match(panel, /Adres serwera API \(HTTPS\)/);
   assert.match(panel, /updateServerUrl: event\.target\.value\.trim\(\)/);
   assert.match(app, /useState<\{ token: string; serverUrl: string \} \| null>/);

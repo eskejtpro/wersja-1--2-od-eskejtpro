@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { requestAi, assertAiResponseCurrent } from '../utils/aiRemoteClient';
 import { 
   Zap, 
   Dumbbell, 
@@ -435,7 +436,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
       const athleteName = data.profile?.name || 'Pasik';
       const prompt = `Jestem zawodnikiem siłowym ${athleteName}. Moje pytanie z pulpitu szybkiego dostępu: "${promptToSend}". Zastosuj zaawansowaną wiedzę periodyzacyjną, zasady progresywnego przeładowania i fizjologię regeneracji. Odpowiedz konkretnie, profesjonalnie i zwięźle (2-4 zdania).`;
 
-      const response = await fetch('/api/ai/chat', {
+      const response = await requestAi('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -448,6 +449,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
 
       if (!response.ok) throw new Error(`AI service HTTP ${response.status}`);
       const json = await response.json();
+      assertAiResponseCurrent(response);
       if (typeof json.reply !== 'string' || !json.reply.trim()) throw new Error('AI service returned no answer');
       setAiResponse(json.reply);
       setAiModelUsed(json.model || 'unknown');

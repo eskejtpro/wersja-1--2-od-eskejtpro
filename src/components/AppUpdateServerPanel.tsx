@@ -215,15 +215,14 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
   };
 
   const handleGoogleLogout = async () => {
+    const previousSession = googleSession;
+    onGoogleSessionChange(null);
+    onUpdateSettings({ googleUser: null });
     try {
-      if (googleSession) await logoutGoogleAccount(googleSession.serverUrl, googleSession.token);
-      onGoogleSessionChange(null);
-      onUpdateSettings({ googleUser: null });
+      if (previousSession) await logoutGoogleAccount(previousSession.serverUrl, previousSession.token);
       setNotification({ type: "info", text: "Wylogowano z sesji konta Google." });
       checkGoogleServer();
     } catch {
-      onGoogleSessionChange(null);
-      onUpdateSettings({ googleUser: null });
       setNotification({ type: "info", text: "Wylogowano lokalnie." });
     }
   };
@@ -352,13 +351,13 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Konto Google na Serwerze:</span>
-                    {activeGoogleUser ? (
+                    {activeGoogleUser && googleSession ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
                         <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Połączono i Zautoryzowano
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[11px] font-semibold">
-                        Niezalogowany
+                        {activeGoogleUser ? 'Konto zapamiętane — zaloguj ponownie' : 'Niezalogowany'}
                       </span>
                     )}
                   </div>
@@ -637,8 +636,17 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
             <span className="text-[10px] text-slate-500 uppercase font-bold">Magazyn Danych:</span>
-            <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Magazyn lokalny; zapis chmurowy wymaga konfiguracji
+            <div className={`text-xs font-bold ${googleSession ? "text-amber-300" : "text-slate-300"} flex items-center gap-1.5`}>
+              {googleSession ? <AlertCircle className="w-3.5 h-3.5 shrink-0" /> : <Info className="w-3.5 h-3.5 shrink-0" />}
+              <span>
+                {googleSession
+                  ? "Sesja API aktywna; synchronizacja GymData niepotwierdzona"
+                  : activeGoogleUser
+                    ? "Konto Google zapamiętane; sesja API nieaktywna — zaloguj ponownie"
+                    : configuredServerUrl
+                      ? "Serwer skonfigurowany; trening zapisuje się lokalnie"
+                      : "Trening zapisuje się lokalnie; serwer chmurowy nie skonfigurowany"}
+              </span>
             </div>
           </div>
           <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">

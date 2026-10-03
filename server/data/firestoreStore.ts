@@ -24,6 +24,21 @@ export interface CloudSession {
   };
 }
 
+export interface FirestoreDiagnosticsStep {
+  name: string;
+  status: 'pass' | 'fail';
+  timestamp: string;
+  latencyMs: number;
+  requestId?: string;
+  error?: string;
+}
+
+export interface FirestoreDiagnosticsResult {
+  status: 'pass' | 'fail';
+  steps: FirestoreDiagnosticsStep[];
+  documentId: string;
+}
+
 type RequestOptions = { url: string; method: 'GET' | 'POST'; data?: unknown; timeout?: number };
 export type FirestoreRequester = (options: RequestOptions) => Promise<{ data: unknown }>;
 
@@ -149,6 +164,10 @@ export class FirestoreStore {
     return `${this.database}/documents/${collection}/${digest(key)}`;
   }
 
+  private diagnosticsDocumentName(documentId: string): string {
+    return `${this.database}/documents/gymtracker_v1_diagnostics/${documentId}`;
+  }
+
   private async getDocument(name: string): Promise<FirestoreDocument | null> {
     try {
       const result = await this.requester({ method: 'GET', url: `https://firestore.googleapis.com/v1/${name}`, timeout: 8000 });
@@ -210,6 +229,101 @@ export class FirestoreStore {
       if (error instanceof CloudStoreError) throw error;
       throw new CloudStoreError('cloud_store_unavailable', 503);
     }
+  }
+
+  async selfTest(requestId?: string): Promise<FirestoreDiagnosticsResult> {
+    const documentId = crypto.randomUUID();
+    const name = this.diagnosticsDocumentName(documentId);
+    const steps: FirestoreDiagnosticsStep[] = [];
+    const run = async (stepName: string, action: () => Promise<void>) => {
+      const started = this.now();
+      const step: FirestoreDiagnosticsStep = {
+        name: stepName,
+        status: 'pass',
+        timestamp: new Date(started).toISOString(),
+        latencyMs: 0,
+        ...(requestId ? { requestId } : {}),
+      };
+      try {
+        await action();
+      } catch (error) {
+        step.status = 'fail';
+        step.error = error instanceof CloudStoreError ? error.code : 'cloud_store_unavailable';
+        throw error;
+      } finally {
+        step.latencyMs = Math.max(0, this.now() - started);
+        steps.push(step);
+      }
+    };
+    const initial = { kind: 'diagnostic', documentId, revision: 1, marker: crypto.randomUUID() };
+    const initialHash = digest(JSON.stringify(initial));
+    let originalUpdateTime = '';
+    let updatedHash = '';
+    let cleanupError: unknown;
+    try {
+      await run('write', async () => {
+        await this.commit(name, { ...initial, contentHash: initialHash }, { exists: false });
+      });
+      await run('read', async () => {
+        const document = await this.getDocument(name);
+        if (!document?.updateTime) throw new CloudStoreError('cloud_store_corrupt', 503);
+        const value = parsePayload(document);
+        if (!object(value) || value.documentId !== documentId || value.revision !== 1 || value.contentHash !== initialHash
+          || digest(JSON.stringify({ kind: value.kind, documentId: value.documentId, revision: value.revision, marker: value.marker })) !== value.contentHash) {
+          throw new CloudStoreError('cloud_store_corrupt', 503);
+        }
+        originalUpdateTime = document.updateTime;
+      });
+      const updated = { ...initial, revision: 2, marker: crypto.randomUUID() };
+      updatedHash = digest(JSON.stringify(updated));
+      await run('update', async () => {
+        await this.commit(name, { ...updated, contentHash: updatedHash }, { updateTime: originalUpdateTime });
+      });
+      await run('revision/hash', async () => {
+        const document = await this.getDocument(name);
+        if (!document?.updateTime) throw new CloudStoreError('cloud_store_corrupt', 503);
+        const value = parsePayload(document);
+        if (!object(value) || value.revision !== 2 || value.contentHash !== updatedHash
+          || digest(JSON.stringify({ kind: value.kind, documentId: value.documentId, revision: value.revision, marker: value.marker })) !== value.contentHash) {
+          throw new CloudStoreError('cloud_store_corrupt', 503);
+        }
+      });
+      const staleUpdate = { ...updated, marker: crypto.randomUUID() };
+      await run('STALE_WRITE expect conflict', async () => {
+        try {
+          await this.commit(name, { ...staleUpdate, contentHash: digest(JSON.stringify(staleUpdate)) }, { updateTime: originalUpdateTime });
+        } catch (error) {
+          if (isPreconditionFailure(error)) return;
+          throw error;
+        }
+        throw new CloudStoreError('diagnostic_expected_conflict_missing', 503);
+      });
+      await run('post-stale verification', async () => {
+        const document = await this.getDocument(name);
+        if (!document?.updateTime) throw new CloudStoreError('cloud_store_corrupt', 503);
+        const value = parsePayload(document);
+        if (!object(value) || value.revision !== 2 || value.contentHash !== updatedHash
+          || digest(JSON.stringify({ kind: value.kind, documentId: value.documentId, revision: value.revision, marker: value.marker })) !== value.contentHash) {
+          throw new CloudStoreError('cloud_store_corrupt', 503);
+        }
+      });
+    } catch (error) {
+      void error;
+    } finally {
+      try {
+        await run('cleanup', async () => {
+          await this.requester({ method: 'POST', url: this.url(':commit'), timeout: 8000, data: { writes: [{ delete: name }] } });
+          if (await this.getDocument(name)) throw new CloudStoreError('diagnostic_cleanup_not_confirmed', 503);
+        });
+      } catch (error) {
+        cleanupError = error;
+      }
+    }
+    if (cleanupError) {
+      const cleanupStep = steps[steps.length - 1];
+      if (cleanupStep) cleanupStep.status = 'fail';
+    }
+    return { status: steps.every((step) => step.status === 'pass') && !cleanupError ? 'pass' : 'fail', steps, documentId };
   }
 
   async readSession(tokenHash: string): Promise<CloudSession | null> {
