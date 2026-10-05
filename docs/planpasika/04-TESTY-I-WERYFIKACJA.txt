@@ -1,0 +1,5 @@
+PASS: lint, 111 testów aplikacji, 26 testów serwera, 40 testów Cloud, 6 testów AI transportu.
+PASS: npm build, Capacitor sync, Gradle assembleDebug.
+PASS: APK install -r i uruchomienie na Oppo CPH2269.
+PASS: instrumented test XML 1/1; WARN: Gradle UTP nie odebrał wyniku końcowego.
+UNKNOWN/BLOCKED: Xiaomi, live Cloud Run round-trip, pełne UI E2E, pełne AI E2E.

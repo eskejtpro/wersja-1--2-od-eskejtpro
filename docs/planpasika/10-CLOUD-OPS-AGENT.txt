@@ -1,0 +1,4 @@
+Cloud Ops Agent V1 znajduje się na osobnej gałęzi codex/planpasika-cloud-ops, commit feb0898.
+Tryb: read-only. Może raportować Cloud Run, rewizje, metadata i bezpieczne podsumowania.
+Nie może zapisywać GymData, zmieniać IAM, sekretów, Firestore ani wdrażać.
+Live deploy/agenta: UNVERIFIED.

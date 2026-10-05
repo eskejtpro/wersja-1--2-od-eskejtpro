@@ -1,0 +1,5 @@
+Projekt: gen-lang-client-0836043899. Numer projektu: 761415655121. Region: europe-central2.
+Cloud Run: wersja-1--2-od-eskejtpro-git.
+Firestore: baza (default), typ Firestore Native, lokalizacja europe-central2.
+Runtime service account ma roles/datastore.user według wcześniejszego audytu.
+Live revision/traffic/Secret Manager: wymagają ponownego sprawdzenia w Cloud Shell.

@@ -1,0 +1,4 @@
+Lokalne testy diagnostyczne Firestore: 40/40 PASS, w tym write/read/update/hash/stale conflict/cleanup.
+Nie jest to dowód live Cloud Run. Live procedura znajduje się w runs/2026-10-06_0215-CLOUD-LIVE-RUNBOOK.txt.
+Nie wykonywać ręcznego kasowania kolekcji użytkowników.
+Live status: UNVERIFIED.

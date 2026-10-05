@@ -1,0 +1,4 @@
+Lokalna aplikacja używa adapterów danych i warstwy DAO-shaped; testy nie dowodzą natywnego Room SQLite dla całej ścieżki.
+Backend przechowuje sesje i GymData w Firestore, izolując dane przez zweryfikowany principal.
+Testy lokalne potwierdzają revision/contentHash, konflikty, backup/restore i process-death journal.
+Live phone -> Cloud Run -> Firestore -> phone: UNVERIFIED.

@@ -1,0 +1,4 @@
+Chat i endpointy AI korzystają z transportu serwerowego; klient nie powinien zawierać sekretu Gemini.
+Główny czat używa gemini-3.5-flash-lite w aktualnym branchu.
+Pozostałe endpointy wymagają osobnej tabeli live PASS/WARN/FAIL; lokalny transport AI ma 6/6 PASS.
+Dane testowe AI muszą być syntetyczne, bez prawdziwych danych zdrowotnych.

@@ -1,0 +1,10 @@
+1. Sklonuj repozytorium i wybierz właściwą gałąź.
+2. Uruchom npm ci.
+3. Uruchom npm run lint, npm test, npm run test:server, npm run test:cloud.
+4. Uruchom npm run build oraz npx cap sync android.
+5. Ustaw android/local.properties lokalnie na własny Android SDK.
+6. W android uruchom gradlew.bat assembleDebug.
+7. Zainstaluj APK przez adb install -r.
+8. Skonfiguruj Cloud Run, Firestore, OAuth i sekrety poza repozytorium.
+9. Wykonaj live runbook z katalogu runs.
+Nie przechowuj tokenów, kluczy ani plików .env w repozytorium.

@@ -1,0 +1,5 @@
+PlanPasika / GymTracker Pro to aplikacja Android oparta o Capacitor i frontend webowy.
+Klient przechowuje dane lokalnie, może uwierzytelnić użytkownika Google i komunikuje się z backendem Cloud Run.
+Backend obsługuje sesję, GymData, synchronizację, diagnostykę Firestore i funkcje AI.
+Wersja robocza zweryfikowanego APK: 3.0.9, versionCode 309.
+Stan: lokalne testy PASS; live Cloud Run i pełne E2E pozostają do potwierdzenia.

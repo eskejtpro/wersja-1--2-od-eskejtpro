@@ -1,0 +1,4 @@
+Nie znaleziono kluczy API, private keys ani Bearer tokenów w kontrolowanym skanie branchu.
+Google ID token jest weryfikowany po stronie serwera; principal nie może pochodzić wyłącznie z danych klienta.
+Sesje i dane są izolowane przez verified principal w testach serwera.
+Do pełnego release pozostaje live test auth isolation oraz potwierdzenie braku sekretów w finalnym bundle/APK.

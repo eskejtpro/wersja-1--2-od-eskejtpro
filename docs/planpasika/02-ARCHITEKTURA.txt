@@ -1,0 +1,13 @@
+SYSTEM:
+```mermaid
+flowchart LR
+  A[Android Capacitor] --> B[ApiClient/Auth/Sync]
+  B --> C[Cloud Run API]
+  C --> D[Google OIDC]
+  C --> E[Firestore]
+  C --> F[Gemini server-side]
+  G[Cloud Ops read-only] --> C
+```
+Lokalna ścieżka: UI -> Repository/adapter -> lokalne dane -> SyncEngine.
+Chmurowa ścieżka: Android -> Google ID token -> sesja Bearer -> Cloud Run -> Firestore.
+Cloud Ops nie zapisuje GymData i nie wykonuje auto-fix.

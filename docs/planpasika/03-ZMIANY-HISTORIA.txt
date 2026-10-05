@@ -1,0 +1,6 @@
+2026-10-06: utworzono gałąź codex/planpasika-release.
+2026-10-06: ujednolicono wersję aplikacji do 3.0.9 / 309.
+2026-10-06: poprawiono test instrumentacyjny do com.gymtracker.pro.
+2026-10-06: poprawiono semantykę health dla zimnego startu Cloud Run.
+2026-10-06: dodano raporty Android/Oppo, Cloud/AI i runbook live.
+Commity: 5663977, f2566f1, 9257cf9.

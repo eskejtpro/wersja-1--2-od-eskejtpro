@@ -1,0 +1,6 @@
+P0: live Firestore round-trip na wdrożonej rewizji — UNVERIFIED.
+P0: pełne Google login -> session -> sync na urządzeniu — UNVERIFIED.
+P1: pozostałe endpointy AI i ich modele — wymagana tabela live.
+P1: Xiaomi 14T — BLOCKED, urządzenie niewykryte.
+P1: pełne UI/settings/process-death/backup E2E — częściowo lokalnie, runtime UNKNOWN.
+P1: status UTP — raportowanie Gradle WARN mimo XML 1/1 PASS.
