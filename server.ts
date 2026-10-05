@@ -14,7 +14,7 @@ import { validateHealthAuditInput } from './server/validation/healthAudit.ts';
 
 dotenv.config();
 
-export const APP_VERSION = '3.0.8';
+export const APP_VERSION = '3.0.9';
 export const API_VERSION = '1';
 export const SCHEMA_VERSION = 1;
 
@@ -479,7 +479,9 @@ export function createApp(options: AppOptions = {}) {
   };
 
   app.get('/api/health', (_req, res) => res.json({
-    status: config.isCloudRun ? (cloudStoreVerified ? 'ok' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'ok'),
+    // A cold Cloud Run instance has not necessarily handled a user request yet.
+    // Durable-data proof is provided by /api/diagnostics/firestore and sync routes.
+    status: config.isCloudRun ? (cloudStore ? 'ok' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'ok'),
     app: 'GymTracker Pro',
     version: APP_VERSION,
     apiVersion: API_VERSION,
@@ -560,7 +562,7 @@ export function createApp(options: AppOptions = {}) {
 
   app.get('/api/server/google-info', (_req, res) => {
     res.json({
-      status: config.isCloudRun ? (cloudStoreVerified ? 'online' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'online'),
+      status: config.isCloudRun ? (cloudStore ? 'online' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'online'),
       ...GOOGLE_CLOUD_INFO,
       activeUser: null,
       durableCloudStorage: cloudStoreVerified,

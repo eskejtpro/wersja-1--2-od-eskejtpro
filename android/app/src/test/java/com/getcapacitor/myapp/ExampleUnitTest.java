@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package com.gymtracker.pro;
 
 import static org.junit.Assert.*;
 

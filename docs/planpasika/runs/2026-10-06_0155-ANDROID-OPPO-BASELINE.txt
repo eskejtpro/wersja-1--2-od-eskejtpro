@@ -1,0 +1,32 @@
+DATA: 2026-10-06
+BRANCH: planpasika-release (bazuje na work/v3.0.9-cloud-store)
+COMMIT_BAZOWY: f1b27bcc3c3eed745fe837018688f6b197c8f82e
+ENVIRONMENT: Windows 10/11 host, Oppo CPH2269, Android 11, ADB USB + Wi-Fi
+CEL: weryfikacja świeżego APK 3.0.9 na dostępnym urządzeniu
+
+APK:
+PATH: android/app/build/outputs/apk/debug/app-debug.apk
+PACKAGE: com.gymtracker.pro
+VERSION_NAME: 3.0.9
+VERSION_CODE: 309
+SHA256: B0E5D6DA3698EBBE509BA84CF02BB7E7470C5667602F3524E94EE2281DB1C200
+
+KOMENDY I WYNIKI:
+- npm run lint: PASS
+- npm test: 111/111 PASS
+- npm run test:server: 26/26 PASS
+- npm run build: PASS
+- npx cap sync android: PASS
+- gradlew assembleDebug: PASS
+- adb install -r: PASS (Success)
+- pm path/version/process: PASS
+- connectedDebugAndroidTest: test-result.xml 1/1 PASS; Gradle UTP finalization WARN
+
+URZADZENIA:
+- Oppo CPH2269 / MRAE6PIRJBFIEIKB: dostępny, test wykonany
+- Xiaomi 14T: niewykryty; testy Xiaomi pozostają BLOCKED/UNKNOWN
+
+LOG SUMMARY: brak FATAL EXCEPTION i ANR aplikacji w zebranym logcat. UTP nie dostarczył
+wyniku do Gradle mimo poprawnego XML i logu testu.
+STATUS: PASS z WARN dotyczących harnessu UTP; release nadal niezweryfikowany końcowo.
+CLEANUP: test package usunięty przez Gradle, aplikacja główna pozostała zainstalowana.
