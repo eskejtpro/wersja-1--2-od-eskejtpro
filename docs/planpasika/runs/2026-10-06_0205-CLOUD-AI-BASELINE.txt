@@ -1,0 +1,20 @@
+DATA: 2026-10-06
+BRANCH: codex/planpasika-release
+COMMIT_BEFORE_RUN: 5663977
+CEL: lokalna bramka Cloud/AI przed wdrożeniem Cloud Run
+
+TESTY:
+- npm run test:cloud: 40/40 PASS
+- npm run test:ai-transport: 6/6 PASS
+
+ZAKRES:
+- Firestore diagnostics: write/read/update/hash/stale conflict/cleanup
+- auth protection and per-user throttling
+- failed cleanup and unavailable transport handling
+- backup/restore preview, conflict and process-death journal
+- sync baseline, revision conflict and reconnect retry
+- native AI bearer/session transport and logout race protection
+
+STATUS: PASS lokalny; live Cloud Run round-trip remains UNVERIFIED until executed
+from Cloud Shell against the deployed revision.
+SEKRETY: no credentials or tokens written.
