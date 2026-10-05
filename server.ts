@@ -998,10 +998,11 @@ ZASADY ODPOWIEDZI:
           ]
         : message;
 
-      // Kaskada modeli: start od wysoce wydajnego i dostępnego gemini-3.8-flash, następnie fallbacki
-      const modelCandidates = ['gemini-3.8-flash', 'gemini-2.5-flash'];
+      // Czat używa tylko lekkiego modelu dostępnego w bezpłatnym poziomie Gemini API.
+      // Nie przełączaj automatycznie na droższy model po wyczerpaniu limitu.
+      const modelCandidates = ['gemini-2.5-flash-lite'];
       let replyText = '';
-      let successfulModel = 'gemini-3.8-flash';
+      let successfulModel = 'gemini-2.5-flash-lite';
 
       for (const candidate of modelCandidates) {
         try {
