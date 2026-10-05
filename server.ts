@@ -1000,9 +1000,9 @@ ZASADY ODPOWIEDZI:
 
       // Czat używa tylko lekkiego modelu dostępnego w bezpłatnym poziomie Gemini API.
       // Nie przełączaj automatycznie na droższy model po wyczerpaniu limitu.
-      const modelCandidates = ['gemini-2.5-flash-lite'];
+      const modelCandidates = ['gemini-3.5-flash-lite'];
       let replyText = '';
-      let successfulModel = 'gemini-2.5-flash-lite';
+      let successfulModel = 'gemini-3.5-flash-lite';
 
       for (const candidate of modelCandidates) {
         try {
