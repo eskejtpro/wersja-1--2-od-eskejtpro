@@ -1,0 +1,34 @@
+CEL: live verification of the deployed Cloud Run revision from Cloud Shell
+
+PROJECT=gen-lang-client-0836043899
+REGION=europe-central2
+SERVICE=wersja-1--2-od-eskejtpro-git
+URL=https://wersja-1--2-od-eskejtpro-git-761415655121.europe-central2.run.app
+
+RUN IN CLOUD SHELL:
+gcloud config set project gen-lang-client-0836043899
+gcloud run services describe wersja-1--2-od-eskejtpro-git --region=europe-central2 --format='yaml(status.latestReadyRevisionName,status.traffic,spec.template.spec.containers[0].env)'
+curl -sS "$URL/api/version"
+curl -sS "$URL/api/health"
+curl -sS "$URL/api/server/google-info"
+
+AUTHENTICATED DIAGNOSTIC:
+1. Use the installed APK to sign in with Google.
+2. Capture the Bearer session from the app only through the app flow; never paste it into git or reports.
+3. POST the protected /api/diagnostics/firestore endpoint from the app's diagnostics control.
+4. Confirm result status=pass, every phase write/read/update/conflict/cleanup=pass, and cleanup=pass.
+5. Repeat GET /api/health and record that process readiness and durable storage proof are separate fields.
+
+SECURITY:
+- Do not print ID tokens, Bearer sessions, API keys or .env contents.
+- Do not run firestore delete commands against user collections.
+- Use only the dedicated diagnostic document created by the endpoint.
+
+EXPECTED EVIDENCE:
+- latest ready revision and traffic are known;
+- /api/health reports process readiness;
+- authenticated Firestore diagnostic reports real round-trip and cleanup;
+- Google login and one synthetic data sync succeed;
+- no secret appears in output or APK/frontend bundle.
+
+STATUS: pending live execution in Cloud Shell; gcloud is not installed on the Windows host.
