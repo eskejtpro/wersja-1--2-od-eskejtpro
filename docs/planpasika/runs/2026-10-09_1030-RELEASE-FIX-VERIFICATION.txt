@@ -1,0 +1,52 @@
+DATA: 2026-10-09 10:30 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 750fb3f57d8914b98ef2db193cc7b1a64f87acab
+CEL: weryfikacja poprawki Google login, semantyki Firestore, testow Android i produkcyjnych endpointow
+
+KOD:
+- Google Social Login wywoluje plugin bez niestandardowych scopes (options: {}); plugin dodaje standardowe scopes samodzielnie.
+- Health cold-start rozdziela stan procesu/konfiguracji Firestore od potwierdzonego diagnostycznego round-trip.
+- `durableCloudStorage` jest true tylko po pelnym syntetycznym selfTest; sama sesja lub zapis sesji potwierdza co najwyzej lacznosc.
+- Test jednostkowy Android jest w namespace `com.gymtracker.pro`; workflow CI uruchamia `testDebugUnitTest`.
+
+TESTY LOKALNE:
+- `npm ci --ignore-scripts`: PASS; 11 moderate advisories (bez automatycznego fix --force).
+- `npm run lint`: PASS.
+- `npm test`: 111/111 PASS.
+- `npm run test:server`: 27/27 PASS.
+- `npm run test:cloud`: 40/40 PASS.
+- `npm run test:ai-transport`: 6/6 PASS.
+- `npm run test:google-ui`: 3/3 PASS.
+- `npm run test:ai-model-registry`: 2/2 PASS.
+- `npm run test:ops-agent`: 7/7 PASS; `npm run build:ops-agent`: PASS.
+- `npm run build`: PASS; Vite raportuje znany duzy chunk.
+- Capacitor sync zwraca komunikat, ze platformy android nie dodano w root, ale wlascwy projekt android istnieje i byl budowany bezposrednio przez Gradle.
+- `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`: BUILD SUCCESSFUL; Android unit test 1/1.
+- Debug APK: package `com.gymtracker.pro`, versionName 3.0.9, versionCode 309, 8,672,108 bytes.
+- SHA-256 APK: `DF98310901EB7EE0F489330D0B98995E1E7B9748753D32725255630B02FEBEC1`.
+
+GITHUB:
+- Commit 750fb3f pushed to `origin/codex/planpasika-release`.
+- Workflow run 37838879710 dla tego SHA: strona GitHub Actions pokazuje Node i Android jobs jako completed successfully.
+- Lokalny branch czysty po push.
+
+PRODUKCJA — TYLKO GET:
+- `/api/health`: HTTP 200, status ok, version 3.0.9.
+- `/api/version`: HTTP 200, status ok, appVersion 3.0.9.
+- `/api/server/google-info`: HTTP 200, status online, `durableCloudStorage:false`.
+- Zmiany server.ts z commitu 750fb3f NIE sa wdrozone. Publiczne endpointy nadal odpowiadaja stara rewizja.
+- Windows host nie ma gcloud ani skonfigurowanych Google/Cloud SDK credentials w tej sesji; Cloud Shell auth/billing/IAM/revision inventory nie zostaly odczytane.
+
+URZADZENIE:
+- W chwili sprawdzenia `adb devices -l` nie pokazal zadnego urzadzenia.
+- Nie wykonano instalacji, odinstalowania ani czyszczenia danych.
+- Telefoniczne Google login, Firestore real round-trip, synchronizacja, AI E2E, UI i backup pozostaja UNKNOWN.
+
+NEXT:
+1. Po podlaczeniu telefonu i zgodzie Androida zainstalowac APK bez odinstalowywania.
+2. Zalogowac sie przez Google w aplikacji i uruchomic dedykowana diagnostyke Firestore; potwierdzic cleanup.
+3. Z Cloud Shell odczytac billing/service/revision/logs/secret references bez wartosci sekretow.
+4. Zweryfikowac trigger/build konfiguracji Cloud Run; wdrozyc commit tylko po potwierdzeniu source/ref i poprawnosci konfiguracji.
+5. Po wdrozeniu powtorzyc health, login, Firestore diagnostic, synthetic sync, AI endpoint i cross-device tests.
+
+VERDICT: NOT READY — kod i build gates PASS, produkcyjny Firestore/auth/sync/AI i Android runtime niepotwierdzone.

@@ -1,22 +1,24 @@
-P0: Cloud Run is currently reachable: GET /api/health, /api/version and /api/server/google-info returned HTTP 200 on 2026-10-08; deployed version 3.0.9. This proves process/API availability only.
+P0: Cloud Run is currently reachable: GET /api/health, /api/version and /api/server/google-info returned HTTP 200 on 2026-10-09; deployed version 3.0.9. This proves process/API availability only.
 P0: `/api/server/google-info` currently reports `durableCloudStorage:false`. No live authenticated Firestore write/read/update/conflict/cleanup result has been observed; durable storage and cross-device sync remain UNVERIFIED.
 P0: Local code now separates Firestore connectivity from an explicit diagnostic round-trip. Cold start reports configured/unverified (health remains healthy); a real failed operation marks storage unavailable; only the complete synthetic diagnostic proves `durableCloudStorage:true`. Unit/integration transport tests pass; production code is not deployed yet.
-P0: Current billing account/project state after reported prepayment was not re-read in Cloud Shell. No basis to change min/max instances, IAM or other cost-bearing settings.
+P0: Current billing account/project state after reported prepayment was not re-read in Cloud Shell. No basis to change min/max instances, IAM or other cost-bearing settings. Windows host has no gcloud/Cloud SDK credentials in this session.
 P0: Google login -> server session -> Firestore sync and authenticated AI requests have not passed a fresh physical-device E2E in this release cycle.
-P1: Current Xiaomi 2406APNFAG / Android 16 is detected via ADB, but `com.gymtracker.pro` is absent. Fresh `adb install -r` was rejected by Android with `INSTALL_FAILED_USER_RESTRICTED`; no bypass, uninstall or data clear. Install and runtime checks await an explicit on-device allow/install confirmation.
+P1: Xiaomi 2406APNFAG / Android 16 is not connected in the latest ADB check. A prior install attempt was rejected with `INSTALL_FAILED_USER_RESTRICTED`; no bypass, uninstall or data clear. Install and runtime checks await the phone to be reconnected and the normal Android install confirmation.
 P1: Xiaomi instrumentation test helper installation is also blocked by `INSTALL_FAILED_USER_RESTRICTED`; 0 tests ran on Xiaomi. Historical Oppo XML is not evidence for the current release.
-P1: Fresh APK 3.0.9/309 built locally: SHA-256 `09AC1214E4C1E13B6250573A56A3AEB1E04AF629F125306BEA87518485372028`, size 7,275,711 bytes. Not installed in this run.
+P1: Fresh APK 3.0.9/309 with Google login fix built locally: SHA-256 `DF98310901EB7EE0F489330D0B98995E1E7B9748753D32725255630B02FEBEC1`, size 8,672,108 bytes. Not installed in this run.
 P1: Full UI/settings, process-death, offline recovery, backup/import and two-device sync E2E remain incomplete or UNKNOWN.
 P1: AI model registry is centralized and covered by tests, but several capabilities still use `gemini-3.8-*` IDs whose live availability/quota was not checked in this session. Chat is set to `gemini-3.5-flash-lite`; all production endpoints/models require live synthetic-payload validation. Do not blindly switch models or claim they work from metadata alone.
 P1: Dependency audit after pinning `http-cache-semantics@4.3.0`: 0 high/critical, 11 moderate full tree and 3 moderate production-only. GitHub Actions run 37836277574 passed on the pin commit; moderate advisories remain for review.
 P1: Android local unit-test example had stale source path `com.getcapacitor.myapp` despite declaring `com.gymtracker.pro`; moved it to the matching namespace. The real-package instrumented startup smoke test is already under `com.gymtracker.pro`.
+P1: Commit 750fb3f pushed. GitHub Actions run 37838879710 shows Node and Android jobs completed successfully; local Android unit test 1/1 and debug/test APK builds passed.
 
 NEXT VERIFIED PATH:
-1. User allows normal Android install prompt; retry ADB install and run launch/logcat/instrumentation without clearing data.
+1. Reconnect Xiaomi, allow normal Android install prompt; retry ADB install and run launch/logcat/instrumentation without clearing data.
 2. User signs in with Google in the app.
 3. In Settings -> Treningi w chmurze -> Diagnostyka trwałego zapisu Firestore -> Uruchom test Firestore, confirm all phases pass including cleanup. It uses a dedicated diagnostic record, not training data.
 4. Verify synthetic training save/read with the same account and a second client/device; then test backup/export/import and app restart.
 5. Re-read billing/project/service state in Cloud Shell and decide on cost-bearing changes only from current evidence.
 6. Deploy the reviewed backend branch only after confirming the correct service/revision and no pending user-data or secret risks; rerun public API checks and authenticated Firestore self-test after deployment.
+7. Current verification run details: `docs/planpasika/runs/2026-10-09_1030-RELEASE-FIX-VERIFICATION.txt`.
 
 RELEASE VERDICT: NOT READY until durable Firestore, authenticated client sync, required Android device tests, backup/recovery and release gates pass.
