@@ -132,7 +132,7 @@ export const AndroidMoreBottomSheet: React.FC<AndroidMoreBottomSheetProps> = ({
           label: 'Trener AI & Periodyzacja',
           description: 'Czat z modelem Gemini, analiza tonażu, regeneracji i periodyzacji',
           icon: Bot,
-          badge: 'Gemini 3.8'
+          badge: 'AI'
         }
       ]
     },

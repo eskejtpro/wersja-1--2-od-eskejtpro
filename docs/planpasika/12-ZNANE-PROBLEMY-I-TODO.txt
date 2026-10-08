@@ -26,3 +26,11 @@ NEXT VERIFIED PATH:
 7. Current billing/source/CI evidence: `docs/planpasika/runs/2026-10-08_2236-CLOUD-BILLING-AND-DEPLOY-SOURCE-VERIFICATION.txt`.
 
 RELEASE VERDICT: NOT READY until durable Firestore, authenticated client sync, required Android device tests, backup/recovery and release gates pass.
+
+2026-10-08 23:18 Europe/Warsaw — kontynuacja po potwierdzeniu wpłaty przez użytkownika:
+- Bezpieczne poprawki etykiet AI w interfejsie: brak fałszywego „Gemini 3.8”/„PRO”; nazwa modelu jest pokazywana tylko, gdy zwróci ją serwer. Dodano test regresyjny.
+- `npx cap sync android` uruchomiono z katalogu głównego repozytorium i zakończył się poprawnie; wcześniejszy błąd wynikał z uruchomienia w podkatalogu `android`.
+- `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest` — BUILD SUCCESSFUL.
+- APK debug: 3.0.9 (versionCode 309), `com.gymtracker.pro`, SHA-256 `A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE`; SDK 24–36.
+- ADB wykrywa 0 urządzeń. Instalacja i test na fizycznym telefonie nie wykonane.
+- Produkcyjny Cloud Run nie został zmieniony. Wpłata/aktywne rozliczenie nie dowodzi samo w sobie trwałego zapisu Firestore, działania Google Auth ani synchronizacji aplikacji. Wymagany test aplikacyjny z kontem użytkownika.

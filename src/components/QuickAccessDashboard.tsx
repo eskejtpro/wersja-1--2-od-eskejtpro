@@ -177,7 +177,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
   });
   const [quickNoteSaved, setQuickNoteSaved] = useState<boolean>(false);
 
-  // AI Mini Coach state (Gemini 3.8 Pro)
+  // AI Mini Coach state
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
@@ -424,7 +424,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
     return Math.round(w * (1 + r / 30));
   };
 
-  // Mini AI Coach submit with Gemini 3.8 Pro
+  // Mini AI Coach request through the configured server model
   const handleAskAiCoach = async (queryText?: string) => {
     const promptToSend = queryText || aiPrompt;
     if (!promptToSend.trim()) return;
@@ -1091,7 +1091,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
         );
       }
 
-      // 6. TRENER AI GEMINI 3.8 PRO
+      // 6. TRENER AI
       case 'ai_coach_mini': {
         const quickChips = [
           'Przeanalizuj dzisiejszy trening',
@@ -1153,7 +1153,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAskAiCoach();
                   }}
-                  placeholder="Zadaj szybkie pytanie do Gemini 3.8 Pro..."
+                  placeholder="Zadaj szybkie pytanie do trenera AI..."
                   className="w-full pl-3 pr-10 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                 />
 
@@ -1170,7 +1170,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
               {aiResponse && (
                 <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-800/40 text-xs text-slate-200 leading-relaxed animate-fadeIn">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-mono font-bold text-emerald-400">Gemini 3.8 Pro Response:</span>
+                    <span className="text-[10px] font-mono font-bold text-emerald-400">Odpowiedź AI:</span>
                     <span className="text-[9px] text-slate-500 font-mono">Model: {aiModelUsed}</span>
                   </div>
                   <p>{aiResponse}</p>
@@ -1767,7 +1767,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
             <span>Dodaj Widget</span>
           </button>
 
-          {/* Przycisk Szablony Gemini 3.8 Pro */}
+          {/* Przycisk szablonów AI */}
           <button
             type="button"
             onClick={() => setIsAiPresetsModalOpen(true)}
@@ -2056,7 +2056,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
       )}
 
       {/* ===================================================================== */}
-      {/* MODAL 3: REKOMENDACJE UKŁADU GEMINI 3.8 PRO                           */}
+      {/* MODAL 3: REKOMENDACJE UKŁADU AI */}
       {/* ===================================================================== */}
       {isAiPresetsModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
@@ -2067,7 +2067,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
               <div className="flex items-center gap-2">
                 <Wand2 className="w-5 h-5 text-purple-400" />
                 <div>
-                  <h3 className="text-base font-extrabold text-white">Rekomendacje Układu Gemini 3.8 Pro</h3>
+                  <h3 className="text-base font-extrabold text-white">Rekomendacje układu AI</h3>
                   <p className="text-xs text-slate-400">Inteligentne presety pulpitów dostosowane do Twojego celu</p>
                 </div>
               </div>

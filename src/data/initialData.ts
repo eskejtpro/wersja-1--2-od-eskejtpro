@@ -69,10 +69,10 @@ export const AVAILABLE_WIDGET_CATALOG: CatalogWidgetDefinition[] = [
   },
   {
     widgetType: 'ai_coach_mini',
-    defaultTitle: 'Trener AI Gemini 3.8 Pro',
+    defaultTitle: 'Trener AI',
     category: 'narzedzia',
     defaultSize: 'full',
-    description: 'Inteligentny asystent treningowy zasilany Gemini 3.8 Pro – szybkie porady, periodyzacja i RPE.',
+    description: 'Inteligentny asystent treningowy – szybkie porady, periodyzacja i RPE.',
     iconName: 'Sparkles'
   },
   {
@@ -138,7 +138,7 @@ export const GEMINI_AI_PRESET_LAYOUTS: AiPresetLayout[] = [
   {
     id: 'powerlifting',
     name: 'Trójbój & Maksymalna Siła',
-    subtitle: 'Rekomendacja Gemini 3.8 Pro',
+    subtitle: 'Rekomendacja AI',
     icon: '🏋️‍♂️',
     description: 'Konfiguracja zoptymalizowana pod ciężkie boje, długie przerwy, kalkulację obciążenia i 1RM.',
     widgets: [
@@ -147,14 +147,14 @@ export const GEMINI_AI_PRESET_LAYOUTS: AiPresetLayout[] = [
       { id: 'w-plates', widgetType: 'plate_calc_widget', title: 'Talerze na Sztangę (20kg)', enabled: true, order: 3, size: 'half' },
       { id: 'w-onerm', widgetType: 'one_rm_calc', title: 'Kalkulator 1RM & Procenty', enabled: true, order: 4, size: 'half' },
       { id: 'w-pr', widgetType: 'pr_tracker', title: 'Rekordy Siłowe 1RM', enabled: true, order: 5, size: 'half' },
-      { id: 'w-ai-coach', widgetType: 'ai_coach_mini', title: 'Trener AI Gemini 3.8 Pro', enabled: true, order: 6, size: 'full' },
+      { id: 'w-ai-coach', widgetType: 'ai_coach_mini', title: 'Trener AI', enabled: true, order: 6, size: 'full' },
       { id: 'w-notes', widgetType: 'quick_notes', title: 'Notatki Techniczne & Pas', enabled: true, order: 7, size: 'full' }
     ]
   },
   {
     id: 'hypertrophy',
     name: 'Kulturystyka & Hipertrofia',
-    subtitle: 'Rekomendacja Gemini 3.8 Pro',
+    subtitle: 'Rekomendacja AI',
     icon: '🔱',
     description: 'Zbalansowany zestaw pod objętość partii mięśniowych, regenerację i nawodnienie.',
     widgets: [
@@ -163,14 +163,14 @@ export const GEMINI_AI_PRESET_LAYOUTS: AiPresetLayout[] = [
       { id: 'w-timer', widgetType: 'timer_quick', title: 'Stoper Przerw (60-90s)', enabled: true, order: 3, size: 'half' },
       { id: 'w-macro', widgetType: 'macro_calories', title: 'Makroskładniki & Posiłki', enabled: true, order: 4, size: 'half' },
       { id: 'w-water', widgetType: 'water_hydration', title: 'Nawodnienie Mięśni', enabled: true, order: 5, size: 'half' },
-      { id: 'w-ai-coach', widgetType: 'ai_coach_mini', title: 'Konsultacja Gemini 3.8 Pro', enabled: true, order: 6, size: 'full' },
+      { id: 'w-ai-coach', widgetType: 'ai_coach_mini', title: 'Konsultacja AI', enabled: true, order: 6, size: 'full' },
       { id: 'w-weight', widgetType: 'weight_trend', title: 'Masa Ciała & Filtr EMA', enabled: true, order: 7, size: 'half' }
     ]
   },
   {
     id: 'fat_loss',
     name: 'Redukcja & Deficyt Kaloryczny',
-    subtitle: 'Rekomendacja Gemini 3.8 Pro',
+    subtitle: 'Rekomendacja AI',
     icon: '🔥',
     description: 'Nacisk na kontrolę wagi EMA, deficyt kaloryczny, nawodnienie i interwały.',
     widgets: [
@@ -185,7 +185,7 @@ export const GEMINI_AI_PRESET_LAYOUTS: AiPresetLayout[] = [
   {
     id: 'health_protocol',
     name: 'Zdrowie, Badania & Protokół',
-    subtitle: 'Rekomendacja Gemini 3.8 Pro',
+    subtitle: 'Rekomendacja AI',
     icon: '💉',
     description: 'Kompletne monitorowanie dawek, iniekcji, parametrów krwi i odnowy biologicznej.',
     widgets: [
@@ -194,7 +194,7 @@ export const GEMINI_AI_PRESET_LAYOUTS: AiPresetLayout[] = [
       { id: 'w-workout', widgetType: 'active_workout', title: 'Dzisiejszy Trening', enabled: true, order: 3, size: 'full' },
       { id: 'w-weight', widgetType: 'weight_trend', title: 'Waga Ciała (Retencja)', enabled: true, order: 4, size: 'half' },
       { id: 'w-water', widgetType: 'water_hydration', title: 'Płyny & Elektrolity', enabled: true, order: 5, size: 'half' },
-      { id: 'w-ai-coach', widgetType: 'ai_coach_mini', title: 'Analiza Gemini 3.8 Pro', enabled: true, order: 6, size: 'full' }
+      { id: 'w-ai-coach', widgetType: 'ai_coach_mini', title: 'Analiza AI', enabled: true, order: 6, size: 'full' }
     ]
   }
 ];
@@ -203,7 +203,7 @@ export const DEFAULT_QUICK_ACCESS_WIDGETS: QuickAccessWidgetConfig[] = [
   { id: 'w-workout', widgetType: 'active_workout', title: 'Dzisiejszy Trening', enabled: true, order: 1, size: 'full' },
   { id: 'w-timer', widgetType: 'timer_quick', title: 'Szybki Stoper Treningowy', enabled: true, order: 2, size: 'half' },
   { id: 'w-weight', widgetType: 'weight_trend', title: 'Masa Ciała & Filtr EMA', enabled: true, order: 3, size: 'half' },
-  { id: 'w-ai-coach', widgetType: 'ai_coach_mini', title: 'Trener AI Gemini 3.8', enabled: true, order: 4, size: 'full' },
+  { id: 'w-ai-coach', widgetType: 'ai_coach_mini', title: 'Trener AI', enabled: true, order: 4, size: 'full' },
   { id: 'w-plates', widgetType: 'plate_calc_widget', title: 'Kalkulator Talerzy na Gryf', enabled: true, order: 5, size: 'half' },
   { id: 'w-water', widgetType: 'water_hydration', title: 'Licznik Nawodnienia (H₂O)', enabled: true, order: 6, size: 'half' },
   { id: 'w-radar', widgetType: 'muscle_volume_radar', title: 'Balans Objętości Tygodnia', enabled: true, order: 7, size: 'half' },

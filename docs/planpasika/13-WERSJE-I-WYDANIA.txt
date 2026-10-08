@@ -2,8 +2,12 @@ App version: 3.0.9
 versionCode: 309
 package: com.gymtracker.pro
 APK type: debug
-APK SHA-256: 09AC1214E4C1E13B6250573A56A3AEB1E04AF629F125306BEA87518485372028
+APK SHA-256: A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE
 Branch: codex/planpasika-release
-Latest local build: 2026-10-08, APK 7,275,711 bytes, SHA-256 09AC1214E4C1E13B6250573A56A3AEB1E04AF629F125306BEA87518485372028. Install attempt on Xiaomi 2406APNFAG was blocked by Android (`INSTALL_FAILED_USER_RESTRICTED`); not installed in this run.
+Latest local build: 2026-10-08, APK 7,228,723 bytes, SHA-256 A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE. Current ADB check detected no phone; installation not performed.
 Integrated Cloud Ops Agent V1: commit 21500a1.
 Wydanie produkcyjne: NOT READY do czasu live Cloud/E2E.
+
+2026-10-08 — lokalny APK po poprawce etykiet AI:
+3.0.9 (versionCode 309), debug, package `com.gymtracker.pro`; SHA-256 `A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE`.
+Gradle unit tests and debug APK build passed. No phone detected; do not describe as installed or device-tested. No production Cloud Run deployment performed.

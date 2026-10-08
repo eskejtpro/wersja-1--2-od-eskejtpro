@@ -860,7 +860,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-black tracking-tight text-slate-100 flex items-center gap-1.5">
-                  Autonomiczny Trener AI <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Gemini 3.8 Flash</span>
+                  Autonomiczny Trener AI <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Model serwerowy</span>
                 </h1>
               </div>
               <p className="text-xs text-slate-400 flex items-center gap-1.5">
@@ -1031,9 +1031,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
                           <span className="text-xs font-bold text-slate-300">
                             {currentPersonaObj.label}
                           </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-400">
-                            {msg.model || 'gemini-3.8-flash'}
-                          </span>
+                          {msg.model && <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-400">{msg.model}</span>}
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -1412,7 +1410,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
                 className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 disabled:opacity-50"
               >
                 {isGeneratingPlan ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                Generuj Plan przez Gemini 3.8 Flash
+                Generuj plan z pomocą AI
               </button>
 
               <button
