@@ -10,6 +10,7 @@ WYNIKI:
 - Cloud Run service `wersja-1--2-od-eskejtpro-git`, region `europe-central2`: aktywna rewizja `...00021-9zx`, 100% ruchu.
 - Cloud Build trigger `93fcf4aa-dcad-4d7a-b49c-299971ac957f` kieruje push z `work/v3.0.9-cloud-store`; ostatni widoczny build `82a8a278` zakończył się sukcesem na commicie `f1b27bcc3c3eed745fe837018688f6b197c8f82e`.
 - Cloud Run GET `/api/health`, `/api/version`, `/api/server/google-info`: HTTP 200, wersja 3.0.9, `durableCloudStorage:false`.
+- Anonymous POST `/api/diagnostics/firestore` without a token returned HTTP 401 `unauthorized` as expected; auth guard verified, Firestore diagnostic not executed and no test record created.
 - Read-only inventory container configuration: `GYMTRACKER_CLOUD_STORE=firestore`, project ID and `(default)` database configured, correct `GOOGLE_CLIENT_ID`, public server URL/region present, and `GEMINI_API_KEY` references Secret Manager secret `planpasika-gemini-free-chat-key` at `latest`. Secret value was not read or recorded.
 - GitHub Actions run `37839864285` dla integracji `363d128`: Node i Android job zakończone sukcesem.
 - `adb devices -l`: brak podłączonych urządzeń.
@@ -20,6 +21,7 @@ STATUS:
 - Gemini prepaid: WARN; osobny portfel AI Studio trzeba zweryfikować przed płatnymi testami.
 - Cloud Run inventory/source: PASS (UI read-only).
 - Cloud Run API availability: PASS.
+- Firestore diagnostics route/auth guard: PASS (unauthenticated 401 only; data round-trip remains UNVERIFIED).
 - Cloud Run configuration inventory: PASS (read-only; secret reference only).
 - Local app/server tests and web/server build: PASS.
 - Firestore durable round-trip: UNVERIFIED.
