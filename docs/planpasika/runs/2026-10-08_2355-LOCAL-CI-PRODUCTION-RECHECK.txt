@@ -1,0 +1,38 @@
+DATA: 2026-10-08 23:55 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 971e740ebf6d112430b040d69f1c57d897f942fd
+CEL: ponownie zweryfikowac testy release, live API i gotowosc bezpiecznego kroku produkcyjnego
+
+LOKALNE TESTY (czysty worktree, HEAD 971e740):
+- npm run lint: PASS (tsc --noEmit).
+- npm test: PASS (pelny zestaw aplikacji, polecenie zakonczone kodem 0).
+- npm run test:server: PASS, 27/27.
+- npm run test:cloud: PASS, 40/40; obejmuje symulowany Firestore self-test przez fake transport, nie live Firestore.
+- npm run test:ai-transport: PASS, 6/6.
+- npm run test:ai-model-registry: PASS, 3/3.
+- npm run build: PASS (Vite + bundle serwera). Vite zglosil ostrzezenie o chunka JS >500 kB.
+- GitHub Actions run 37849466088: node-quality PASS; android-debug PASS; APK artifact 11581247296.
+
+LIVE CLOUD RUN (GET, 2026-10-08 23:54 Europe/Warsaw):
+- `/api/health`: HTTP 200, status ok, version 3.0.9.
+- `/api/version`: HTTP 200, version 3.0.9, status ok.
+- `/api/server/google-info`: HTTP 200, status online, durableCloudStorage=false, activeUser=null.
+- Timestamp z odpowiedzi live: 2026-10-08T21:54:11Z.
+- Obecna usluga odpowiada, ale brak dowodu uwierzytelnionego Firestore write/read/update/conflict/cleanup.
+
+GIT / DEPLOY:
+- Worktree czysty przed dodaniem tego raportu; lokalna galaz release jest bezposrednim potomkiem `origin/work/v3.0.9-cloud-store` (merge-base f1b27bcc3c3eed745fe837018688f6b197c8f82e).
+- Porownanie wykazuje szersze zmiany release: backend health/diagnostyka i centralizacja AI, testy Androida, workflow CI, Cloud Ops Agent i dokumentacja.
+- Nie zmieniono triggera, IAM, Cloud Run, Firestore ani ustawien billing. Nie wykonano deploymentu.
+- Lokalny komputer nie ma polecenia `gcloud` ani aktywnej tozsamosci ADC; Cloud Shell pozostaje jedynym potwierdzonym kanalem administracyjnym.
+
+ANDROID:
+- `adb devices -l`: brak podlaczonych urzadzen.
+- Instalacja i E2E na telefonie: BLOCKED / oczekuje na ponowne podlaczenie i normalne potwierdzenie debugowania USB.
+
+NASTEPNY KROK:
+1. W zalogowanej aplikacji: Ustawienia > Serwer Google & Logowanie > Treningi w chmurze > Diagnostyka trwalego zapisu Firestore > Uruchom test Firestore.
+2. Ocenic wszystkie fazy, w tym cleanup. Nie wysylac tokenow ani sekretow.
+3. Przed produkcyjnym deployem zachowac mozliwosc rollbacku i ponownie sprawdzic identycznosc buildu, zmienne/sekrety i aktywna rewizje. Nie wdrazac przed potwierdzeniem zachowania produkcji.
+
+WERDYKT: NOT READY. Testy kodu i CI PASS; live Firestore round-trip, logowanie/sync E2E i Android na urzadzeniach pozostaja UNVERIFIED/BLOCKED.
