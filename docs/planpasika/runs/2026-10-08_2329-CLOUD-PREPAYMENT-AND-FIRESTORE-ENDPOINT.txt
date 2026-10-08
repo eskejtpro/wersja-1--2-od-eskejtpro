@@ -1,0 +1,27 @@
+DATA: 2026-10-08 23:29 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 541eef33d00869e2f1456e8955a5bb645a54ad7c
+ENVIRONMENT: Cloud Run production, project gen-lang-client-0836043899, region europe-central2
+CEL: rozdzielic potwierdzenie przedplaty/billing od faktycznego dowodu Firestore round-trip
+
+WYNIKI LIVE (GET, bez zapisu danych):
+- GET /api/health: HTTP 200, status ok, version 3.0.9.
+- GET /api/server/google-info: HTTP 200, status online, durableCloudStorage=false.
+- POST /api/diagnostics/firestore bez sesji: HTTP 401 unauthorized. Auth guard dziala; diagnostyka nie zostala uruchomiona i zaden dokument nie zostal utworzony.
+
+CI:
+- GitHub Actions run 37846686369 dla commit 541eef33d00869e2f1456e8955a5bb645a54ad7c: node-quality PASS; android-debug PASS, w tym testDebugUnitTest, assembleDebug i assembleDebugAndroidTest.
+
+INTERPRETACJA:
+- Przedplata/billing Cloud nie dowodzi, ze aplikacja zapisuje do Firestore.
+- Rzeczywista diagnostyka istnieje w kodzie wydania jako chronione POST /api/diagnostics/firestore i zapisuje tylko tymczasowy dokument diagnostyczny, po czym go usuwa.
+- Produkcyjny endpoint odpowiada 401 dla anonimowego POST, co dowodzi istnienia ochrony trasy, ale NIE dowodzi powodzenia diagnostyki. Nie bylo dostepnej sesji uzytkownika w tej sesji.
+- Nie wykonano wdrozenia, zapisu danych uzytkownika, zmiany IAM, konfiguracji rozliczen ani limitow Cloud Run.
+- Publiczny health nie moze zastapic uwierzytelnionego Firestore write/read/update/conflict/cleanup.
+
+NEXT:
+1. Uzytkownik uruchamia w aplikacji Ustawienia > Server Google & Logowanie > Diagnostyka trwalego zapisu Firestore > Uruchom test Firestore (musi byc zalogowany).
+2. Sprawdzic wynik PASS i cleanup; w razie bledu zebrac kod bledu bez wysylania tokenow.
+3. Przed wdrozeniem nowszego serwera rozstrzygnac rozjazd galezi: Cloud Build trigger produkcyjny wskazuje work/v3.0.9-cloud-store, a zweryfikowany kod release znajduje sie na codex/planpasika-release. Nie przestawiac triggera ani wdrazac innej galezi bez potwierdzenia zrodla produkcyjnego.
+
+STATUS: Firestore live round-trip UNVERIFIED; release CI PASS; production deployment parity WARN.
