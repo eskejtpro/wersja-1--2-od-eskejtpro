@@ -1,4 +1,5 @@
-Cloud Ops Agent V1 znajduje się na osobnej gałęzi codex/planpasika-cloud-ops, commit feb0898.
-Tryb: read-only. Może raportować Cloud Run, rewizje, metadata i bezpieczne podsumowania.
-Nie może zapisywać GymData, zmieniać IAM, sekretów, Firestore ani wdrażać.
-Live deploy/agenta: UNVERIFIED.
+Cloud Ops Agent V1 zintegrowany z gałęzią `codex/planpasika-release` przez cherry-pick `21500a1` z `codex/planpasika-cloud-ops` (`feb0898`).
+Tryb: read-only. GoogleReader korzysta z metod odczytu; agent nie zapisuje GymData/Firestore, nie zmienia IAM/sekretów i nie wdraża.
+Weryfikacja lokalna 2026-10-08: testy 7/7 PASS; `npm run build:ops-agent` PASS; GET `/health` i `/version` zwracają 200; GET `/api/diagnostics/run` zwraca 404 (diagnostyka jest POST-only).
+Aktualny `OPS_EXPECTED_VERSION` aplikacji: 3.0.9.
+Live deploy/agenta: UNVERIFIED. Nie wdrażano nowej usługi; oddzielny deploy wymaga prywatnego IAM i osobnej oceny kosztów.

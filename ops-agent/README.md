@@ -14,13 +14,13 @@ Raport osobno pokazuje Cloud Run Ready, rewizję, HTTP health, wersję, konfigur
 
 1. Potwierdź aktualny projekt, region, nazwę backendu i koszty Cloud Run, Cloud Logging oraz Monitoring. Dane z rozmowy: `gen-lang-client-0836043899`, `europe-central2`, `wersja-1--2-od-eskejtpro-git`.
 2. Użyj dedykowanego konta `planpasika-ops-agent@gen-lang-client-0836043899.iam.gserviceaccount.com` z rolami wyłącznie do odczytu z [IAM-REQUIRED.md](IAM-REQUIRED.md); nie używaj konta backendu ani klucza JSON.
-3. Zbuduj z katalogu `ops-agent` obraz z [Dockerfile](Dockerfile). Wdróż go jako **osobną prywatną usługę** `planpasika-cloud-ops` w `europe-central2`, ustawiając `OPS_PROJECT_ID`, `OPS_REGION`, `OPS_TARGET_SERVICE`, `OPS_FIRESTORE_DATABASE_ID=(default)` oraz `OPS_EXPECTED_VERSION=3.0.8`. Nie zmieniaj istniejącej usługi `planpasika-ops-agent` ani backendu produktu. Nie włączaj dostępu nieuwierzytelnionego; zachowaj minimum instancji 0 i limit maksimum 2.
+3. Zbuduj z katalogu `ops-agent` obraz z [Dockerfile](Dockerfile). Wdróż go jako **osobną prywatną usługę** `planpasika-cloud-ops` w `europe-central2`, ustawiając `OPS_PROJECT_ID`, `OPS_REGION`, `OPS_TARGET_SERVICE`, `OPS_FIRESTORE_DATABASE_ID=(default)` oraz `OPS_EXPECTED_VERSION=3.0.9` dla aktualnej gałęzi release. Nie zmieniaj istniejącej usługi `planpasika-ops-agent` ani backendu produktu. Nie włączaj dostępu nieuwierzytelnionego; zachowaj minimum instancji 0 i limit maksimum 2.
 4. `roles/run.invoker` na nowej usłudze nadaj wyłącznie `ai.eskejtpro@gmail.com`. Zweryfikuj, że anonimowy request jest odrzucony, a uwierzytelniony operator może pobrać `/health`, `/version` i raport diagnostyczny.
 
 Przykładowa komenda wdrożenia, **nie wykonywana przez agenta** (zamień wartości po ponownej weryfikacji):
 
 ```bash
-gcloud run deploy planpasika-cloud-ops --source . --region=europe-central2 --project=gen-lang-client-0836043899 --service-account=planpasika-ops-agent@gen-lang-client-0836043899.iam.gserviceaccount.com --no-allow-unauthenticated --min=0 --max=2 --set-env-vars=OPS_PROJECT_ID=gen-lang-client-0836043899,OPS_REGION=europe-central2,OPS_TARGET_SERVICE=wersja-1--2-od-eskejtpro-git,OPS_FIRESTORE_DATABASE_ID='(default)',OPS_EXPECTED_VERSION=3.0.8
+gcloud run deploy planpasika-cloud-ops --source . --region=europe-central2 --project=gen-lang-client-0836043899 --service-account=planpasika-ops-agent@gen-lang-client-0836043899.iam.gserviceaccount.com --no-allow-unauthenticated --min=0 --max=2 --set-env-vars=OPS_PROJECT_ID=gen-lang-client-0836043899,OPS_REGION=europe-central2,OPS_TARGET_SERVICE=wersja-1--2-od-eskejtpro-git,OPS_FIRESTORE_DATABASE_ID='(default)',OPS_EXPECTED_VERSION=3.0.9
 ```
 
 Jeżeli wdrażasz ze źródeł, sprawdź, czy wybrana ścieżka budowania honoruje Dockerfile w `ops-agent`; alternatywnie zbuduj obraz z tego katalogu i wdróż obraz. Nie wdrażaj katalogu głównego produktu jako Ops Agent.

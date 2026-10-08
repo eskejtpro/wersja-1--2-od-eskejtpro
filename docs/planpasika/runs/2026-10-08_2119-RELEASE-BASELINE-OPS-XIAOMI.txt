@@ -1,0 +1,35 @@
+DATA: 2026-10-08 21:19 Europe/Warsaw
+BRANCH: codex/planpasika-release
+PARENT_COMMIT: b2789b7c711cdfce1c2b10242f0dd92d5e07b52c
+ENVIRONMENT: Windows 10, project worktree, Cloud Shell `ai.eskejtpro@gmail.com`, project gen-lang-client-0836043899, Xiaomi USB ADB
+TEST: release baseline continuation, Cloud Ops Agent integration, APK build/install, Cloud billing/serving read-only diagnostics
+CEL: move verified local/phone gates forward and diagnose the live Cloud 429
+
+STATUS: LOCAL RELEASE GATES PASS; PRODUCTION CLOUD GATE FAIL/WAIT
+
+KOMENDY / AKCJE:
+- `git fetch --all --prune`, branch graph/merge-base and status inspection.
+- `npm run lint`; `npm test`; `npm run test:server`; `npm run test:cloud`; `npm run test:ai-transport`; `npm run test:google-ui`.
+- `npm run build`; `npx cap sync android`; `.\gradlew.bat assembleDebug`.
+- `npm --prefix ops-agent ci`; `npm run test:ops-agent`; `npm run build:ops-agent`.
+- Local smoke: GET `/health`, GET `/version`, GET `/api/diagnostics/run`.
+- `adb install -r` to Xiaomi; inspect package/version and launch.
+- Cloud Shell read-only: billing project/account describe, Cloud Run service/revision describe, `gcloud logging read`, and one GET `/api/health`.
+
+WYNIKI:
+- Lint PASS.
+- App tests 111/111 PASS; server 26/26; cloud/sync 40/40; AI transport 6/6; Google UI 3/3; Ops Agent 7/7 PASS.
+- Web/server build PASS, Capacitor sync PASS, Gradle assembleDebug PASS, Ops Agent build PASS. Vite reports one large bundle warning (1.66 MB).
+- APK: `com.gymtracker.pro`, version 3.0.9, versionCode 309, minSdk 24, targetSdk 36, 6,676,513 bytes, SHA-256 `B0E5D6DA3698EBBE509BA84CF02BB7E7470C5667602F3524E94EE2281DB1C200`.
+- Xiaomi serial `755XZTPVNJNVX4OJ`, model `2406APNFAG`, Android 16. ADB install-r Success; package process launched; captured logcat slice contains no FATAL/ANR.
+- Xiaomi instrumentation test setup stopped before tests: helper APK install returned `INSTALL_FAILED_USER_RESTRICTED` (install canceled by device/user); 0 tests executed. No device-policy bypass attempted.
+- Local Ops Agent GET `/health` and `/version`: HTTP 200; GET `/api/diagnostics/run`: HTTP 404 (POST-only).
+- Billing project `billingEnabled=true`, account `open=true`; Cloud Run latest ready revision `00021-9zx`, 100% traffic, service/revision Ready conditions True.
+- Production GET `/api/health`: HTTP 429 `Rate exceeded`; Cloud Logging WARNING says `The request was aborted because there was no available instance.`
+- Cloud Run scale annotations: minScale=0, maxScale=1, concurrency=80, CPU=1, memory=512Mi.
+
+LOG SUMMARY: Billing is active now. Live 429 is Cloud Run capacity/recovery behavior, not an application JSON 429. Google documents up to 30-minute recovery delay after re-enabling billing. No scaling changes made; retest once after that window.
+ARTIFACTS: freshly built and installed debug APK; no user data export/read performed.
+PROBLEMS: Cloud Run remains unable to serve API requests; Firestore/auth/sync/AI E2E not yet possible. Xiaomi instrumentation requires user to allow the helper APK install and rerun.
+CLEANUP: local Ops Agent smoke process stopped; no cloud configuration, IAM, billing, Firestore or user app data mutated.
+NEXT: one health/version read after recovery window; if still 429, inspect current Cloud Run warning and scaling quota before any config change. Then run authenticated Google login and synthetic Firestore diagnostic/cleanup.

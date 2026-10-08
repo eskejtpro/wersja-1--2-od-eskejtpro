@@ -1,0 +1,22 @@
+DATA: 2026-10-08
+BRANCH: codex/planpasika-release
+SOURCE OPS COMMIT: feb089858e8b3db52ceb607b6bf0161077006ae2
+INTEGRATION COMMIT: 21500a1 (cherry-pick)
+
+CHANGES:
+- Integrated read-only PlanPasika Cloud Ops Agent V1 into the release branch.
+- Added isolated `test:ops-agent` and `build:ops-agent` scripts and `ops-agent` package.
+- Corrected OPS_EXPECTED_VERSION in deployment example to 3.0.9.
+- Refreshed live Google Cloud status: billingEnabled/open are true, but Cloud Run 429 is logged as no available instance.
+- Recorded verified app/server/cloud/AI/Ops tests, fresh Android APK metadata and Xiaomi install.
+
+VERIFICATION:
+- Ops Agent tests 7/7 PASS; build PASS; local health/version 200.
+- npm lint PASS; app 111/111; server 26/26; cloud 40/40; AI transport 6/6; Google UI 3/3.
+- Vite/server build, Capacitor sync, Gradle assembleDebug PASS.
+- Xiaomi `adb install -r` PASS; package 3.0.9/309 launched.
+
+NOT DONE:
+- No Cloud Ops production deployment.
+- No backend deploy or scaling/billing/IAM changes.
+- Live Cloud Run, Firestore round-trip, auth/sync/AI E2E remain unverified because 429 no available instance.

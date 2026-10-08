@@ -4,3 +4,7 @@
 2026-10-06: poprawiono semantykę health dla zimnego startu Cloud Run.
 2026-10-06: dodano raporty Android/Oppo, Cloud/AI i runbook live.
 Commity: 5663977, f2566f1, 9257cf9.
+2026-10-08: potwierdzono Cloud Billing `open=true` i project `billingEnabled=true`; HTTP 429 wynika z logu Cloud Run „no available instance”, limit maxScale=1/minScale=0.
+2026-10-08: zintegrowano read-only Cloud Ops Agent V1 (`21500a1`), 7/7 testów i build PASS; live usługi Ops nie wdrażano.
+2026-10-08: zbudowano APK debug 3.0.9/309, SHA-256 B0E5D6DA3698EBBE509BA84CF02BB7E7470C5667602F3524E94EE2281DB1C200; `adb install -r` na Xiaomi PASS.
+2026-10-08: Xiaomi instrumentation zatrzymany przed testami — system zablokował instalację helper APK (`INSTALL_FAILED_USER_RESTRICTED`); 0 testów, bez obejścia ustawień urządzenia.

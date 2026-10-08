@@ -1,5 +1,11 @@
 PASS: lint, 111 testów aplikacji, 26 testów serwera, 40 testów Cloud, 6 testów AI transportu.
 PASS: npm build, Capacitor sync, Gradle assembleDebug.
 PASS: APK install -r i uruchomienie na Oppo CPH2269.
-PASS: instrumented test XML 1/1; WARN: Gradle UTP nie odebrał wyniku końcowego.
-UNKNOWN/BLOCKED: Xiaomi, live Cloud Run round-trip, pełne UI E2E, pełne AI E2E.
+HISTORY (2026-10-06): instrumented test XML 1/1 PASS; Gradle UTP nie odebrał wyniku końcowego.
+2026-10-08 Xiaomi: `connectedDebugAndroidTest` BLOCKED przed uruchomieniem testów — instalacja helper APK anulowana/odrzucona przez urządzenie (`INSTALL_FAILED_USER_RESTRICTED`); 0 testów wykonanych. Nie obchodzono ograniczenia urządzenia.
+UNKNOWN/BLOCKED: live Cloud Run round-trip, pełne UI E2E, pełne AI E2E.
+2026-10-08: npm lint PASS; app 111/111; server 26/26; cloud/sync 40/40; AI transport 6/6; Google UI 3/3; Ops Agent 7/7.
+2026-10-08: Vite/server build, `npx cap sync android`, Gradle assembleDebug, Ops Agent build PASS. Vite ostrzega o dużym chunku (1.66 MB).
+2026-10-08: Xiaomi 2406APNFAG / Android 16, APK `com.gymtracker.pro` 3.0.9/309; ADB install-r PASS, proces uruchomiony, brak FATAL/ANR w zebranym fragmencie logcat.
+BLOCKED: Xiaomi instrumented tests — system odrzucił instalację helper APK (`INSTALL_FAILED_USER_RESTRICTED`), 0 testów wykonanych; trzeba ręcznie dopuścić instalację/zaakceptować monit na telefonie i ponowić.
+UNKNOWN/BLOCKED: produkcyjny `/api/health` HTTP 429 z logiem `no available instance`; Firestore/Auth/sync/AI E2E, pełne UI/ustawienia/backup.
