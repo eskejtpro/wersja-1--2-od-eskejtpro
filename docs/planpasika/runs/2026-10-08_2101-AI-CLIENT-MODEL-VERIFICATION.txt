@@ -1,0 +1,36 @@
+DATA: 2026-10-08 21:01 UTC
+BRANCH: codex/planpasika-release
+BASE COMMIT: 6dab3f89eb7f305af27dc084f045074bffccc58f
+ENVIRONMENT: Windows 10 host, Node/npm, JDK 21, Android SDK 36
+
+CEL:
+Sprawdzić i usunąć rozjazd między serwerowym rejestrem modeli AI a tym, co Android wysyła i pokazuje.
+
+KOMENDY / WYNIKI:
+- `npm run lint`: PASS
+- `npm run test:ai-model-registry`: 3/3 PASS
+- `npm test`: 111/111 PASS
+- `npm run test:server`: 27/27 PASS
+- `npm run test:cloud`: 40/40 PASS
+- `npm run test:ai-transport`: 6/6 PASS
+- `npm run test:google-ui`: 3/3 PASS
+- `npm run test:update`: 4/4 PASS
+- `npm run test:ops-agent`: 7/7 PASS
+- `npm run build:ops-agent`: PASS
+- `npm run build`: PASS; large frontend chunk warning
+- `npx cap sync android`: PASS
+- `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`: BUILD SUCCESSFUL
+- APK metadata: package `com.gymtracker.pro`, versionName `3.0.9`, versionCode `309`, minSdk 24, targetSdk 36
+- ADB: no physical device attached
+- Emulator: blocked because Android Emulator hardware acceleration driver is not installed
+
+ARTIFACT:
+`android/app/build/outputs/apk/debug/app-debug.apk`; debug-signed.
+
+NOT VERIFIED:
+Physical-device installation/UI, Google login, authenticated Firestore diagnostics, live Gemini request, two-device synchronization, backup round-trip, full UI/settings matrix.
+
+CLEANUP:
+No production Cloud Run, Firestore, IAM, billing, or secret settings changed. No phone data changed.
+
+STATUS: CODE/TEST/BUILD PASS; LIVE PHONE/CLOUD AI E2E UNKNOWN; RELEASE NOT READY.

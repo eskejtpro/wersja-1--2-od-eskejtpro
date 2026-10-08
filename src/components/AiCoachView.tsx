@@ -187,7 +187,7 @@ export const AiCoachView: React.FC<AiCoachViewProps> = ({
   const defaultWelcomeMessage: AiChatMessage = {
     id: 'welcome-msg',
     role: 'assistant',
-    content: `Cześć **${profile?.name || 'Zawodniku'}**! 👋 Jestem Twoim autonomicznym **Trenerem AI & Agentem Wykonawczym (Gemini 3.8 Flash)** w aplikacji PlanPasika.v2.
+    content: `Cześć **${profile?.name || 'Zawodniku'}**! 👋 Jestem Twoim autonomicznym **Trenerem AI & Agentem Wykonawczym** w aplikacji PlanPasika.v2.
 
 ⚡ **Pełna kontrola nad aplikacją (Wszystkie Funkcje Zintegrowane)**:
 Mogę bezpośrednio w bazie aplikacji:
@@ -202,7 +202,7 @@ Mogę bezpośrednio w bazie aplikacji:
 
 Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z menu poniżej!`,
     timestamp: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
-    model: 'gemini-3.8-flash',
+    model: 'unknown',
     persona: 'head_coach'
   };
 
@@ -662,7 +662,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
         role: 'assistant',
         content: cleanContent || data.reply || 'Otrzymano odpowiedź.',
         timestamp: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
-        model: data.model || 'gemini-3.8-flash',
+        model: data.model || 'unknown',
         persona: selectedPersona,
         action,
         actions

@@ -1,0 +1,36 @@
+DATA: 2026-10-08 21:01 UTC
+MODULE: Android AI client / model reporting
+BRANCH: codex/planpasika-release
+BASE COMMIT: 6dab3f89eb7f305af27dc084f045074bffccc58f
+
+PRZED:
+- Quick Access wysyłał pole `model` z klienta, mimo że serwer używa własnego centralnego rejestru.
+- Powitanie i domyślne etykiety mogły przypisać odpowiedziom niewłaściwy albo niezweryfikowany model.
+
+PO:
+- Klient nie wysyła modelu; backend wybiera go z `server/ai/models.ts`.
+- UI pokazuje model zwrócony przez serwer; w stanie nieznanym używa `unknown`.
+- Usunięto twierdzenie o konkretnym Gemini z tekstu powitalnego.
+- Dodano regresyjny test braku nadpisania modelu po stronie UI.
+
+TESTY:
+- lint: PASS
+- app tests: 111/111 PASS
+- AI model registry/client contract: 3/3 PASS
+- server: 27/27 PASS
+- cloud/sync: 40/40 PASS
+- AI transport: 6/6 PASS
+- Google UI: 3/3 PASS
+- update service: 4/4 PASS
+- Cloud Ops: 7/7 PASS; build PASS
+- web/server build: PASS (large frontend chunk advisory remains)
+- Capacitor sync: PASS
+- Android unit tests and debug/test APK builds: PASS
+
+LIMITATIONS:
+- No physical Android device attached; emulator cannot start because hardware acceleration driver is absent.
+- Live authenticated Gemini response was not tested.
+- Cloud Run production not changed.
+
+ROLLBACK:
+Revert the commit created for this change; no production state was modified.

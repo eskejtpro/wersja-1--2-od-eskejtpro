@@ -181,7 +181,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
-  const [aiModelUsed, setAiModelUsed] = useState<string>('gemini-3.8-pro');
+  const [aiModelUsed, setAiModelUsed] = useState<string>('unknown');
 
   // Quick Weight Input
   const latestWeightObj = data.bodyWeights?.[data.bodyWeights.length - 1];
@@ -442,8 +442,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
         body: JSON.stringify({
           message: prompt,
           history: [],
-          persona: settings.aiAgentPersona || 'balanced',
-          model: 'gemini-3.8-flash'
+          persona: settings.aiAgentPersona || 'balanced'
         })
       });
 
