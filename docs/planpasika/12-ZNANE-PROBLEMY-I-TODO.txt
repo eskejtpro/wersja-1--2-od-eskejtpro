@@ -6,3 +6,5 @@ P1: Xiaomi 14T — świeży APK 3.0.9 zainstalowany przez ADB, proces działa, b
 P1: pełne UI/settings/process-death/backup E2E — częściowo lokalnie, runtime UNKNOWN.
 P1: Xiaomi connectedDebugAndroidTest — zablokowane przed testami, helper APK odrzucony przez telefon (`INSTALL_FAILED_USER_RESTRICTED`), 0 testów; ręcznie zaakceptować/dopuścić instalację i powtórzyć. Dawny XML 1/1 z Oppo (2026-10-06) jest historyczny, nie dowodzi testu Xiaomi.
 P1: bieżący APK z poprawką health/model registry zbudowany, lecz ani testowy helper, ani `adb install -r` nie zostały wpuszczone przez Xiaomi (`INSTALL_FAILED_USER_RESTRICTED`); ręczne odblokowanie instalacji jest wymagane przed instalacją i E2E.
+P0: Xiaomi check 2026-10-09 wykazał brak `com.gymtracker.pro` na profilach Android 0/10/999; stan danych aplikacji jest UNKNOWN po nieudanym cyklu UTP, który zgłosił błędy uninstall. Nie instalować/odinstalowywać ponownie, dopóki właściciel nie potwierdzi monitu i nie sprawdzimy odzyskiwania/backupów.
+P1: nowy workflow GitHub release dodany, YAML PASS; oczekuje na pierwsze wykonanie Actions.

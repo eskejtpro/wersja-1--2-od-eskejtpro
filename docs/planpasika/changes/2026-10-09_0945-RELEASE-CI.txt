@@ -1,0 +1,15 @@
+DATA: 2026-10-09
+MODULE: GitHub Actions release validation
+
+PRZED:
+Release branch had no CI. `main` has legacy Deno and Webpack workflows unrelated to the current Node/Vite/Capacitor app.
+
+PO:
+Added a separate workflow for current Node tests/build and Android debug APK build, triggered on the release branch and PRs to main. Historical workflows remain untouched.
+
+WERYFIKACJA:
+- YAML parse with js-yaml: PASS.
+- GitHub Actions remote execution: PENDING.
+
+ROLLBACK:
+Revert the workflow-only commit; no production or device changes are coupled to it.

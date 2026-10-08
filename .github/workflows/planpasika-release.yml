@@ -1,0 +1,55 @@
+name: PlanPasika release gates
+
+on:
+  push:
+    branches: [main, codex/planpasika-release]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: planpasika-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix ops-agent
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:server
+      - run: npm run test:cloud
+      - run: npm run test:ai-transport
+      - run: npm run test:google-ui
+      - run: npm run test:ai-model-registry
+      - run: npm run test:ops-agent
+      - run: npm run build:ops-agent
+      - run: npm run build
+
+  android-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - uses: gradle/actions/setup-gradle@v4
+      - run: bash ./gradlew -p android assembleDebug

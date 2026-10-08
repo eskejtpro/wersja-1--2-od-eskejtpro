@@ -12,3 +12,5 @@ UNKNOWN/BLOCKED: produkcyjny `/api/health` HTTP 429 z logiem `no available insta
 2026-10-08 continuation: lint PASS; app 111/111; server 26/26; cloud 40/40; AI model registry 2/2; AI transport 6/6; Google UI 3/3; Ops 7/7; web/server build PASS; Capacitor sync PASS; Gradle assembleDebug PASS.
 2026-10-08 Xiaomi retry: `connectedDebugAndroidTest` again stopped before test execution (`INSTALL_FAILED_USER_RESTRICTED`); APK update `adb install -r` rejected by same device restriction. 0 instrumentation tests; no bypass.
 Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98276C2DA738D92756047ADFB8A7CCD4848CD0E6B3C46. Not installed on device in this run.
+2026-10-09: dodano release workflow Node + Android; YAML parse PASS. GitHub Actions run not yet observed.
+2026-10-09 Xiaomi: `com.gymtracker.pro` not present for Android users 0, 10, 999 (`pm list packages`); app's user data preservation is UNKNOWN. No further installs/uninstalls attempted.

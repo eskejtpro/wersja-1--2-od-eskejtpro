@@ -1,0 +1,18 @@
+DATA: 2026-10-09 09:45 Europe/Warsaw
+BRANCH: codex/planpasika-release
+ENVIRONMENT: Windows checkout; Xiaomi 2406APNFAG by USB; Google Cloud Console signed in as account shown in page
+TEST: inspect existing CI, validate release workflow, retry Android instrumentation, inventory installed app packages, attempt Cloud Shell read-only access
+CEL: add current Node/Android CI without discarding historical workflows and verify device/cloud blockers
+
+WYNIKI:
+- `origin/main` retains `.github/workflows/deno.yml` and `webpack.yml`; they target obsolete Deno/Webpack flow. They were not removed or modified.
+- Added `.github/workflows/planpasika-release.yml` with Node quality/build and Android assembleDebug jobs. YAML parsed successfully using `js-yaml`.
+- GitHub Actions execution has not yet been observed.
+- Xiaomi connectedDebugAndroidTest again failed before any test with `INSTALL_FAILED_USER_RESTRICTED`; 0 tests executed. UTP cleanup reported DELETE_FAILED_INTERNAL_ERROR, so no more package-manager install/uninstall calls were made.
+- Read-only package inventory shows no `com.gymtracker.pro` for Android users 0, 10, or 999. App data preservation is UNKNOWN; no claim of preservation or deletion is made.
+- Cloud Console is signed in and project `gen-lang-client-0836043899` is selected. Cloud Shell requires an authorization interaction that could not be completed from this session; no Cloud API calls or production writes were made.
+- `git diff --check` PASS.
+
+STATUS: CI file validated locally; device runtime and live Cloud gates remain BLOCKED/UNKNOWN.
+NEXT: owner must resolve Android install confirmation/restriction and inspect app/data recovery on-device; owner must authorize Cloud Shell prompt in console and leave terminal ready for read-only health/version/log checks.
+CLEANUP: no device data, Cloud configuration, billing, IAM, Firestore, or Cloud Run service changed.
