@@ -1,0 +1,30 @@
+DATA: 2026-10-08 20:57 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT_BEFORE_REPORT: e50998ab2b9072bd8c5963e453b4e4d66950812c
+ENVIRONMENT: Google Cloud Shell, konto ai.eskejtpro@gmail.com, projekt gen-lang-client-0836043899, europe-central2
+TEST: Cloud Run live availability and billing state (read-only)
+CEL: ustalenie przyczyny aplikacyjnego OFFLINE oraz HTTP 503
+
+KOMENDY:
+- gcloud billing projects describe gen-lang-client-0836043899 --format='yaml(projectId,billingAccountName,billingEnabled)'
+- gcloud billing accounts describe 01C2B5-858010-1DCF54 --format='yaml(name,displayName,open)'
+- gcloud run services describe wersja-1--2-od-eskejtpro-git --region=europe-central2 --project=gen-lang-client-0836043899 --format='yaml(status.latestReadyRevisionName,status.traffic)'
+- curl -sS -o /tmp/api-health.txt -w 'HTTP=%{http_code}\n' https://wersja-1--2-od-eskejtpro-git-761415655121.europe-central2.run.app/api/health
+- Cloud Logging request error details for 2026-10-08 20:49 CEST
+
+STATUS: FAIL (production API unavailable) / BLOCKED (billing reactivation)
+WYNIKI:
+- Cloud Billing account open=false.
+- Project billingEnabled=false.
+- Attached billing account exists, but project billing is disabled.
+- Latest ready Cloud Run revision: wersja-1--2-od-eskejtpro-git-00021-9zx.
+- Traffic: 100% to revision 00021-9zx.
+- /api/health: HTTP 503, Google Frontend response.
+- Cloud Logging reports: "The request failed because billing is disabled for this project."
+- Xiaomi 14T application consequently reports OFFLINE; this is consistent with the failed live endpoint.
+
+LOG SUMMARY: Billing shutdown blocks Cloud Run request serving. The revision is ready in metadata but cannot currently serve application traffic.
+ARTIFACTS: app-debug.apk v3.0.9 remains installed on Xiaomi; no cloud data operations performed.
+PROBLEMS: Account billing must be reopened and project billing enabled by an authorized billing owner. May require payment/prepayment.
+CLEANUP: No resources or user data changed. No payment, billing setting, IAM, deployment, or Firestore mutation performed.
+NEXT: After billing is restored, verify billingEnabled=true, run /api/health and /api/version, then Google login and synthetic Firestore self-test including cleanup.

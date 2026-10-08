@@ -2,4 +2,11 @@ Projekt: gen-lang-client-0836043899. Numer projektu: 761415655121. Region: europ
 Cloud Run: wersja-1--2-od-eskejtpro-git.
 Firestore: baza (default), typ Firestore Native, lokalizacja europe-central2.
 Runtime service account ma roles/datastore.user według wcześniejszego audytu.
-Live revision/traffic/Secret Manager: wymagają ponownego sprawdzenia w Cloud Shell.
+
+Stan live zweryfikowany 2026-10-08:
+- Konto Cloud Billing jest zamknięte (open=false).
+- Projekt ma przypisane konto rozliczeniowe, lecz billingEnabled=false.
+- Cloud Run wskazuje rewizję wersja-1--2-od-eskejtpro-git-00021-9zx z 100% ruchu.
+- /api/health zwraca HTTP 503; Cloud Logging dla requestów potwierdza komunikat "The request failed because billing is disabled for this project.".
+- Cloud Run, logowanie aplikacji i Firestore nie mogą być uznane za działające, dopóki billing nie zostanie ponownie aktywowany.
+- Nie wykonano płatności ani nie zmieniono rozliczeń. Po aktywacji wymagane ponowne smoke testy API, Google Auth oraz syntetyczny Firestore write/read/cleanup.
