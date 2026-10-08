@@ -1,0 +1,11 @@
+DATA: 2026-10-08 22:49 Europe/Warsaw
+BRANCH: codex/planpasika-release
+
+ZMIANY:
+- Zapisano sukces obu zadań GitHub Actions run 37841574567.
+- Zapisano świeże lokalne wyniki lint, AI model registry, Cloud/Firestore i AI transport.
+- Zapisano metadane i hash APK 3.0.9 oraz aktualny brak urządzenia ADB.
+- Zaktualizowano status release gates; live Firestore i instalacja na telefonie pozostają niezweryfikowane.
+
+WERYFIKACJA: `git diff --check` oraz CI uruchomione dla poprzedniego commit.
+WDROŻENIE: brak.

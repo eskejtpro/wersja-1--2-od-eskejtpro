@@ -1,0 +1,36 @@
+DATA: 2026-10-08 22:49 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 9aa5e21edd24bf1bb00c304892565dc2312905f7 (checked out before this report)
+ENVIRONMENT: Windows 10 workstation, Node/TypeScript, Gradle APK artifact, GitHub Actions public run page, ADB
+TEST: post-push CI and local release gate refresh
+CEL: sprawdzić końcowe CI, aktualny APK oraz bramki lokalne niezależne od telefonu
+
+KOMENDY / ZAKRES:
+- GitHub Actions run 37841574567, workflow planpasika-release.yml.
+- `npm run lint`.
+- `npm run test:ai-model-registry`.
+- `npm run test:cloud`.
+- `npm run test:ai-transport`.
+- `adb devices -l`.
+- Odczyt metadanych istniejącego APK i SHA-256.
+
+STATUS:
+- node-quality: PASS.
+- android-debug: PASS.
+- TypeScript lint: PASS.
+- AI registry: PASS, 2/2.
+- Cloud/Firestore suite: PASS, 40/40 (testy lokalne/fake transport, nie live persistence).
+- AI transport: PASS, 6/6.
+- ADB physical device: BLOCKED, brak podłączonego urządzenia.
+
+WYNIKI:
+- APK: `android/app/build/outputs/apk/debug/app-debug.apk`, debug, 8,672,108 bytes.
+- applicationId `com.gymtracker.pro`, versionName `3.0.9`, versionCode `309`.
+- SHA-256 `DF98310901EB7EE0F489330D0B98995E1E7B9748753D32725255630B02FEBEC1`.
+- Produkcyjny endpoint diagnostics zwrócił HTTP 401 bez Bearer; zabezpieczenie auth działa, test zapisu Firestore nie został uruchomiony.
+- Aktywny Cloud Build nadal wskazuje `work/v3.0.9-cloud-store`; integration branch nie jest wdrożona.
+
+LOG SUMMARY: testy zakończone bez błędów. CI zawiera 3 ostrzeżenia/uwagi nieblokujące; sprawdzić szczegóły przed kolejnym wydaniem.
+ARTIFACTS: run 37841574567; APK wskazany powyżej.
+PROBLEMS: brak aktualnego urządzenia; brak zalogowanego klienta do autoryzowanego Firestore self-test; production deploy nie wykonano.
+CLEANUP: brak zmian produkcyjnych, billingowych, IAM lub danych użytkownika.
