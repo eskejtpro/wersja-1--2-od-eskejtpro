@@ -1,0 +1,29 @@
+DATA: 2026-10-08 22:36 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 363d128db0eb11c04ec90275d89995f6123e36b7
+ENVIRONMENT: Windows workstation, Google Cloud Console signed-in UI, public HTTPS GET, GitHub Actions public run page
+CEL: sprawdzić deklarowaną przedpłatę, powiązanie projektu z billingiem i dokładne źródło aktywnego Cloud Run
+
+WYNIKI:
+- Cloud Console konto rozliczeniowe `01C2B5-858010-1DCF54` ma projekt `gen-lang-client-0836043899` na liście powiązanych projektów.
+- Konto płatności po użyciu dla Cloud Run i osobna przedpłata Gemini AI Studio są odrębnymi źródłami rozliczeń. Dostępność środków Gemini wymaga osobnej weryfikacji przed płatnymi testami; nie wykonano zakupu ani zmiany ustawień.
+- Cloud Run service `wersja-1--2-od-eskejtpro-git`, region `europe-central2`: aktywna rewizja `...00021-9zx`, 100% ruchu.
+- Cloud Build trigger `93fcf4aa-dcad-4d7a-b49c-299971ac957f` kieruje push z `work/v3.0.9-cloud-store`; ostatni widoczny build `82a8a278` zakończył się sukcesem na commicie `f1b27bcc3c3eed745fe837018688f6b197c8f82e`.
+- Cloud Run GET `/api/health`, `/api/version`, `/api/server/google-info`: HTTP 200, wersja 3.0.9, `durableCloudStorage:false`.
+- Read-only inventory container configuration: `GYMTRACKER_CLOUD_STORE=firestore`, project ID and `(default)` database configured, correct `GOOGLE_CLIENT_ID`, public server URL/region present, and `GEMINI_API_KEY` references Secret Manager secret `planpasika-gemini-free-chat-key` at `latest`. Secret value was not read or recorded.
+- GitHub Actions run `37839864285` dla integracji `363d128`: Node i Android job zakończone sukcesem.
+- `adb devices -l`: brak podłączonych urządzeń.
+- Additional local verification after inventory: app tests 111/111 PASS; server/Firestore/auth tests 40/40 PASS; production web/server build PASS (Vite reports a large-chunk advisory). These local tests do not prove live Firestore persistence.
+
+STATUS:
+- Billing project link: PASS (UI read-only).
+- Gemini prepaid: WARN; osobny portfel AI Studio trzeba zweryfikować przed płatnymi testami.
+- Cloud Run inventory/source: PASS (UI read-only).
+- Cloud Run API availability: PASS.
+- Cloud Run configuration inventory: PASS (read-only; secret reference only).
+- Local app/server tests and web/server build: PASS.
+- Firestore durable round-trip: UNVERIFIED.
+- Production deployment of integration branch: NOT DONE; trigger still points to source branch above.
+- Android physical-device E2E: BLOCKED (no device attached).
+
+CLEANUP: brak zmian w Google Cloud, billing, IAM, sekretach, Cloud Run lub telefonie. Nie zapisano danych karty ani kwot transakcji.

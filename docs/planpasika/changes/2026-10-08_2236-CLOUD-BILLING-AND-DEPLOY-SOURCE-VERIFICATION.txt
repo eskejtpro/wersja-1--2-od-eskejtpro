@@ -1,0 +1,23 @@
+DATA: 2026-10-08 22:36 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 363d128db0eb11c04ec90275d89995f6123e36b7 (stan przed zmianami dokumentacji)
+
+ZMIANY:
+- Uzupełniono bieżące źródło Cloud Build, wdrożony commit, rewizję i ruch.
+- Rozdzielono w dokumentacji status billing projektu Cloud Run od portfela przedpłaty Gemini AI Studio.
+- Zaktualizowano stan GitHub Actions z „oczekuje” na PASS dla obu zadań najnowszego przebiegu.
+- Usunięto szczegółowe kwoty płatności z ogólnej dokumentacji cloud; pozostawiono wyłącznie statusy operacyjne.
+- Potwierdzono read-only konfigurację Firestore, OAuth Client ID i referencję sekretu Gemini (bez odczytu wartości sekretu).
+- Dopisano wyniki lokalnych testów aplikacji 111/111, serwera/Firestore/auth 40/40 oraz produkcyjnego builda web/server.
+
+WERYFIKACJA:
+- Publiczne GET endpointów: 200.
+- Google Cloud Console: odczyt powiązanego projektu, triggera Cloud Build i aktywnej rewizji.
+- GitHub Actions run 37839864285: Node PASS, Android PASS.
+- Brak zmian produkcyjnych i billingowych.
+
+POZOSTAJE:
+- Autoryzowany Firestore synthetic round-trip i cleanup.
+- Uzyskanie wyjaśnienia/dostępnego salda Gemini prepaid przed płatnymi testami AI.
+- Kontrolowane uzgodnienie kodu release branch z triggerem produkcyjnym przed wdrożeniem.
+- Telefon E2E po podłączeniu urządzenia.

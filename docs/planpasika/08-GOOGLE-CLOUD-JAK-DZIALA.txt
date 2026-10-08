@@ -4,10 +4,11 @@ Firestore: baza (default), typ Firestore Native, lokalizacja europe-central2.
 Runtime service account ma roles/datastore.user według wcześniejszego audytu.
 
 Stan live 2026-10-08:
-- Billing UI odnotowuje ręczną wpłatę 40,00 zł dla płatności po użyciu Google Cloud z 8 października; brak zaległości, próg płatności 200,00 zł.
-- Osobna sekcja „Przedpłata – AI Studio” pokazuje saldo 0,00 zł; to odrębny portfel, nie stan billing projektu Cloud Run.
+- Konsola rozliczeń potwierdza, że projekt `gen-lang-client-0836043899` jest powiązany z kontem rozliczeniowym `01C2B5-858010-1DCF54`; konto jest typu płatności po użyciu. Nie zapisujemy kwot, danych karty ani historii transakcji w repozytorium.
+- Sekcja przedpłat AI Studio jest odrębna od rozliczeń Cloud Run. Jej dostępne saldo trzeba zweryfikować przed płatnym testem Gemini; nie zapisujemy sald ani historii transakcji w repozytorium.
 - Odczyt Cloud Shell o 21:12 Europe/Warsaw potwierdził project `billingEnabled: true` i konto `open: true` (`billingAccounts/01C2B5-858010-1DCF54`).
 - Cloud Run wskazuje rewizję `wersja-1--2-od-eskejtpro-git-00021-9zx`, 100% ruchu; warunki Ready/ConfigurationsReady/RoutesReady=True.
+- Trigger Cloud Build `93fcf4aa-dcad-4d7a-b49c-299971ac957f` wdraża przy pushu do `work/v3.0.9-cloud-store`. Ostatni widoczny build triggera: `82a8a278`, sukces, commit `f1b27bcc3c3eed745fe837018688f6b197c8f82e`; to źródło aktywnej rewizji. Gałąź `codex/planpasika-release` nie jest celem tego triggera.
 - GET `/api/health` z Cloud Shell nadal zwrócił HTTP 429 `Rate exceeded` (`Server: Google Frontend`).
 - Cloud Logging dla requestów wskazuje WARNING: `The request was aborted because there was no available instance.`
 - Konfiguracja: `autoscaling.knative.dev/minScale=0`, `maxScale=1`, concurrency=80, CPU=1000m, pamięć=512Mi.
@@ -15,6 +16,6 @@ Stan live 2026-10-08:
 - Nie wykonano zmian Billing, IAM, usługi ani kolejnych płatności. W poprzednim odczycie API miało 429; świeży GET zwraca 200, lecz Auth/Firestore/sync/AI E2E nadal bez PASS.
 - Zmiana kodu lokalna (2026-10-08): `/api/server/google-info` nie przedstawia chwilowej flagi procesu jako `durableCloudStorage`; zwraca `cloudStoreConfigured` i `cloudStoreVerifiedInProcess` osobno, a trwałość pozostaje false bez odrębnego round-trip. Wymaga wdrożenia, nie jest jeszcze live.
 
-Aktualny odczyt publicznych GET endpointów (2026-10-08, Windows worktree): `/api/health`, `/api/version`, `/api/server/google-info` zwróciły HTTP 200; backend zgłasza 3.0.9, status ok/online. `google-info` nadal zwraca `durableCloudStorage:false`. To dowodzi dostępności procesu i metadanych, nie Firestore write/read ani billing status.
+Aktualny odczyt publicznych GET endpointów (2026-10-08 22:34 Europe/Warsaw, Windows worktree): `/api/health`, `/api/version`, `/api/server/google-info` zwróciły HTTP 200; backend zgłasza 3.0.9, status ok/online. `google-info` nadal zwraca `durableCloudStorage:false`. To dowodzi dostępności procesu i metadanych, nie Firestore write/read ani synchronizacji.
 
 Poprzednia kontrola przed rejestracją wpłaty/aktywacją wykazała `open=false`, `billingEnabled=false`, HTTP 503. Ten stan historyczny został zastąpiony powyższym odczytem live.

@@ -1,7 +1,7 @@
 P0: Cloud Run is currently reachable: GET /api/health, /api/version and /api/server/google-info returned HTTP 200 on 2026-10-09; deployed version 3.0.9. This proves process/API availability only.
 P0: `/api/server/google-info` currently reports `durableCloudStorage:false`. No live authenticated Firestore write/read/update/conflict/cleanup result has been observed; durable storage and cross-device sync remain UNVERIFIED.
 P0: Local code now separates Firestore connectivity from an explicit diagnostic round-trip. Cold start reports configured/unverified (health remains healthy); a real failed operation marks storage unavailable; only the complete synthetic diagnostic proves `durableCloudStorage:true`. Unit/integration transport tests pass; production code is not deployed yet.
-P0: Current billing account/project state after reported prepayment was not re-read in Cloud Shell. No basis to change min/max instances, IAM or other cost-bearing settings. Windows host has no gcloud/Cloud SDK credentials in this session.
+P0: Google Cloud Console read-only check confirms the project is linked to a billing account. Cloud Run pay-as-you-go and Gemini AI Studio prepaid billing are separate; the available Gemini balance must be verified before paid AI tests. No billing, IAM, min/max instance, or payment settings were changed.
 P0: Google login -> server session -> Firestore sync and authenticated AI requests have not passed a fresh physical-device E2E in this release cycle.
 P1: Xiaomi 2406APNFAG / Android 16 is not connected in the latest ADB check. A prior install attempt was rejected with `INSTALL_FAILED_USER_RESTRICTED`; no bypass, uninstall or data clear. Install and runtime checks await the phone to be reconnected and the normal Android install confirmation.
 P1: Xiaomi instrumentation test helper installation is also blocked by `INSTALL_FAILED_USER_RESTRICTED`; 0 tests ran on Xiaomi. Historical Oppo XML is not evidence for the current release.
@@ -11,15 +11,16 @@ P1: AI model registry is centralized and covered by tests, but several capabilit
 P1: Dependency audit after pinning `http-cache-semantics@4.3.0`: 0 high/critical, 11 moderate full tree and 3 moderate production-only. GitHub Actions run 37836277574 passed on the pin commit; moderate advisories remain for review.
 P1: Android local unit-test example had stale source path `com.getcapacitor.myapp` despite declaring `com.gymtracker.pro`; moved it to the matching namespace. The real-package instrumented startup smoke test is already under `com.gymtracker.pro`.
 P1: Commit 750fb3f pushed. GitHub Actions run 37838879710 shows Node and Android jobs completed successfully; local Android unit test 1/1 and debug/test APK builds passed.
-P1: CI now includes `npm run test:update` (4/4 local PASS); commit 7e89111 workflow is queued behind the prior serialized run and awaits result.
+P1: CI now includes `npm run test:update` (4/4 local PASS). GitHub Actions run 37839864285 on commit 363d128 completed successfully for both Node quality and Android debug jobs. Earlier run 37839596608 had its Android job canceled by a higher-priority waiting workflow; the latest run supersedes that incomplete result.
+P0: Cloud Build trigger 93fcf4aa-dcad-4d7a-b49c-299971ac957f still deploys `work/v3.0.9-cloud-store`, not `codex/planpasika-release`. Active revision is `wersja-1--2-od-eskejtpro-git-00021-9zx` at 100% traffic; latest successful trigger build 82a8a278 uses commit f1b27bcc3c3eed745fe837018688f6b197c8f82e. Reviewed release-branch server changes remain undeployed.
 
 NEXT VERIFIED PATH:
 1. Reconnect Xiaomi, allow normal Android install prompt; retry ADB install and run launch/logcat/instrumentation without clearing data.
 2. User signs in with Google in the app.
 3. In Settings -> Treningi w chmurze -> Diagnostyka trwałego zapisu Firestore -> Uruchom test Firestore, confirm all phases pass including cleanup. It uses a dedicated diagnostic record, not training data.
 4. Verify synthetic training save/read with the same account and a second client/device; then test backup/export/import and app restart.
-5. Re-read billing/project/service state in Cloud Shell and decide on cost-bearing changes only from current evidence.
-6. Deploy the reviewed backend branch only after confirming the correct service/revision and no pending user-data or secret risks; rerun public API checks and authenticated Firestore self-test after deployment.
-7. Current verification run details: `docs/planpasika/runs/2026-10-09_1030-RELEASE-FIX-VERIFICATION.txt`.
+5. The project-to-billing link and service source/revision have now been verified read-only; do not add cost-bearing settings based only on the user's reported payment.
+6. Reconcile and review the release branch against the trigger source; deploy only after confirming the exact intended commit and preserving service configuration/secrets. Then rerun public API checks and authenticated Firestore self-test.
+7. Current billing/source/CI evidence: `docs/planpasika/runs/2026-10-08_2236-CLOUD-BILLING-AND-DEPLOY-SOURCE-VERIFICATION.txt`.
 
 RELEASE VERDICT: NOT READY until durable Firestore, authenticated client sync, required Android device tests, backup/recovery and release gates pass.
