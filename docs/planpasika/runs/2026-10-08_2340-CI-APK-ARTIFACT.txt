@@ -1,6 +1,6 @@
 DATA: 2026-10-08 23:40 Europe/Warsaw
 BRANCH: codex/planpasika-release
-BASE COMMIT: 5f6711aa3576d80df77a0a96fd6bc88d0666ff98
+COMMIT: 4498b6f612acdea04fe6708b67c7f3a3a7dad29c
 CEL: udostepnic zbudowany Android debug APK jako ograniczony czasowo artefakt GitHub Actions
 
 STAN PRZED ZMIANA:
@@ -14,10 +14,16 @@ ZMIANA:
 - Retencja artefaktu: 14 dni; brak pliku powoduje jawny blad joba.
 - Jest to APK debug do testow, nie release podpisany do Google Play.
 
-WERYFIKACJA:
-- Wymagany nowy CI po pushu; oczekiwane kroki: wszystkie dotychczasowe testy oraz upload-artifact PASS.
-- Po sukcesie pobrac artefakt z GitHub Actions i sprawdzic package/version/hash przed instalacja.
+WERYFIKACJA PO PUSHU:
+- GitHub Actions run 37847740289: node-quality PASS oraz android-debug PASS.
+- Gradle `testDebugUnitTest`, `assembleDebug` i `assembleDebugAndroidTest`: PASS.
+- `actions/upload-artifact@v4`: PASS.
+- Artefakt `gymtracker-pro-android-debug-4498b6f612acdea04fe6708b67c7f3a3a7dad29c`, ID 11581005569, 6,106,397 bytes; wygasa 2026-10-22 21:36:49Z.
+- Suma SHA-256 ZIP-u artefaktu z GitHub: `49cd49449b1d11636df5922cc1ff23ae456a34e9e06610dfe8088d0c050201dc` (to hash archiwum, nie samego APK).
+- Otworz [przebieg GitHub Actions](https://github.com/eskejtpro/wersja-1--2-od-eskejtpro/actions/runs/37847740289), sekcja Artifacts, aby pobrac ZIP.
+- APK zawarty w artefakcie pochodzi z Gradle `assembleDebug`; package/version/hash samego APK nie zostaly tym razem odczytane z pobranego archiwum.
 
 OGRANICZENIA:
 - Zmiana nie wdraza backendu ani nie zmienia billing, IAM, Firestore, Cloud Run lub danych uzytkownika.
+- Przed instalacja pobrac ZIP, wypakowac APK i sprawdzic package/version/hash.
 - Cloud Firestore authenticated round-trip, fizyczny Android E2E, login, AI i pelna synchronizacja pozostaja UNKNOWN.
