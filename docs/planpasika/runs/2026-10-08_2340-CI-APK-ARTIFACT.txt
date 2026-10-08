@@ -21,7 +21,8 @@ WERYFIKACJA PO PUSHU:
 - Artefakt `gymtracker-pro-android-debug-4498b6f612acdea04fe6708b67c7f3a3a7dad29c`, ID 11581005569, 6,106,397 bytes; wygasa 2026-10-22 21:36:49Z.
 - Suma SHA-256 ZIP-u artefaktu z GitHub: `49cd49449b1d11636df5922cc1ff23ae456a34e9e06610dfe8088d0c050201dc` (to hash archiwum, nie samego APK).
 - Otworz [przebieg GitHub Actions](https://github.com/eskejtpro/wersja-1--2-od-eskejtpro/actions/runs/37847740289), sekcja Artifacts, aby pobrac ZIP.
-- APK zawarty w artefakcie pochodzi z Gradle `assembleDebug`; package/version/hash samego APK nie zostaly tym razem odczytane z pobranego archiwum.
+- APK pobrany i sprawdzony z artefaktu: package `com.gymtracker.pro`, versionName `3.0.9`, versionCode `309`, minSdk 24, targetSdk 36; rozmiar 6,677,741 bytes; SHA-256 `8E156F7209F09B0DAB10C1E68A58823C7FEB2A7DD1B252D5E9A14B1E76EB9DD5`.
+- Jest to artifact APK z CI commita 4498b6f; hash różni się od lokalnego APK, co jest normalne dla buildów w oddzielnych środowiskach. ADB nadal nie wykrył telefonu, więc instalacja i UI smoke test pozostają niewykonane.
 
 OGRANICZENIA:
 - Zmiana nie wdraza backendu ani nie zmienia billing, IAM, Firestore, Cloud Run lub danych uzytkownika.
