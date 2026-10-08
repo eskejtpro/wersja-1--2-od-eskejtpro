@@ -10,3 +10,6 @@ P0: Xiaomi check 2026-10-09 wykazał brak `com.gymtracker.pro` na profilach Andr
 P1: nowy workflow GitHub release dodany, YAML PASS; oczekuje na pierwsze wykonanie Actions.
 P0: po zgłoszonej przedpłacie Google Cloud nie ma jeszcze aktualnego Cloud Shell dowodu `billingEnabled`, stanu konta rozliczeniowego, odpowiedzi 2xx ani Firestore round-trip. Wykonać tylko read-only billing/service/health checks; nie mylić pay-as-you-go przedpłaty z saldem AI Studio.
 P1: GitHub Actions run 37835123452: node-quality PASS; android-debug nadal buduje `:app:assembleDebug` i `:app:assembleDebugAndroidTest` przy ostatnim odczycie. Poczekać na zakończenie i zapisać wynik.
+P0: live Cloud billing/service status and Firestore/auth/sync/AI E2E remain UNKNOWN until fresh Cloud Shell output is provided; do not change paid settings based only on the reported prepayment.
+P1: local read-only ADB check 2026-10-08: Xiaomi 2406APNFAG / Android 16 connected, but `com.gymtracker.pro` is absent from installed third-party packages. No install/uninstall/data-clear performed because previous report marks app data recovery status UNKNOWN.
+P1: `npm audit` 2026-10-08: 1 high and 11 moderate advisories across full dependency tree; production-only 3 moderate, 0 high/critical. Audit is recorded in 11-BEZPIECZENSTWO.txt; investigate fixes before release.

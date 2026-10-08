@@ -2,3 +2,9 @@ Nie znaleziono kluczy API, private keys ani Bearer tokenów w kontrolowanym skan
 Google ID token jest weryfikowany po stronie serwera; principal nie może pochodzić wyłącznie z danych klienta.
 Sesje i dane są izolowane przez verified principal w testach serwera.
 Do pełnego release pozostaje live test auth isolation oraz potwierdzenie braku sekretów w finalnym bundle/APK.
+
+DEPENDENCY AUDIT (2026-10-08, npm audit):
+- Full dependency tree: 12 advisories (11 moderate, 1 high, 0 critical).
+- The high advisory is `http-cache-semantics` <=4.2.0, GHSA-ch52-4w7c-c8xp, CVSS 7.5; npm reports a compatible fix is available. It is in the installed development dependency tree; trace the exact parent and update with regression/build tests before release.
+- Production-only audit (`npm audit --omit=dev`): 3 moderate, 0 high, 0 critical. These include `@capacitor/cli` -> `xcode` -> `uuid`; npm proposes a major CLI upgrade, so do not apply automatically without checking Capacitor compatibility.
+- This audit is not a complete security review and does not prove runtime exposure or exploitability. Re-run after any dependency change.
