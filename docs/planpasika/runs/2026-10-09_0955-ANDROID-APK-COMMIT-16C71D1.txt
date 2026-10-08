@@ -1,0 +1,23 @@
+DATA: 2026-10-09 09:55 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 16c71d17fd47d81c485fba1f8d5f6ae224a578d3
+CEL: lokalnie zbudowac i zidentyfikowac APK z aktualnego commita, gdy GitHub Actions Android runner jest opozniony
+
+WERYFIKACJA LOKALNA:
+- `gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`: BUILD SUCCESSFUL.
+- `app-debug.apk`: `android/app/build/outputs/apk/debug/app-debug.apk`.
+- package: `com.gymtracker.pro`.
+- versionName: 3.0.9; versionCode: 309.
+- minSdk: 24; targetSdk: 36.
+- size: 7,228,723 bytes.
+- SHA-256: `A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE`.
+- `adb devices -l`: no devices attached; install and UI/runtime tests not performed.
+
+GITHUB ACTIONS:
+- run 37848802764 for the same commit: node-quality PASS.
+- android-debug remained in progress at Gradle when checked; no artifact was published yet.
+- Local APK is not represented as a GitHub artifact; CI result remains pending until its authoritative job completes.
+
+OGRANICZENIA:
+- No production Cloud Run deployment or cloud/IAM/billing changes.
+- Authenticated production Firestore diagnostic, device E2E, two-device sync and AI endpoint E2E remain unverified.
