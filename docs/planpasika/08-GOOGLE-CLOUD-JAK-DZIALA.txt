@@ -13,5 +13,6 @@ Stan live 2026-10-08:
 - Konfiguracja: `autoscaling.knative.dev/minScale=0`, `maxScale=1`, concurrency=80, CPU=1000m, pamięć=512Mi.
 - Oficjalna dokumentacja Cloud Run opisuje do 30 minut opóźnienia wznowienia ruchu po przywróceniu billing; w tym okresie mogą wystąpić 429/503 z komunikatem o braku instancji. Obserwacja jest zgodna z tym znanym przypadkiem; po oknie należy ponowić pojedynczy health check.
 - Nie wykonano zmian Billing, IAM, usługi ani kolejnych płatności. Dopóki API nie zwróci 2xx, Auth/Firestore/sync/AI E2E pozostają bez PASS.
+- Zmiana kodu lokalna (2026-10-08): `/api/server/google-info` nie przedstawia chwilowej flagi procesu jako `durableCloudStorage`; zwraca `cloudStoreConfigured` i `cloudStoreVerifiedInProcess` osobno, a trwałość pozostaje false bez odrębnego round-trip. Wymaga wdrożenia, nie jest jeszcze live.
 
 Poprzednia kontrola przed rejestracją wpłaty/aktywacją wykazała `open=false`, `billingEnabled=false`, HTTP 503. Ten stan historyczny został zastąpiony powyższym odczytem live.

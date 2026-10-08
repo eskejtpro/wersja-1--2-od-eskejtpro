@@ -1,0 +1,20 @@
+DATA: 2026-10-08
+MODULE: Cloud health metadata and server-side AI model registry
+BRANCH: codex/planpasika-release
+
+PRZED:
+- `durableCloudStorage` mirrored a process-local boolean that could be true after one request, without representing a durable diagnostic round-trip.
+- Gemini model IDs were repeated in endpoint code and response payloads.
+
+PO:
+- Durability is conservative and separated from `cloudStoreConfigured` and `cloudStoreVerifiedInProcess`.
+- All eight server-side AI capabilities use constants from `server/ai/models.ts`.
+- Model IDs intentionally unchanged; availability/cost and endpoint success still need live tests.
+
+TESTY:
+- lint PASS; model registry 2/2; server 26/26; cloud 40/40; app 111/111; AI transport 6/6; Google UI 3/3; Ops 7/7.
+- web/server build, Capacitor sync, Gradle debug build PASS.
+- Xiaomi test APK install blocked by device `INSTALL_FAILED_USER_RESTRICTED`; 0 instrumentation tests.
+
+ROLLBACK:
+- Revert the commit containing this patch set; do not alter Firestore data or Cloud Run configuration.

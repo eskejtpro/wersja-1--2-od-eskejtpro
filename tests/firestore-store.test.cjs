@@ -219,7 +219,9 @@ test('Cloud Run API persists Google session and data across server restart, enfo
     assert.equal(loginBody.user.sub, 'verified-subject');
     assert.equal(loginBody.user.email, 'verified@example.invalid');
     const verifiedInfo = await (await fetch(`${first.base}/api/server/google-info`)).json();
-    assert.equal(verifiedInfo.durableCloudStorage, true);
+    assert.equal(verifiedInfo.durableCloudStorage, false);
+    assert.equal(verifiedInfo.cloudStoreConfigured, true);
+    assert.equal(verifiedInfo.cloudStoreVerifiedInProcess, true);
     assert.equal(verifiedInfo.status, 'online');
     const response = await fetch(`${first.base}/api/data`, {
       method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${sessionToken}` },

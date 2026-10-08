@@ -1,0 +1,42 @@
+DATA: 2026-10-08 22:40 Europe/Warsaw
+BRANCH: codex/planpasika-release
+ENVIRONMENT: Windows worktree; Xiaomi 2406APNFAG Android 16 via USB ADB; production Cloud Run not modified
+TEST: central AI model registry, honest Firestore durability metadata, regression suite, Android test/install retry
+CEL: move current verified release closer to aligned backend, Android and Cloud reporting without changing production state
+
+CHANGES:
+- Added `server/ai/models.ts` as a central registry for all 8 server AI capabilities; preserved existing model IDs pending live validation.
+- Server-side AI calls/responses now reference the registry.
+- `/api/server/google-info` no longer reports `durableCloudStorage=true` from a process-local observation. It exposes `cloudStoreConfigured` and `cloudStoreVerifiedInProcess`; durable proof remains false until a real diagnostic round-trip is separately reported.
+- Added a registry consistency test and updated Firestore/health tests.
+
+COMMANDS / RESULTS:
+- `npm run lint`: PASS.
+- `npm run test:ai-model-registry`: 2/2 PASS.
+- `npm run test:server`: 26/26 PASS.
+- `npm run test:cloud`: 40/40 PASS.
+- `npm test`: 111/111 PASS.
+- `npm run test:ai-transport`: 6/6 PASS.
+- `npm run test:google-ui`: 3/3 PASS.
+- `npm run test:ops-agent`: 7/7 PASS.
+- `npm run build`: PASS; Vite warns bundle 1.66 MB.
+- `npx cap sync android`: PASS.
+- `android/gradlew.bat assembleDebug`: PASS.
+- `connectedDebugAndroidTest`: BLOCKED before tests; install commit returned `INSTALL_FAILED_USER_RESTRICTED`; 0 tests.
+- Xiaomi install update of freshly built APK: BLOCKED with same `INSTALL_FAILED_USER_RESTRICTED`; no data-clearing attempt.
+
+APK:
+- `com.gymtracker.pro`, versionName 3.0.9, versionCode 309.
+- Size 6,723,501 bytes; SHA-256 `307874295CDF95441FC98276C2DA738D92756047ADFB8A7CCD4848CD0E6B3C46`.
+- Built locally, not installed on phone in this run.
+
+CLOUD:
+- No Cloud Shell tab was active (browser had only billing pages); no live request or production mutation made.
+- Previous live observation remains HTTP 429 `no available instance`; requires fresh read when Cloud Shell is available.
+
+SECURITY / CLEANUP:
+- Secret-pattern scan of `dist` and APK yielded no matching Gemini API keys/private-key headers/Bearer tokens.
+- No billing, IAM, Firestore, Cloud Run configuration, user app data or device policy changed.
+
+STATUS: local backend changes and builds PASS; Android install/instrumentation BLOCKED; live Cloud/Auth/Firestore/AI E2E UNKNOWN.
+NEXT: user must allow the Android installer prompt/restriction on Xiaomi; then install the new APK and run instrumentation/UI smoke. Re-open Cloud Shell for one read-only health/version/log verification before considering a production deployment.

@@ -136,6 +136,8 @@ test('Cloud Run reports HTTPS ingress without advertising unavailable cloud stor
     assert.equal(info.ssl, 'HTTPS na wejściu Cloud Run');
     assert.equal(info.googleAuthAvailable, false);
     assert.equal(info.durableCloudStorage, false);
+    assert.equal(info.cloudStoreConfigured, false);
+    assert.equal(info.cloudStoreVerifiedInProcess, false);
     const health = await (await fetch(`${url}/api/health`)).json();
     assert.equal(health.status, 'degraded');
     assert.match((await fetch(`${url}/api/health`)).headers.get('strict-transport-security') || '', /max-age=/);

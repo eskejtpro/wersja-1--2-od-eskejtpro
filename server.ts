@@ -11,6 +11,7 @@ import { GoogleGenAI } from '@google/genai';
 import { GoogleIdentityError, type GoogleIdTokenVerifier, verifyGoogleIdToken } from './server/auth/googleIdentity.ts';
 import { CloudConflictError, CloudStoreError, FirestoreStore, type CloudSession } from './server/data/firestoreStore.ts';
 import { validateHealthAuditInput } from './server/validation/healthAudit.ts';
+import { AI_MODELS } from './server/ai/models.ts';
 
 dotenv.config();
 
@@ -565,7 +566,11 @@ export function createApp(options: AppOptions = {}) {
       status: config.isCloudRun ? (cloudStore ? 'online' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'online'),
       ...GOOGLE_CLOUD_INFO,
       activeUser: null,
-      durableCloudStorage: cloudStoreVerified,
+      // Configured storage is not proof of durable writes; expose the last
+      // process-local verification separately and keep the boolean conservative.
+      durableCloudStorage: false,
+      cloudStoreConfigured: Boolean(config.isCloudRun && cloudStore),
+      cloudStoreVerifiedInProcess: cloudStoreVerified,
       timestamp: new Date(now()).toISOString()
     });
   });
@@ -1002,9 +1007,9 @@ ZASADY ODPOWIEDZI:
 
       // Czat używa tylko lekkiego modelu dostępnego w bezpłatnym poziomie Gemini API.
       // Nie przełączaj automatycznie na droższy model po wyczerpaniu limitu.
-      const modelCandidates = ['gemini-3.5-flash-lite'];
+      const modelCandidates = [AI_MODELS.coachChat];
       let replyText = '';
-      let successfulModel = 'gemini-3.5-flash-lite';
+      let successfulModel: string = AI_MODELS.coachChat;
 
       for (const candidate of modelCandidates) {
         try {
@@ -1076,7 +1081,7 @@ Podaj dla każdego dnia:
 3. Krótkie wskazówki techniczne dla głównych bojów.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.generatePlan,
         contents: prompt,
         config: {
           systemInstruction: 'Jesteś Elitarnym Trenerem i Metodykiem Treningu Siłowego. Tworzysz zbalansowane, zoptymalizowane biomechanicznie plany treningowe zgodne z najnowszą nauką o hipertrofii i periodyzacji.',
@@ -1086,7 +1091,7 @@ Podaj dla każdego dnia:
 
       return res.json({
         planText: response.text,
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.generatePlan,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -1121,7 +1126,7 @@ Zasady i zadanie:
 4. Nie wyciągaj wniosków z brakujących danych; jasno opisz ograniczenia.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.healthAudit,
         contents: prompt,
         config: {
           systemInstruction: 'Przygotowujesz wyłącznie edukacyjne, nie-diagnostyczne omówienie danych zdrowotnych. Nie diagnozujesz, nie ustalasz leczenia ani dawek. Nie deklarujesz normy bez podanego zakresu referencyjnego. Zachęcaj do konsultacji z wykwalifikowanym pracownikiem ochrony zdrowia.',
@@ -1136,7 +1141,7 @@ Zasady i zadanie:
 
       return res.json({
         auditText,
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.healthAudit,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -1183,7 +1188,7 @@ Podaj:
 4. Suplementację bazową (kreatyna, omega-3, witamina D3, elektrolity)`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.nutritionPlan,
         contents: prompt,
         config: {
           systemInstruction: 'Jesteś Elitarnym Dietetykiem Sportowym. Przygotowujesz precyzyjne rozpiski makroskładników i timing składników odżywczych poparte dowodami naukowymi.',
@@ -1200,7 +1205,7 @@ Podaj:
       return res.json({
         planText: response.text,
         macros: { dailyCalories: targetKcal, proteinGrams: protein, carbsGrams: carbs, fatsGrams: fats },
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.nutritionPlan,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -1236,7 +1241,7 @@ Dla każdego zamiennika podaj:
 3. Dlaczego to ćwiczenie jest świetnym substytutem biomechanicznym (profil oporu, bezpieczeństwo stawowe).`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.swapExercise,
         contents: prompt,
         config: {
           systemInstruction: 'Jesteś Ekspertem Biomechaniki i Fizjoterapii Sportowej. Dobierasz zamienniki ćwiczeń o zbliżonym ramieniu dźwigni i krzywej oporu.',
@@ -1246,7 +1251,7 @@ Dla każdego zamiennika podaj:
 
       return res.json({
         explanation: response.text,
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.swapExercise,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -1272,7 +1277,7 @@ Dla każdego zamiennika podaj:
       const cleanText = text.replace(/[*_#`[\]()]/g, '').slice(0, 400);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash-lite-tts',
+        model: AI_MODELS.tts,
         contents: [
           {
             role: 'user',
@@ -1297,7 +1302,7 @@ Dla każdego zamiennika podaj:
       return res.json({
         audioBase64: base64Audio,
         mimeType: 'audio/wav',
-        model: 'gemini-3.8-flash-lite-tts'
+        model: AI_MODELS.tts
       });
     } catch (err: any) {
       console.warn('[server] Błąd Gemini TTS:', err?.message || err);
@@ -1343,7 +1348,7 @@ Zwróć wyłącznie prawidłowy format JSON:
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.parseCommand,
         contents: prompt,
         config: {
           systemInstruction: 'Jesteś Kompilatorem Poleceń do Bazy Aplikacji Treningowej. Tłumaczysz naturalny język na ścisłe akcje JSON.',
@@ -1357,14 +1362,14 @@ Zwróć wyłącznie prawidłowy format JSON:
         return res.json({
           summary: parsed.summary || 'Przetworzono polecenie',
           actions: Array.isArray(parsed.actions) ? parsed.actions : [],
-          model: 'gemini-3.8-flash',
+          model: AI_MODELS.parseCommand,
           timestamp: new Date().toISOString()
         });
       } catch {
         return res.json({
           summary: 'Nie udało się sparsować akcji',
           actions: [],
-          model: 'gemini-3.8-flash'
+          model: AI_MODELS.parseCommand
         });
       }
     } catch (err: any) {
@@ -1441,7 +1446,7 @@ ${exerciseSummaryList.slice(0, 15).join('\n')}
 Wygeneruj wyczerpujący i praktyczny raport trenerski.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.analyze,
         contents: prompt,
         config: {
           systemInstruction,
@@ -1451,7 +1456,7 @@ Wygeneruj wyczerpujący i praktyczny raport trenerski.`;
 
       return res.json({
         analysis: response.text,
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.analyze,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
