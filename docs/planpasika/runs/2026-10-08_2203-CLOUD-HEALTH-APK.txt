@@ -1,0 +1,24 @@
+DATA: 2026-10-08 22:03 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT BEFORE REPORT: f00731db0dc9cddc6f4933a451583f4563ceca37
+ENVIRONMENT: Windows worktree; Xiaomi 2406APNFAG / Android 16 via USB; public Cloud Run endpoints
+
+CLOUD (read-only):
+- GET /api/health: HTTP 200, status ok, app GymTracker Pro, version 3.0.9.
+- GET /api/version: HTTP 200, status ok, appVersion 3.0.9.
+- GET /api/server/google-info: HTTP 200, status online, deployed version 3.0.9, durableCloudStorage=false.
+- No authenticated Firestore test; no Cloud Shell billing/IAM/service inventory available in this session.
+
+ANDROID:
+- `npx cap sync android`: PASS; Google Social Login plugin configured/enabled.
+- Gradle `:app:assembleDebug :app:assembleDebugAndroidTest`: BUILD SUCCESSFUL.
+- APK: debug, com.gymtracker.pro, versionName 3.0.9, versionCode 309, 7,275,711 bytes, SHA-256 09AC1214E4C1E13B6250573A56A3AEB1E04AF629F125306BEA87518485372028.
+- Device detected: Xiaomi 2406APNFAG, Android 16. Package absent before install attempt.
+- `adb install -r`: BLOCKED, `INSTALL_FAILED_USER_RESTRICTED: Install canceled by user`. No bypass/uninstall/data-clear.
+
+QUALITY:
+- `npm audit`: 0 high/critical, 11 moderate; production-only 0 high/critical, 3 moderate.
+- `npm test`: 111/111 PASS; `npm run lint`: PASS; `npm run build`: PASS (known Vite large-chunk warning).
+- GitHub Actions run 37836277574 for f00731d: Node and Android jobs PASS.
+
+STATUS: code/build/CI PASS; live API responds; durable Firestore, auth/sync/AI E2E UNKNOWN; device install BLOCKED; release NOT READY.

@@ -9,3 +9,4 @@ Commity: 5663977, f2566f1, 9257cf9.
 2026-10-08: zbudowano APK debug 3.0.9/309, SHA-256 B0E5D6DA3698EBBE509BA84CF02BB7E7470C5667602F3524E94EE2281DB1C200; `adb install -r` na Xiaomi PASS.
 2026-10-08: Xiaomi instrumentation zatrzymany przed testami — system zablokował instalację helper APK (`INSTALL_FAILED_USER_RESTRICTED`); 0 testów, bez obejścia ustawień urządzenia.
 2026-10-08: dodano npm override `http-cache-semantics@4.3.0` dla transitive zależności electron-builder, eliminując advisory high GHSA-ch52-4w7c-c8xp z full audit. Lokalne lint, 111 testów aplikacji i web/server build PASS; weryfikacja CI po zmianie oczekuje.
+2026-10-08: GitHub Actions run 37836277574 zakończony sukcesem na commicie f00731d (Node + Android). Public Cloud Run endpoints zwróciły 200 na wersji 3.0.9, ale trwałość Firestore nadal niepotwierdzona. Fresh APK build PASS; ADB install na Xiaomi ponownie odrzucony przez restrykcję telefonu.

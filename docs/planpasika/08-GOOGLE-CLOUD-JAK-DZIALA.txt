@@ -12,7 +12,9 @@ Stan live 2026-10-08:
 - Cloud Logging dla requestów wskazuje WARNING: `The request was aborted because there was no available instance.`
 - Konfiguracja: `autoscaling.knative.dev/minScale=0`, `maxScale=1`, concurrency=80, CPU=1000m, pamięć=512Mi.
 - Oficjalna dokumentacja Cloud Run opisuje do 30 minut opóźnienia wznowienia ruchu po przywróceniu billing; w tym okresie mogą wystąpić 429/503 z komunikatem o braku instancji. Obserwacja jest zgodna z tym znanym przypadkiem; po oknie należy ponowić pojedynczy health check.
-- Nie wykonano zmian Billing, IAM, usługi ani kolejnych płatności. Dopóki API nie zwróci 2xx, Auth/Firestore/sync/AI E2E pozostają bez PASS.
+- Nie wykonano zmian Billing, IAM, usługi ani kolejnych płatności. W poprzednim odczycie API miało 429; świeży GET zwraca 200, lecz Auth/Firestore/sync/AI E2E nadal bez PASS.
 - Zmiana kodu lokalna (2026-10-08): `/api/server/google-info` nie przedstawia chwilowej flagi procesu jako `durableCloudStorage`; zwraca `cloudStoreConfigured` i `cloudStoreVerifiedInProcess` osobno, a trwałość pozostaje false bez odrębnego round-trip. Wymaga wdrożenia, nie jest jeszcze live.
+
+Aktualny odczyt publicznych GET endpointów (2026-10-08, Windows worktree): `/api/health`, `/api/version`, `/api/server/google-info` zwróciły HTTP 200; backend zgłasza 3.0.9, status ok/online. `google-info` nadal zwraca `durableCloudStorage:false`. To dowodzi dostępności procesu i metadanych, nie Firestore write/read ani billing status.
 
 Poprzednia kontrola przed rejestracją wpłaty/aktywacją wykazała `open=false`, `billingEnabled=false`, HTTP 503. Ten stan historyczny został zastąpiony powyższym odczytem live.

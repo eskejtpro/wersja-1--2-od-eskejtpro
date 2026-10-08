@@ -1,0 +1,9 @@
+DATA: 2026-10-08 22:03 Europe/Warsaw
+BRANCH: codex/planpasika-release
+
+- Rechecked public Cloud Run health/version/info endpoints: all HTTP 200, deployed version 3.0.9.
+- Server metadata still reports durableCloudStorage=false; no persistence claim made.
+- Built fresh Android debug APK and AndroidTest compile locally; CI jobs pass on commit f00731d.
+- Applied and CI-verified override to http-cache-semantics 4.3.0; full npm audit has no high/critical advisories.
+- Xiaomi installation was again rejected by Android user restriction; no bypass, uninstall or data clear.
+- No billing, IAM, Firestore data, Cloud Run configuration or app data was changed.
