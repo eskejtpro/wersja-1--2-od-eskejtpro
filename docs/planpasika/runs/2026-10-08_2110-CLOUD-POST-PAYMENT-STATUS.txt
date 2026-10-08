@@ -1,0 +1,24 @@
+DATA: 2026-10-08 21:10 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: b36c93359abb4e5bbfed882133a614787236df04
+ENVIRONMENT: Google Cloud Console, konto ai.eskejtpro@gmail.com, projekt gen-lang-client-0836043899, region europe-central2
+TEST: read-only billing UI, Cloud Run UI/logs, public HTTP endpoints, Xiaomi install state
+CEL: sprawdzenie, czy ręczna przedpłata przywróciła usługę
+
+STATUS: FAIL / INVESTIGATE (API nadal niedostępne dla klienta)
+
+WYNIKI:
+- Billing UI: Google Cloud pay-as-you-go pokazuje ręczną wpłatę 40,00 zł z 8 października, brak zaległości i próg płatności 200,00 zł.
+- Oddzielny AI Studio prepay pokazuje saldo 0,00 zł; nie należy mylić go z Cloud pay-as-you-go.
+- Cloud Shell w przeglądarce pozostawał na "Nawiązuję połączenie"; lokalnego gcloud brak. Nie odczytano na nowo `billingEnabled` ani `open`.
+- Cloud Run UI deklaruje, że usługa działa i obsługuje ruch.
+- GET /api/health, /api/version, /api/server/google-info: HTTP 429, body "Rate exceeded", 14 B, 0 ms, Server: Google, Frontend.
+- Cloud Logging HTTP request rows pokazują 429/14 B/0 ms dla wersji/google-info; odrzucenie jest przed kodem aplikacji.
+- Xiaomi 14T (2406APNFAG), Android 16: zainstalowany com.gymtracker.pro 3.0.9, versionCode 309; proces żyje, ostatni sprawdzony logcat bez FATAL/ANR.
+- Lokalne: npm run lint PASS; npm test PASS 111/111.
+
+LOG SUMMARY: Ręczna płatność jest widoczna, ale nie ma dowodu aktywnego billing projektu. Sprzeczne sygnały UI (Cloud Run healthy) i runtime HTTP 429 pozostawiają stan projektu UNKNOWN; brak podstaw do stwierdzenia przyczyny finansowej lub limitu quota.
+ARTIFACTS: bez zmian w APK i danych użytkownika.
+PROBLEMS: Cloud Shell niedostępny; brak lokalnego Cloud SDK; endpointy odrzucane przez Google Frontend.
+CLEANUP: brak mutacji Cloud, Billing, Firestore i danych aplikacji; nie wykonano płatności.
+NEXT: ponownie uruchomić Cloud Shell, pobrać billing project describe/account describe/service conditions, a po API 2xx wykonać auth i Firestore synthetic self-test.

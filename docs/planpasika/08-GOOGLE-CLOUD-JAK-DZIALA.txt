@@ -3,10 +3,11 @@ Cloud Run: wersja-1--2-od-eskejtpro-git.
 Firestore: baza (default), typ Firestore Native, lokalizacja europe-central2.
 Runtime service account ma roles/datastore.user według wcześniejszego audytu.
 
-Stan live zweryfikowany 2026-10-08:
-- Konto Cloud Billing jest zamknięte (open=false).
-- Projekt ma przypisane konto rozliczeniowe, lecz billingEnabled=false.
-- Cloud Run wskazuje rewizję wersja-1--2-od-eskejtpro-git-00021-9zx z 100% ruchu.
-- /api/health zwraca HTTP 503; Cloud Logging dla requestów potwierdza komunikat "The request failed because billing is disabled for this project.".
-- Cloud Run, logowanie aplikacji i Firestore nie mogą być uznane za działające, dopóki billing nie zostanie ponownie aktywowany.
-- Nie wykonano płatności ani nie zmieniono rozliczeń. Po aktywacji wymagane ponowne smoke testy API, Google Auth oraz syntetyczny Firestore write/read/cleanup.
+Stan live zweryfikowany 2026-10-08, aktualizacja 21:10 Europe/Warsaw:
+- Konsola Billing na koncie ai.eskejtpro@gmail.com odnotowuje ręczną płatność 40,00 zł dla "Płatność po wykonaniu usługi – usługi Google Cloud" z 8 października oraz brak zaległości; widoczny próg płatności wynosi 200,00 zł.
+- Oddzielna sekcja "Przedpłata – AI Studio" pokazuje saldo 0,00 zł. To inny portfel niż płatność po użyciu Google Cloud; nie jest dowodem stanu billing projektu Cloud Run.
+- Nie udało się ponownie odczytać `billingEnabled` ani pola `open` przez gcloud: Cloud Shell w przeglądarce pozostawał w stanie łączenia, a lokalny Cloud SDK nie jest zainstalowany.
+- Konsola Cloud Run pokazuje ikonę "Usługa działa prawidłowo i obsługuje ruch", ale żądania `/api/health`, `/api/version` i `/api/server/google-info` zwracają HTTP 429, body `Rate exceeded`, 14 B, opóźnienie 0 ms, `Server: Google, Frontend`.
+- Wpisy HTTP Request w Cloud Logging również pokazują 429/14 B/0 ms dla tych ścieżek. To wskazuje na odrzucenie przed handlerem aplikacji; przyczyna i bieżąca flaga billing projektu pozostają UNKNOWN.
+- Poprzedni odczyt Cloud Shell tego samego dnia wykazał `open=false`, `billingEnabled=false` i HTTP 503 z komunikatem o wyłączonym billing. Nowa płatność jest potwierdzona w UI, ale nie ma jeszcze dowodu, że konto/projekt zostały odblokowane.
+- Nie wykonano żadnej zmiany billing ani kolejnej płatności. API/Firestore/Auth/AI pozostają bez PASS; po przywróceniu odpowiedzi 2xx wymagane smoke testy i syntetyczny Firestore write/read/cleanup.
