@@ -1,7 +1,8 @@
 Chat i endpointy AI korzystają z transportu serwerowego; klient nie powinien zawierać sekretu Gemini.
 Główny czat używa gemini-3.5-flash-lite w aktualnym branchu.
 2026-10-08: Android nie przekazuje już pola model do endpointu. Model jest wybierany wyłącznie przez serwerowy rejestr; interfejs pokazuje nazwę zwróconą przez backend, a przed odpowiedzią `unknown`. Usunięto niezgodne powitanie Gemini 3.8 Flash.
-Pozostałe modele 3.8 pozostają bez zmian; oficjalna dokumentacja Gemini API potwierdza ich aktualną dostępność. Nie należy przypisywać ich czatowi bez odpowiedzi backendu.
+Pozostałe modele 3.8 pozostają bez zmian. Ich identyfikatory są wymienione w katalogu Gemini API, ale dostęp bieżącego projektu/klucza nie został live sprawdzony. Nie należy przypisywać ich czatowi bez odpowiedzi backendu.
 Pozostałe endpointy wymagają osobnej tabeli live PASS/WARN/FAIL; lokalny transport AI ma 6/6 PASS.
 Od 2026-10-08 wszystkie serwerowe endpointy odwołują się do centralnego `server/ai/models.ts`; modele pozostawiono bez zmiany, bo ich aktualna dostępność i koszt nie zostały live zweryfikowane.
+2026-10-09: oficjalny katalog Gemini API wymienia `gemini-3.8-flash`, `gemini-3.8-flash-lite-tts` i `gemini-3.5-flash-lite`; to potwierdza prawidłowość identyfikatorów modeli, nie dostęp projektu/klucza, limitów, billing ani odpowiedzi konkretnego endpointu. Link: https://ai.google.dev/gemini-api/docs/models. Nie wysyłano żądań generacyjnych ani nie ponoszono kosztu.
 Dane testowe AI muszą być syntetyczne, bez prawdziwych danych zdrowotnych.
