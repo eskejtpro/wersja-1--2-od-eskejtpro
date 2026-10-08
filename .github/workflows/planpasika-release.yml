@@ -31,6 +31,7 @@ jobs:
       - run: npm run test:cloud
       - run: npm run test:ai-transport
       - run: npm run test:google-ui
+      - run: node --test tests/android-package-security.test.mjs
       - run: npm run test:ai-model-registry
       - run: npm run test:ops-agent
       - run: npm run build:ops-agent
@@ -60,6 +61,7 @@ jobs:
       - run: node scripts/verify-android-oauth-bundle.mjs
       - uses: gradle/actions/setup-gradle@v4
       - run: bash android/gradlew -p android :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
+      - run: node scripts/verify-android-package-security.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: ci-test-only-android-debug-ephemeral-signature-${{ github.sha }}

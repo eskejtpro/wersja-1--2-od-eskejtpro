@@ -2,6 +2,7 @@ Nie znaleziono kluczy API, private keys ani Bearer tokenów w kontrolowanym skan
 Google ID token jest weryfikowany po stronie serwera; principal nie może pochodzić wyłącznie z danych klienta.
 Sesje i dane są izolowane przez verified principal w testach serwera.
 Do pełnego release pozostaje live test auth isolation oraz potwierdzenie braku sekretów w finalnym bundle/APK.
+2026-10-09: gotowy lokalny APK 3.0.9/309 (SHA-256 B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1) przeszedł skan rozpakowanych plików tekstowych pod kątem typowych formatów API key, OAuth client secret, PEM private key, service-account JSON, statycznego Bearer JWT i klucza typu sk-; wynik 0 trafień. Publiczny OAuth client ID i publiczny Cloud Run URL są dozwolone. Kontrola jest teraz bramką po Gradle build w CI. Jest to ograniczony skan wzorców, a nie dowód braku wszystkich możliwych sekretów w binariach lub działania live auth isolation.
 
 DEPENDENCY AUDIT (2026-10-08, npm audit):
 - Full dependency tree: 12 advisories (11 moderate, 1 high, 0 critical).

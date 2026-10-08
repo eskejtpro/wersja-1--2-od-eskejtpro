@@ -1,0 +1,8 @@
+DATA: 2026-10-09 00:39 Europe/Warsaw
+MODUL: Android artifact security gate
+PRZED: CI verified the bundle OAuth configuration and built an APK, but did not inspect the final APK for accidentally packaged credential patterns.
+PO: CI runs a tested scanner against the extracted APK after Gradle build and before artifact upload. It reports only path/rule, never matched credential values.
+DLACZEGO: Gemini credentials belong only on the backend; a successful build is not a credential-leak check.
+TESTY: static scanner unit tests 3/3 PASS; local final-APK scan PASS; TypeScript lint PASS. CI result after this commit must be checked separately.
+OGRANICZENIE: pattern-based scan cannot prove absence of arbitrary or encoded secrets, nor live user isolation.
+ROLLBACK: 59b335c

@@ -1,0 +1,13 @@
+DATA: 2026-10-09 00:39 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT UNDER TEST: working tree after 59b335c
+ENVIRONMENT: Windows local JDK 21, Node, existing APK 3.0.9/309
+TEST: static credential-pattern inspection of the extracted Android APK
+CEL: detect common accidentally embedded secrets without printing their values
+KOMENDY: node --test tests/android-package-security.test.mjs; node scripts/verify-android-package-security.mjs; npm run lint
+STATUS: scanner tests PASS 3/3; APK scan PASS; TypeScript lint PASS; production secret configuration and live auth isolation UNKNOWN
+WYNIKI: 0 flagged patterns in APK SHA-256 B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1. Negative test found synthetic service-account JSON and API key/private-key patterns.
+LOG SUMMARY: no matching credential values printed; no device logcat available.
+ARTIFACTS: scripts/verify-android-package-security.mjs; tests/android-package-security.test.mjs; local APK described in 13-WERSJE-I-WYDANIA.txt.
+PROBLEMS: static patterns cannot verify encoded or unknown secret formats; Android login/Firestore E2E remains unverified.
+CLEANUP: scanner removed its validated temporary extraction directory; test removed its synthetic fixture; no cloud mutation.

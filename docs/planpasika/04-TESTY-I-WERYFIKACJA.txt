@@ -1,4 +1,5 @@
 PASS: lint, 111 testów aplikacji, 26 testów serwera, 40 testów Cloud, 6 testów AI transportu.
+2026-10-09 security gate: `node --test tests/android-package-security.test.mjs` 3/3 PASS, `node scripts/verify-android-package-security.mjs` on the local 3.0.9 APK PASS (0 flagged patterns), TypeScript lint PASS. This is static package inspection; device, live Firestore, AI and cross-user auth E2E remain UNKNOWN/BLOCKED for this release cycle.
 PASS: npm build, Capacitor sync, Gradle assembleDebug.
 PASS: APK install -r i uruchomienie na Oppo CPH2269.
 HISTORY (2026-10-06): instrumented test XML 1/1 PASS; Gradle UTP nie odebrał wyniku końcowego.
