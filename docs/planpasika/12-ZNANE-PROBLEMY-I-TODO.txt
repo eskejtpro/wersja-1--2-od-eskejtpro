@@ -18,6 +18,8 @@ P0: Trigger's inline config builds/pushes a Buildpack image then updates Cloud R
 
 P0 update 2026-10-08: local regression fix ensures expected Firestore stale-write conflict (HTTP 409) is not classified as storage outage. Conflict can confirm connectivity, but does not set diagnostic roundTripStatus=pass or durableCloudStorage=true. Tests pass locally; change is not deployed. See `docs/planpasika/runs/2026-10-08_2355-CLOUD-CONFLICT-HEALTH-REGRESSION.txt`.
 
+P0 recheck 2026-10-09: production GET health/version/google-info all returned HTTP 200; version 3.0.9, `health:ok`, but `durableCloudStorage:false` and `activeUser:null`. Console shows revision `00021-9zx` at 100% traffic, created 2026-10-06; Firestore env is configured but authenticated round-trip is still unverified. Release commit 16c71d1 is not deployed; trigger source remains `work/v3.0.9-cloud-store`. Run 37849109927 PASS for Node and Android jobs; APK artifact ID 11581326629. See `docs/planpasika/runs/2026-10-09_1015-PRODUCTION-AND-CI-STATUS.txt`.
+
 2026-10-08 23:29 Europe/Warsaw — Cloud continuation po informacji o przedplacie:
 - CI run 37846686369 dla commita 541eef33d00869e2f1456e8955a5bb645a54ad7c zakonczyl sie sukcesem: node-quality PASS i android-debug PASS.
 - Publiczne GET /api/health oraz /api/server/google-info zwrocily HTTP 200; backend 3.0.9 jest online, ale `durableCloudStorage:false`.

@@ -1,0 +1,31 @@
+DATA: 2026-10-09 10:15 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT APK: 16c71d17fd47d81c485fba1f8d5f6ae224a578d3
+COMMIT HEAD: cf7b0c93cb278ba24f3e7a4d35eb75c4b555c50b
+CEL: ponownie zweryfikowac live Cloud Run, zrodlo produkcyjnej rewizji oraz artefakt Android CI
+
+LIVE API (GET, read-only; 2026-10-09):
+- `/api/health`: HTTP 200, status `ok`, version 3.0.9.
+- `/api/version`: HTTP 200, appVersion 3.0.9, schemaVersion 1.
+- `/api/server/google-info`: HTTP 200, status `online`, `durableCloudStorage:false`, `activeUser:null`.
+- Odpowiedzi potwierdzaja dostepnosc procesu, nie uwierzytelniony Firestore read/write.
+
+CLOUD RUN CONSOLE (read-only):
+- Projekt `gen-lang-client-0836043899`, region `europe-central2`.
+- Aktywna rewizja `wersja-1--2-od-eskejtpro-git-00021-9zx`, 100% ruchu; utworzona 2026-10-06.
+- Obraz `europe-central2-docker.pkg.dev/gen-lang-client-0836043899/cloud-run-source-deploy/wersja-1--2-od-eskejtpro-git@sha256:d5b8c390fe825ea5d714e8fb86b4e9defb154ecd429d26b6cd456f4d71c22e5d`.
+- Widoczne ustawienia: `GYMTRACKER_CLOUD_STORE=firestore`, projekt i baza `(default)` zgodne; `GOOGLE_CLIENT_ID` ustawiony; `PUBLIC_SERVER_URL` ustawiony; Gemini API key pobierany jako referencja Secret Manager `planpasika-gemini-free-chat-key:latest`. Wartosc sekretu nie byla odczytywana.
+- Konfiguracja nie dowodzi dzialania operacji Firestore ani prawidlowego OAuth end-to-end.
+- Usługa nadal dziala z historycznej galezi triggera `work/v3.0.9-cloud-store`; commit 16c71d1 nie zostal wdrozony.
+
+GITHUB ACTIONS:
+- Run 37849109927 dla HEAD `cf7b0c9`: node-quality PASS oraz android-debug PASS.
+- APK artifact ID 11581326629, nazwa `gymtracker-pro-android-debug-cf7b0c93cb278ba24f3e7a4d35eb75c4b555c50b`, 6,106,415 bytes, wygasa 2026-10-22 21:48:57Z.
+- APK z commita zawierajacego kod 16c71d1 jest 3.0.9 (309), package `com.gymtracker.pro`; lokalny SHA-256: `A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE`.
+- Artifact z CI opublikowany i sprawdzony jako job-success; lokalne APK hash nie jest automatycznie przypisywany do zdalnego ZIP/APK.
+
+OGRANICZENIA:
+- ADB: brak podlaczonych urzadzen; brak instalacji/runtime UI testu.
+- Brak zalogowanej sesji aplikacji do uruchomienia chronionego Firestore self-test. Nie zapisano ani nie zmieniono danych uzytkownika.
+- Nie zmieniano Cloud Run, triggera, Firestore, IAM, Secret Manager ani billing.
+- Kolejny produkcyjny krok wymaga kontrolowanego uzgodnienia trigger source z galezia release oraz rollbacku, a po wdrozeniu testu klientowego write/read/cleanup.
