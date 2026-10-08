@@ -1,0 +1,7 @@
+DATA: 2026-10-09 00:34 Europe/Warsaw
+MODUL: Android installation and CI artifact labeling
+PRZED: CI debug APK had an ordinary artifact name despite no stable signing key; install -r workflow did not preflight-check signature compatibility with the installed app.
+PO: CI artifact is labeled test-only/ephemeral-signature; a Windows installer checks the candidate and installed certificate SHA-256 before adb install -r, aborting on mismatch and never uninstalling or clearing data.
+DLACZEGO: a signature mismatch prevents data-preserving update; a green build alone does not prove installability on an existing device.
+TESTY: PowerShell parser PASS; script with absent Xiaomi ADB serial stopped before install, PASS fail-closed; actual device path UNKNOWN.
+ROLLBACK: 1fb4f81

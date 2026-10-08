@@ -1,0 +1,13 @@
+DATA: 2026-10-09 00:34 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT UNDER TEST: working tree after 1fb4f81
+ENVIRONMENT: Windows, Android SDK build-tools 36.0.0, ADB
+TEST: safe update preflight without connected phone
+CEL: reject absent/unauthorized device before any installation and verify PowerShell syntax
+KOMENDY: PowerShell Parser.ParseFile(scripts/install-android-candidate.ps1); scripts/install-android-candidate.ps1 -Serial 755XZTPVNJNVX4OJ; adb devices -l
+STATUS: parser PASS; no-device fail-closed PASS; real-device signer comparison BLOCKED; install BLOCKED
+WYNIKI: ADB list empty; script threw `Device 755XZTPVNJNVX4OJ is not connected and authorized in ADB` before install. No APK was installed or removed.
+LOG SUMMARY: no device logcat available.
+ARTIFACTS: scripts/install-android-candidate.ps1; local candidate APK listed in 13-WERSJE-I-WYDANIA.txt.
+PROBLEMS: installed app signing certificate is unknown until device connection. GitHub CI debug signature remains ephemeral.
+CLEANUP: no temporary APK or cloud record created.
