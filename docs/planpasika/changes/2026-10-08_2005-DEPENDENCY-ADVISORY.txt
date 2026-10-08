@@ -1,0 +1,9 @@
+DATA: 2026-10-08 20:05 Europe/Warsaw
+BRANCH: codex/planpasika-release
+CHANGE: pin vulnerable transitive cache semantics dependency to fixed 4.3.0
+
+- Added npm override and regenerated lockfile.
+- Resolved the full-tree high advisory GHSA-ch52-4w7c-c8xp in local dependency tree.
+- Full audit: 0 high/critical, 11 moderate; production audit: 0 high/critical, 3 moderate.
+- Local tests/build/lint pass; CI for this exact dependency change remains pending.
+- No production Cloud Run, billing, IAM, Firestore or device data changed.

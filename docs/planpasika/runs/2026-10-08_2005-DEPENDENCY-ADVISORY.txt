@@ -1,0 +1,23 @@
+DATA: 2026-10-08
+BRANCH: codex/planpasika-release
+ENVIRONMENT: Windows release worktree
+SCOPE: mitigate high transitive npm advisory without broad/major dependency upgrades
+
+FINDING:
+- `http-cache-semantics@4.2.0` was pulled through electron-builder -> app-builder-lib -> @electron/get -> got -> cacheable-request.
+- npm advisory GHSA-ch52-4w7c-c8xp affects <=4.2.0; registry resolves 4.3.0 and no 4.2.1 release.
+
+CHANGE:
+- Added root npm override `http-cache-semantics: 4.3.0`; package-lock updated via `npm install --package-lock-only` and dependency tree restored with `npm ci`.
+
+VERIFICATION:
+- `npm ls http-cache-semantics --all`: 4.3.0 overridden in the expected dependency chain.
+- `npm audit`: 0 high, 0 critical, 11 moderate.
+- `npm audit --omit=dev`: 0 high/critical, 3 moderate.
+- `npm test`: 111/111 PASS.
+- `npm run lint`: PASS.
+- `npm run build`: PASS (existing Vite large-chunk warning, 1.66 MB).
+- GitHub Actions run 37835576910 before the override: Node and Android jobs PASS; it does not verify this override.
+- CI for the dependency change: PENDING.
+
+STATUS: local mitigation PASS; CI confirmation pending. No Cloud/device/data changes.

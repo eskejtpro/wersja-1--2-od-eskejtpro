@@ -68,6 +68,9 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
   },
+  "overrides": {
+    "http-cache-semantics": "4.3.0"
+  },
   "build": {
     "appId": "pl.pasik92.gymtrackerpro",
     "productName": "GymTracker Pro",
