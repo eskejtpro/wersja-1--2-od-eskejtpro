@@ -186,7 +186,9 @@ export const AppUpdateServerPanel: React.FC<AppUpdateServerPanelProps> = ({
       if (!googleServerInfo?.googleAuthAvailable) throw new Error("Serwer nie zgłasza aktywnego logowania Google.");
       const targetUrl = configuredServerUrl;
       await SocialLogin.initialize({ google: { webClientId, mode: "online" } });
-      const googleResult = await SocialLogin.login({ provider: "google", options: { scopes: ["email", "profile"] } });
+      // The plugin requests its standard email/profile/openid scopes by default.
+      // Passing custom scopes requires a modified native MainActivity and breaks login here.
+      const googleResult = await SocialLogin.login({ provider: "google", options: {} });
       const idToken = googleResult.result.responseType === "online" ? googleResult.result.idToken : null;
       if (!idToken) throw new Error("Google nie zwrócił tokenu ID.");
       const res = await loginWithGoogleAccount({ idToken, targetUrl });

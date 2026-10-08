@@ -54,4 +54,4 @@ jobs:
       - run: npm run build
       - run: npx cap sync android
       - uses: gradle/actions/setup-gradle@v4
-      - run: bash android/gradlew -p android :app:assembleDebug :app:assembleDebugAndroidTest
+      - run: bash android/gradlew -p android :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest

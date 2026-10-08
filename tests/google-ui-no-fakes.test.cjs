@@ -12,6 +12,7 @@ test('Google settings use a real ID token and keep the bearer session in React m
   const profileModal = source('src/components/AccountProfileModal.tsx');
   const profile = source('src/components/UserProfileView.tsx');
   assert.match(panel, /SocialLogin\.login\(\{ provider: "google"/);
+  assert.match(panel, /SocialLogin\.login\(\{ provider: "google", options: \{\} \}\)/);
   assert.match(panel, /loginWithGoogleAccount\(\{ idToken, targetUrl \}\)/);
   assert.match(panel, /googleSession\.token/);
   assert.match(panel, /activeGoogleUser && googleSession \? \(/);

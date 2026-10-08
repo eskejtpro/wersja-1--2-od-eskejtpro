@@ -209,6 +209,7 @@ test('Cloud Run API persists Google session and data across server restart, enfo
     const initialInfo = await (await fetch(`${first.base}/api/server/google-info`)).json();
     assert.equal(initialInfo.durableCloudStorage, false);
     assert.equal(initialInfo.status, 'online');
+    assert.equal((await (await fetch(`${first.base}/api/health`)).json()).status, 'ok');
     const login = await fetch(`${first.base}/api/auth/google/login`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ idToken: 'signed-id-token', email: 'forged@example.invalid' }),
@@ -221,7 +222,9 @@ test('Cloud Run API persists Google session and data across server restart, enfo
     const verifiedInfo = await (await fetch(`${first.base}/api/server/google-info`)).json();
     assert.equal(verifiedInfo.durableCloudStorage, false);
     assert.equal(verifiedInfo.cloudStoreConfigured, true);
-    assert.equal(verifiedInfo.cloudStoreVerifiedInProcess, true);
+    assert.equal(verifiedInfo.cloudStoreVerifiedInProcess, false);
+    assert.equal(verifiedInfo.cloudStorage.connectivity, 'available');
+    assert.equal(verifiedInfo.cloudStorage.roundTripStatus, 'not_run');
     assert.equal(verifiedInfo.status, 'online');
     const response = await fetch(`${first.base}/api/data`, {
       method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${sessionToken}` },
@@ -230,6 +233,10 @@ test('Cloud Run API persists Google session and data across server restart, enfo
     assert.equal(response.status, 201);
     saved = await response.json();
     assert.equal(saved.revision, 1);
+    const afterSaveInfo = await (await fetch(`${first.base}/api/server/google-info`)).json();
+    assert.equal(afterSaveInfo.durableCloudStorage, false);
+    assert.equal(afterSaveInfo.cloudStorage.connectivity, 'available');
+    assert.equal(afterSaveInfo.cloudStorage.roundTripStatus, 'not_run');
   } finally {
     await first.close();
   }

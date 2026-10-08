@@ -38,7 +38,7 @@ test('Trener AI Online: Pamięć trwała czatu oraz fakty długoterminowe są za
       role: 'assistant',
       content: 'Świetny cel! Rozpiszemy periodyzację blokową z falą 3-tygodniową.',
       timestamp: '16:01',
-      model: 'gemini-3.8-flash'
+      model: 'gemini-3.5-flash-lite'
     }
   ];
 

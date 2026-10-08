@@ -403,9 +403,24 @@ export function createApp(options: AppOptions = {}) {
   const localStore = dataStoreFor(localPrincipalId);
   const verifyIdToken = options.verifyGoogleIdToken || verifyGoogleIdToken;
   const availableCapabilities = config.isCloudRun && !cloudStore ? ['update_metadata_only'] : capabilities;
-  let cloudStoreVerified = false;
+  const cloudStorageState: {
+    connectivity: 'unknown' | 'available' | 'unavailable';
+    roundTripStatus: 'not_run' | 'pass' | 'fail';
+    lastVerifiedAt: string | null;
+    lastRoundTripAt: string | null;
+    lastError: string | null;
+  } = { connectivity: config.isCloudRun && cloudStore ? 'unknown' : 'unavailable', roundTripStatus: 'not_run', lastVerifiedAt: null, lastRoundTripAt: null, lastError: null };
+  const cloudStoreVerified = () => cloudStorageState.roundTripStatus === 'pass';
+  const recordCloudStoreSuccess = () => {
+    cloudStorageState.connectivity = 'available';
+    cloudStorageState.lastError = null;
+  };
   const sendCloudError = (res: Response, error: unknown) => {
-    cloudStoreVerified = false;
+    if (config.isCloudRun) {
+      cloudStorageState.connectivity = 'unavailable';
+      cloudStorageState.roundTripStatus = 'fail';
+      cloudStorageState.lastError = error instanceof CloudStoreError ? error.code : 'cloud_store_unavailable';
+    }
     if (error instanceof CloudConflictError) {
       return res.status(409).json({ error: 'conflict', reason: error.reason, revision: error.revision, contentHash: error.contentHash });
     }
@@ -460,9 +475,12 @@ export function createApp(options: AppOptions = {}) {
     let session: Session | null | undefined;
     try {
       session = config.isCloudRun ? await cloudStore?.readSession(tokenDigest(token)) : sessions.get(tokenDigest(token));
-      if (config.isCloudRun && session) cloudStoreVerified = true;
+      if (config.isCloudRun && session) recordCloudStoreSuccess();
     } catch {
-      cloudStoreVerified = false;
+      if (config.isCloudRun) {
+        cloudStorageState.connectivity = 'unavailable';
+        cloudStorageState.lastError = 'session_store_unavailable';
+      }
       return res.status(503).json({ error: 'session_store_unavailable' });
     }
     if (!session || session.expiresAt <= now()) {
@@ -480,9 +498,9 @@ export function createApp(options: AppOptions = {}) {
   };
 
   app.get('/api/health', (_req, res) => res.json({
-    // A cold Cloud Run instance has not necessarily handled a user request yet.
-    // Durable-data proof is provided by /api/diagnostics/firestore and sync routes.
-    status: config.isCloudRun ? (cloudStore ? 'ok' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'ok'),
+    status: config.isCloudRun
+      ? (!cloudStore ? 'degraded' : cloudStorageState.connectivity === 'unavailable' ? 'degraded' : 'ok')
+      : (!localStore || localStore.error ? 'degraded' : 'ok'),
     app: 'GymTracker Pro',
     version: APP_VERSION,
     apiVersion: API_VERSION,
@@ -568,9 +586,16 @@ export function createApp(options: AppOptions = {}) {
       activeUser: null,
       // Configured storage is not proof of durable writes; expose the last
       // process-local verification separately and keep the boolean conservative.
-      durableCloudStorage: false,
+      durableCloudStorage: cloudStoreVerified(),
       cloudStoreConfigured: Boolean(config.isCloudRun && cloudStore),
-      cloudStoreVerifiedInProcess: cloudStoreVerified,
+      cloudStorage: {
+        connectivity: cloudStorageState.connectivity,
+        roundTripStatus: cloudStorageState.roundTripStatus,
+        lastVerifiedAt: cloudStorageState.lastVerifiedAt,
+        lastRoundTripAt: cloudStorageState.lastRoundTripAt,
+        lastError: cloudStorageState.lastError,
+      },
+      cloudStoreVerifiedInProcess: cloudStoreVerified(),
       timestamp: new Date(now()).toISOString()
     });
   });
@@ -648,7 +673,7 @@ export function createApp(options: AppOptions = {}) {
     try {
       if (config.isCloudRun) {
         await cloudStore?.saveSession(session);
-        cloudStoreVerified = true;
+        recordCloudStoreSuccess();
       }
       else sessions.set(tokenHash, session);
     } catch (error) {
@@ -680,7 +705,7 @@ export function createApp(options: AppOptions = {}) {
       if (!cloudStore) return res.status(503).json({ error: 'cloud_store_not_configured' });
       try {
         const state = await cloudStore.readData(session.principalId);
-        cloudStoreVerified = true;
+        recordCloudStoreSuccess();
         return state ? res.json(state) : res.status(404).json({ error: 'data_unavailable' });
       } catch (error) {
         return sendCloudError(res, error);
@@ -713,7 +738,7 @@ export function createApp(options: AppOptions = {}) {
           typeof expectedRevision === 'number' ? expectedRevision : undefined,
           typeof expectedHash === 'string' ? expectedHash : undefined,
         );
-        cloudStoreVerified = true;
+        recordCloudStoreSuccess();
         return res.status(201).json(next);
       } catch (error) {
         return sendCloudError(res, error);
@@ -760,10 +785,22 @@ export function createApp(options: AppOptions = {}) {
     diagnosticsLastRun.set(session.principalId, now());
     try {
       const result = await cloudStore.selfTest((req as AuthenticatedRequest).requestId);
-      cloudStoreVerified = result.status === 'pass';
+      cloudStorageState.roundTripStatus = result.status;
+      cloudStorageState.lastVerifiedAt = new Date(now()).toISOString();
+      cloudStorageState.lastRoundTripAt = cloudStorageState.lastVerifiedAt;
+      if (result.status === 'pass') {
+        recordCloudStoreSuccess();
+        cloudStorageState.roundTripStatus = 'pass';
+      }
+      else {
+        cloudStorageState.connectivity = 'unavailable';
+        cloudStorageState.lastError = 'firestore_round_trip_failed';
+      }
       return res.status(result.status === 'pass' ? 200 : 503).json(result);
     } catch {
-      cloudStoreVerified = false;
+      cloudStorageState.connectivity = 'unavailable';
+      cloudStorageState.roundTripStatus = 'fail';
+      cloudStorageState.lastError = 'cloud_store_unavailable';
       return res.status(503).json({ status: 'fail', steps: [], error: 'cloud_store_unavailable' });
     }
   });
@@ -774,7 +811,7 @@ export function createApp(options: AppOptions = {}) {
       if (!cloudStore) return res.status(503).json({ error: 'cloud_store_not_configured' });
       try {
         const state = await cloudStore.readData(session.principalId);
-        cloudStoreVerified = true;
+        recordCloudStoreSuccess();
         return res.json({
           status: 'online', revision: state?.revision || 0,
           updatedAt: state?.updatedAt || null, contentHash: state?.contentHash || null,
