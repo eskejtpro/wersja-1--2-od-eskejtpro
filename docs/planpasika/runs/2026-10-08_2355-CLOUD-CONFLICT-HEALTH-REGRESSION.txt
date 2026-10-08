@@ -1,0 +1,22 @@
+DATA: 2026-10-08 23:55 Europe/Warsaw
+BRANCH: codex/planpasika-release
+BAZA: 4894d669bb6f96af01255fa9f63d7e666c8e7604
+CEL: zapobiec oznaczaniu Firestore jako niedostepnego po prawidlowej odpowiedzi konfliktu synchronizacji HTTP 409
+
+ZMIANA:
+- CloudConflictError jest obslugiwany przed ogolnym bledem magazynu.
+- W Cloud Run konflikt potwierdza dostepnosc magazynu, ale nie ustawia wyniku pelnego round-trip; durableCloudStorage pozostaje false, dopoki diagnostyka nie przejdzie wszystkich faz.
+- Dodano test regresyjny sprawdzajacy health=ok, connectivity=available i roundTripStatus=not_run po konflikcie.
+
+WERYFIKACJA:
+- git diff --check: PASS.
+- npm run test:server: PASS, 27/27.
+- npm test: PASS, 112/112.
+- npm run test:cloud: PASS, 40/40.
+- npm run lint: PASS (tsc --noEmit).
+
+ZAKRES I OGRANICZENIA:
+- Zmiana kodu lokalna; brak wdrozenia Cloud Run i brak zmian Firestore/IAM/billing.
+- Live GET wczesniej zwracal health/version 3.0.9 HTTP 200; google-info durableCloudStorage=false. To nie jest wynik uwierzytelnionego testu Firestore.
+- ADB nie wykryl telefonu; instalacja i runtime E2E nadal niezweryfikowane.
+- Cloud Build trigger nadal wskazuje work/v3.0.9-cloud-store; nie wdrazac tej galezi do produkcji bez jawnego uzgodnienia zrodla i konfiguracji.

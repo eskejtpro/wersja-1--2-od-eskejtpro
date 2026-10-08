@@ -1,0 +1,21 @@
+DATA: 2026-10-08 23:55 Europe/Warsaw
+OBSZAR: Cloud Store health / konflikt optimistic concurrency
+
+Problem:
+CloudConflictError dziedziczy po CloudStoreError. Wczesniejsza kolejnosc obslugi oznaczala prawidlowy konflikt stale-write jako awarie Firestore, ustawiajac connectivity=unavailable i roundTripStatus=fail.
+
+Rozwiazanie:
+Obsluz konflikt przed ogolnymi bledami Cloud Store. Konflikt potwierdza dostepnosc operacji magazynu i moze przywrocic connectivity=available, ale sam nie dowodzi pelnego testu diagnostycznego ani trwalosci danych. roundTripStatus pozostaje not_run, a durableCloudStorage=false.
+
+Pliki:
+- server.ts
+- tests/firestore-store.test.cjs
+
+Testy:
+- npm run test:server — PASS 27/27
+- npm test — PASS 112/112
+- npm run test:cloud — PASS 40/40
+- npm run lint — PASS
+- git diff --check — PASS
+
+Nie wdrozono do Cloud Run. Produkcyjny trigger wskazuje inna galaz niz galez integracyjny; najpierw wymagany jest przeglad i uzgodnienie wdrozenia.

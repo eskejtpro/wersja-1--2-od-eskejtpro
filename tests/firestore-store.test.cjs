@@ -252,6 +252,12 @@ test('Cloud Run API persists Google session and data across server restart, enfo
     });
     assert.equal(conflict.status, 409);
     assert.equal((await conflict.json()).revision, 1);
+    const afterConflictInfo = await (await fetch(`${second.base}/api/server/google-info`)).json();
+    assert.equal(afterConflictInfo.status, 'online');
+    assert.equal(afterConflictInfo.cloudStorage.connectivity, 'available');
+    assert.equal(afterConflictInfo.cloudStorage.roundTripStatus, 'not_run');
+    assert.equal(afterConflictInfo.durableCloudStorage, false);
+    assert.equal((await (await fetch(`${second.base}/api/health`)).json()).status, 'ok');
     const missingRevision = await fetch(`${second.base}/api/data`, {
       method: 'POST', headers: { ...headers, 'content-type': 'application/json' },
       body: JSON.stringify({ schemaVersion: 1, data: data('missing-revision') }),

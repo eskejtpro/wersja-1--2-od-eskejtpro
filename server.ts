@@ -416,13 +416,14 @@ export function createApp(options: AppOptions = {}) {
     cloudStorageState.lastError = null;
   };
   const sendCloudError = (res: Response, error: unknown) => {
+    if (error instanceof CloudConflictError) {
+      if (config.isCloudRun) recordCloudStoreSuccess();
+      return res.status(409).json({ error: 'conflict', reason: error.reason, revision: error.revision, contentHash: error.contentHash });
+    }
     if (config.isCloudRun) {
       cloudStorageState.connectivity = 'unavailable';
       cloudStorageState.roundTripStatus = 'fail';
       cloudStorageState.lastError = error instanceof CloudStoreError ? error.code : 'cloud_store_unavailable';
-    }
-    if (error instanceof CloudConflictError) {
-      return res.status(409).json({ error: 'conflict', reason: error.reason, revision: error.revision, contentHash: error.contentHash });
     }
     if (error instanceof CloudStoreError) return res.status(error.status).json({ error: error.code });
     return res.status(503).json({ error: 'cloud_store_unavailable' });
