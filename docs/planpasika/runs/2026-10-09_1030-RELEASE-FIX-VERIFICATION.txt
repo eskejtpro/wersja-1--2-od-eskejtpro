@@ -19,15 +19,20 @@ TESTY LOKALNE:
 - `npm run test:google-ui`: 3/3 PASS.
 - `npm run test:ai-model-registry`: 2/2 PASS.
 - `npm run test:ops-agent`: 7/7 PASS; `npm run build:ops-agent`: PASS.
+- `npm run test:update`: 4/4 PASS (run after it was added to release CI).
 - `npm run build`: PASS; Vite raportuje znany duzy chunk.
 - Capacitor sync zwraca komunikat, ze platformy android nie dodano w root, ale wlascwy projekt android istnieje i byl budowany bezposrednio przez Gradle.
 - `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`: BUILD SUCCESSFUL; Android unit test 1/1.
 - Debug APK: package `com.gymtracker.pro`, versionName 3.0.9, versionCode 309, 8,672,108 bytes.
 - SHA-256 APK: `DF98310901EB7EE0F489330D0B98995E1E7B9748753D32725255630B02FEBEC1`.
+- APK metadata inspection: package/version/minSdk 24/targetSdk 36 verified; `apksigner verify` PASS; `zipalign -c -v 4` PASS.
+- Secret-pattern scan of APK frontend assets and `dist` (Google API key/private key/Bearer patterns): no matches.
 
 GITHUB:
 - Commit 750fb3f pushed to `origin/codex/planpasika-release`.
 - Workflow run 37838879710 dla tego SHA: strona GitHub Actions pokazuje Node i Android jobs jako completed successfully.
+- GitHub page run 37838879710: Android Gradle step and job conclusion success.
+- Later commit 7e89111 adds `npm run test:update`; its workflow is serialized behind prior CI run, pending completion verification.
 - Lokalny branch czysty po push.
 
 PRODUKCJA — TYLKO GET:
