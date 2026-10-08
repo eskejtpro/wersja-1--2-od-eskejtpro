@@ -69,7 +69,8 @@
     "vite": "^6.2.3"
   },
   "overrides": {
-    "http-cache-semantics": "4.3.0"
+    "http-cache-semantics": "4.3.0",
+    "uuid": "11.1.1"
   },
   "build": {
     "appId": "pl.pasik92.gymtrackerpro",

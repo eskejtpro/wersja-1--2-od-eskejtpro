@@ -1,0 +1,21 @@
+DATA: 2026-10-08 21:04 UTC
+MODULE: dependency security / Capacitor CLI toolchain
+BRANCH: codex/planpasika-release
+
+PRZED:
+Capacitor CLI -> xcode@3.0.1 -> uuid@7.0.3, affected by GHSA-w5hq-g745-h8pq.
+
+PO:
+Root npm override pins uuid@11.1.1, the upstream fixed CommonJS release. Capacitor CLI remains 8.5.2; no broad forced dependency downgrade.
+
+TESTY:
+- `npm audit --omit=dev --audit-level=high`: PASS, 0 vulnerabilities
+- Full `npm audit`: 8 moderate remain via Electron packaging dependency chain (sprintf-js -> roarr -> global-agent); no high/critical findings.
+- `npm ls uuid xcode @capacitor/cli --all`: uuid 11.1.1 overridden under xcode 3.0.1 / Capacitor CLI 8.5.2
+- lint: PASS
+- AI model/client contract tests: 3/3 PASS
+- Capacitor sync: PASS
+- Android unit tests + debug APK + instrumentation APK build: PASS
+
+ROLLBACK:
+Remove the uuid entry from root `overrides` and regenerate the lockfile if an incompatibility is discovered.
