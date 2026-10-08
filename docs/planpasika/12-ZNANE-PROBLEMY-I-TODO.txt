@@ -34,3 +34,10 @@ RELEASE VERDICT: NOT READY until durable Firestore, authenticated client sync, r
 - APK debug: 3.0.9 (versionCode 309), `com.gymtracker.pro`, SHA-256 `A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE`; SDK 24–36.
 - ADB wykrywa 0 urządzeń. Instalacja i test na fizycznym telefonie nie wykonane.
 - Produkcyjny Cloud Run nie został zmieniony. Wpłata/aktywne rozliczenie nie dowodzi samo w sobie trwałego zapisu Firestore, działania Google Auth ani synchronizacji aplikacji. Wymagany test aplikacyjny z kontem użytkownika.
+
+2026-10-08 23:24 Europe/Warsaw — dodatkowa kontrola tylko do odczytu:
+- Konsola Cloud Run dla projektu `gen-lang-client-0836043899`: autoskalowanie, minimum instancji 0, maksimum 1, rozliczanie na podstawie żądań, timeout 300 s, współbieżność 80.
+- Cloud Logging pokazuje historyczne HTTP 429 dla `/api/version` (21:09:43 CEST) i `/api/server/google-info` (21:09:58 CEST). Późniejszy odczyt GET z 23:21 CEST zwrócił 200 dla health/version/google-info. To potwierdza wcześniejsze ograniczenie/brak instancji, nie bieżącą awarię.
+- Minimalna liczba instancji 1 może ograniczyć cold start, ale generuje koszt także podczas bezczynności; maksimum 1 ogranicza pojemność i może powodować throttling przy pikach. Nie zmieniano tych ustawień bez limitu kosztowego/zgody użytkownika.
+- GitHub Actions dla `320e3c8`: node-quality i android-debug PASS. Dla `3b7a83f` node-quality PASS; android-debug w toku podczas kontroli.
+- `adb devices -l`: lista pusta; brak testu telefonu.
