@@ -1,0 +1,26 @@
+DATA: 2026-10-08 19:45 UTC
+BRANCH: codex/planpasika-release
+COMMIT: f756bf2a4b178798e1ed1d7bfea3580c48457192
+ENVIRONMENT: Windows 10 host, JDK/Android SDK local toolchain; GitHub Actions Ubuntu runner
+TEST: Android debug build and app-only instrumented-test APK compilation
+CEL: Naprawa bramek CI, eliminacja błędnego testu Capacitor i dodanie smoke testu startu MainActivity.
+KOMENDY:
+- Lokalnie: .\android\gradlew.bat -p android :app:assembleDebug :app:assembleDebugAndroidTest
+- Git: git diff --check
+- CI: npm lint/tests/build; Android SDK setup; web build; Capacitor sync; Gradle app debug + app Android test APK
+STATUS: Lokalna kompilacja obu APK PASS. CI dla commitu f756bf2 oczekuje na wynik po pushu.
+WYNIKI:
+- :app:assembleDebug PASS.
+- :app:assembleDebugAndroidTest PASS; smoke test sprawdza pakiet com.gymtracker.pro i uruchamia MainActivity.
+- GitHub Actions dla commitu 17e561086d614d85925bda38c423a56758c33e38: Node lint/tests/build PASS, Android SDK setup i assembleDebug PASS.
+- GitHub Actions dla f756bf2 (w tym kompilacja testu instrumentacyjnego aplikacji): IN_PROGRESS przy zapisie; https://github.com/eskejtpro/wersja-1--2-od-eskejtpro/actions/runs/37834362912
+- Zbiorcze assembleDebugAndroidTest FAIL na testowych wariantach wtyczek Capacitor z duplikatami klas Kotlin 1.6.21/1.8.22. Workflow zawężono do testów aplikacji.
+- APK aplikacji: android/app/build/outputs/apk/debug/app-debug.apk; package com.gymtracker.pro; versionName 3.0.9; versionCode 309; rozmiar 6 723 501 B; SHA-256 307874295CDF95441FC98276C2DA738D92756047ADFB8A7CCD4848DC0E6B3C46.
+- Urządzenie Xiaomi 2406APNFAG, Android 16 widoczne przez ADB; aplikacja nie jest zainstalowana. Nie wykonano instalacji ani testu runtime.
+LOG SUMMARY: Gradle ostrzega o flatDir i niektórych przestarzałych API pluginów. Brak potwierdzonego testu UI/runtime na urządzeniu.
+ARTIFACTS: app-debug.apk oraz app-debug-androidTest.apk (lokalne artefakty builda).
+PROBLEMS:
+- ADB/runtime E2E BLOCKED do czasu zaakceptowania instalacji/zezwolenia USB na telefonie.
+- Zbiorczy test AndroidTest wszystkich modułów pluginów ma konflikt duplikatów Kotlin; test aplikacji kompiluje się poprawnie.
+- npm audit raportuje 12 pozycji w pełnym drzewie (11 moderate, 1 high); audit --omit=dev nie pokazuje podatności high, pokazuje 3 moderate związane z Capacitor CLI/Xcode.
+CLEANUP: Nie zmieniano ani nie czyszczono danych telefonu. Nie zmieniano Google Cloud, IAM, Firestore ani billing.

@@ -1,0 +1,20 @@
+DATA: 2026-10-08
+BRANCH: codex/planpasika-release
+COMMIT: f756bf2a4b178798e1ed1d7bfea3580c48457192
+
+CHANGES
+- Android CI używa platform-tools zamiast wycofanego pakietu SDK tools.
+- Gradle wrapper wskazuje rzeczywistą ścieżkę android/gradlew.
+- CI buduje debug APK i wyłącznie AndroidTest aplikacji, omijając niepowiązane testowe warianty pluginów Capacitor z duplikatami Kotlin.
+- Domyślny test Capacitor zastąpiono PlanPasikaStartupTest: asercja właściwego applicationId i uruchomienie launcher MainActivity.
+
+VERIFICATION
+- Lokalnie :app:assembleDebug PASS.
+- Lokalnie :app:assembleDebugAndroidTest PASS.
+- GitHub Actions dla f756bf2: wynik końcowy jeszcze niepotwierdzony w chwili zapisu tego pliku.
+- Nie wykonano install/run testu na fizycznym telefonie.
+
+FOLLOW-UP
+- Potwierdzić aktualny run GitHub Actions dla f756bf2.
+- Po zezwoleniu Androida na instalację uruchomić app install/update, smoke test i logcat bez czyszczenia danych.
+- Zbadać zależności podatne w npm audit bez automatycznego major upgrade.
