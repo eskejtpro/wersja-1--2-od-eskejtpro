@@ -8,12 +8,12 @@ KOMENDY:
 - Lokalnie: .\android\gradlew.bat -p android :app:assembleDebug :app:assembleDebugAndroidTest
 - Git: git diff --check
 - CI: npm lint/tests/build; Android SDK setup; web build; Capacitor sync; Gradle app debug + app Android test APK
-STATUS: Lokalna kompilacja obu APK PASS. CI dla commitu f756bf2 oczekuje na wynik po pushu.
+STATUS: Lokalna kompilacja obu APK PASS. GitHub Actions dla HEAD 4ad434a4d04ca1b61e4f230921e5f3d9d0b030e6: wszystkie joby PASS.
 WYNIKI:
 - :app:assembleDebug PASS.
 - :app:assembleDebugAndroidTest PASS; smoke test sprawdza pakiet com.gymtracker.pro i uruchamia MainActivity.
 - GitHub Actions dla commitu 17e561086d614d85925bda38c423a56758c33e38: Node lint/tests/build PASS, Android SDK setup i assembleDebug PASS.
-- GitHub Actions dla f756bf2 (w tym kompilacja testu instrumentacyjnego aplikacji): IN_PROGRESS przy zapisie; https://github.com/eskejtpro/wersja-1--2-od-eskejtpro/actions/runs/37834362912
+- GitHub Actions dla 4ad434a (w tym kompilacja testu instrumentacyjnego aplikacji): PASS; https://github.com/eskejtpro/wersja-1--2-od-eskejtpro/actions/runs/37834658997
 - Zbiorcze assembleDebugAndroidTest FAIL na testowych wariantach wtyczek Capacitor z duplikatami klas Kotlin 1.6.21/1.8.22. Workflow zawężono do testów aplikacji.
 - APK aplikacji: android/app/build/outputs/apk/debug/app-debug.apk; package com.gymtracker.pro; versionName 3.0.9; versionCode 309; rozmiar 6 723 501 B; SHA-256 307874295CDF95441FC98276C2DA738D92756047ADFB8A7CCD4848DC0E6B3C46.
 - Urządzenie Xiaomi 2406APNFAG, Android 16 widoczne przez ADB; aplikacja nie jest zainstalowana. Nie wykonano instalacji ani testu runtime.
