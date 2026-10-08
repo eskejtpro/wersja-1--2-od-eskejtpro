@@ -1,0 +1,23 @@
+DATA: 2026-10-08 23:40 Europe/Warsaw
+BRANCH: codex/planpasika-release
+BASE COMMIT: 5f6711aa3576d80df77a0a96fd6bc88d0666ff98
+CEL: udostepnic zbudowany Android debug APK jako ograniczony czasowo artefakt GitHub Actions
+
+STAN PRZED ZMIANA:
+- GitHub Actions run 37847357291 zakonczyl sie sukcesem; node-quality oraz android-debug PASS.
+- Run zbudowal APK, ale artefaktow nie opublikowal (lista artefaktow pusta).
+- Lokalny APK v3.0.9, versionCode 309, package com.gymtracker.pro: 7,228,723 bytes; SHA-256 A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE.
+- Brak urzadzenia ADB w chwili sprawdzenia; nie wykonano instalacji.
+
+ZMIANA:
+- Workflow android-debug publikuje `app-debug.apk` jako `gymtracker-pro-android-debug-${github.sha}`.
+- Retencja artefaktu: 14 dni; brak pliku powoduje jawny blad joba.
+- Jest to APK debug do testow, nie release podpisany do Google Play.
+
+WERYFIKACJA:
+- Wymagany nowy CI po pushu; oczekiwane kroki: wszystkie dotychczasowe testy oraz upload-artifact PASS.
+- Po sukcesie pobrac artefakt z GitHub Actions i sprawdzic package/version/hash przed instalacja.
+
+OGRANICZENIA:
+- Zmiana nie wdraza backendu ani nie zmienia billing, IAM, Firestore, Cloud Run lub danych uzytkownika.
+- Cloud Firestore authenticated round-trip, fizyczny Android E2E, login, AI i pelna synchronizacja pozostaja UNKNOWN.
