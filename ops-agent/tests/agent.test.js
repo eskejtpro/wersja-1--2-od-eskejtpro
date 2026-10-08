@@ -5,7 +5,7 @@ import { classifyLog, firestoreMetadataSummary, GoogleReader, metricSummary, ser
 import { runDiagnostics } from '../src/diagnostics.js';
 import { createServer } from '../src/index.js';
 
-const config = configuration({ OPS_PROJECT_ID: 'gen-lang-client-0836043899', OPS_REGION: 'europe-central2', OPS_TARGET_SERVICE: 'wersja-1--2-od-eskejtpro-git', OPS_FIRESTORE_DATABASE_ID: '(default)', OPS_EXPECTED_VERSION: '3.0.8' });
+const config = configuration({ OPS_PROJECT_ID: 'gen-lang-client-0836043899', OPS_REGION: 'europe-central2', OPS_TARGET_SERVICE: 'wersja-1--2-od-eskejtpro-git', OPS_FIRESTORE_DATABASE_ID: '(default)', OPS_EXPECTED_VERSION: '3.0.9' });
 const service = { uri: 'https://wersja-1--2-od-eskejtpro-git-761415655121.europe-central2.run.app', terminalCondition: { state: 'CONDITION_SUCCEEDED' }, latestCreatedRevision: 'r-2', latestReadyRevision: 'r-2', template: { serviceAccount: 'private@example.iam.gserviceaccount.com', containers: [{ env: [{ name: 'GYMTRACKER_CLOUD_STORE', value: 'secret' }, { name: 'GYMTRACKER_FIRESTORE_PROJECT_ID', value: 'secret' }, { name: 'GOOGLE_CLIENT_ID', value: 'secret' }] }] }, trafficStatuses: [{ revision: 'r-2', percent: 100 }] };
 const reader = {
   service: async () => service,
@@ -18,7 +18,7 @@ const reader = {
 const fetcher = async url => {
   const path = new URL(url).pathname;
   if (path === '/api/health') return { ok: true, status: 200, json: async () => ({ status: 'ok' }) };
-  if (path === '/api/version') return { ok: true, status: 200, json: async () => ({ appVersion: '3.0.8' }) };
+  if (path === '/api/version') return { ok: true, status: 200, json: async () => ({ appVersion: '3.0.9' }) };
   return { ok: true, status: 200, json: async () => ({ googleAuthAvailable: true }) };
 };
 
