@@ -1,4 +1,4 @@
-P0: Cloud Run zwraca HTTP 429 „no available instance”; billingEnabled=true i billing account open=true. maxScale=1/minScale=0; możliwe opóźnienie wznowienia po re-enable billing — ponowić check po okresie do 30 min, bez podnoszenia limitu — INVESTIGATE.
+P0: Ostatni udokumentowany Cloud Run odczyt (2026-10-08) zwracał HTTP 429 „Rate exceeded” / „no available instance”. Ręczna wpłata 40 PLN była widoczna w Billing UI; wcześniejszy Cloud Shell odczyt miał billingEnabled=true i billing account open=true, ale stan wymaga ponownej kontroli po wpłacie. Bez aktualnego read-only wyniku nie zmieniać skalowania ani limitów.
 P0: live Firestore round-trip na wdrożonej rewizji — UNVERIFIED (API nie zwraca 2xx).
 P0: pełne Google login -> session -> sync na urządzeniu — UNVERIFIED.
 P1: pozostałe endpointy AI i ich modele — wymagana tabela live.
@@ -8,3 +8,5 @@ P1: Xiaomi connectedDebugAndroidTest — zablokowane przed testami, helper APK o
 P1: bieżący APK z poprawką health/model registry zbudowany, lecz ani testowy helper, ani `adb install -r` nie zostały wpuszczone przez Xiaomi (`INSTALL_FAILED_USER_RESTRICTED`); ręczne odblokowanie instalacji jest wymagane przed instalacją i E2E.
 P0: Xiaomi check 2026-10-09 wykazał brak `com.gymtracker.pro` na profilach Android 0/10/999; stan danych aplikacji jest UNKNOWN po nieudanym cyklu UTP, który zgłosił błędy uninstall. Nie instalować/odinstalowywać ponownie, dopóki właściciel nie potwierdzi monitu i nie sprawdzimy odzyskiwania/backupów.
 P1: nowy workflow GitHub release dodany, YAML PASS; oczekuje na pierwsze wykonanie Actions.
+P0: po zgłoszonej przedpłacie Google Cloud nie ma jeszcze aktualnego Cloud Shell dowodu `billingEnabled`, stanu konta rozliczeniowego, odpowiedzi 2xx ani Firestore round-trip. Wykonać tylko read-only billing/service/health checks; nie mylić pay-as-you-go przedpłaty z saldem AI Studio.
+P1: GitHub Actions run 37835123452: node-quality PASS; android-debug nadal buduje `:app:assembleDebug` i `:app:assembleDebugAndroidTest` przy ostatnim odczycie. Poczekać na zakończenie i zapisać wynik.
