@@ -19,6 +19,8 @@ WYNIKI:
 - Urządzenie Xiaomi 2406APNFAG, Android 16 widoczne przez ADB; aplikacja nie jest zainstalowana. Nie wykonano instalacji ani testu runtime.
 LOG SUMMARY: Gradle ostrzega o flatDir i niektórych przestarzałych API pluginów. Brak potwierdzonego testu UI/runtime na urządzeniu.
 ARTIFACTS: app-debug.apk oraz app-debug-androidTest.apk (lokalne artefakty builda).
+BACKUP GIT: tag backup/planpasika-2026-10-08-3c796eb wskazuje commit 3c796eb257a010f308851d197aa4f1f85df44e9b i jest wypchnięty na origin.
+BACKUP LOKALNY: A:\PlanPasikaBackups\2026-10-08\planpasika-release-3c796eb.bundle; 1 054 690 B; bundle verify PASS; SHA-256 0F5B1963BF1F2FD17AD6620FBB951CC3173BF7004E03D1FDE804B83D56885B35.
 PROBLEMS:
 - ADB/runtime E2E BLOCKED do czasu zaakceptowania instalacji/zezwolenia USB na telefonie.
 - Zbiorczy test AndroidTest wszystkich modułów pluginów ma konflikt duplikatów Kotlin; test aplikacji kompiluje się poprawnie.

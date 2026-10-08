@@ -7,6 +7,7 @@ CHANGES
 - Gradle wrapper wskazuje rzeczywistą ścieżkę android/gradlew.
 - CI buduje debug APK i wyłącznie AndroidTest aplikacji, omijając niepowiązane testowe warianty pluginów Capacitor z duplikatami Kotlin.
 - Domyślny test Capacitor zastąpiono PlanPasikaStartupTest: asercja właściwego applicationId i uruchomienie launcher MainActivity.
+- Utworzono i zweryfikowano pełny lokalny backup Git bundle na A: oraz wypchnięto tag przywracania backup/planpasika-2026-10-08-3c796eb.
 
 VERIFICATION
 - Lokalnie :app:assembleDebug PASS.
