@@ -29,6 +29,7 @@ WYNIKI:
 - SHA-256 `DF98310901EB7EE0F489330D0B98995E1E7B9748753D32725255630B02FEBEC1`.
 - Produkcyjny endpoint diagnostics zwrócił HTTP 401 bez Bearer; zabezpieczenie auth działa, test zapisu Firestore nie został uruchomiony.
 - Aktywny Cloud Build nadal wskazuje `work/v3.0.9-cloud-store`; integration branch nie jest wdrożona.
+- Read-only trigger inspection: inline Buildpack config builds `--path=.`, pushes the `$COMMIT_SHA` image to Artifact Registry, then invokes `gcloud run services update`; manual-run is disabled. Execution identity is the default Compute service account; no trigger/IAM changes made.
 
 LOG SUMMARY: testy zakończone bez błędów. CI zawiera 3 ostrzeżenia/uwagi nieblokujące; sprawdzić szczegóły przed kolejnym wydaniem.
 ARTIFACTS: run 37841574567; APK wskazany powyżej.

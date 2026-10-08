@@ -13,6 +13,7 @@ P1: Android local unit-test example had stale source path `com.getcapacitor.myap
 P1: Commit 750fb3f pushed. GitHub Actions run 37838879710 shows Node and Android jobs completed successfully; local Android unit test 1/1 and debug/test APK builds passed.
 P1: CI includes `npm run test:update` (4/4 local PASS). GitHub Actions run 37841574567 on commit 9aa5e21 completed successfully for both Node quality and Android debug jobs; local TypeScript lint, model registry 2/2, cloud/Firestore 40/40 and AI transport 6/6 pass. Latest APK in the worktree is 3.0.9/versionCode 309/package com.gymtracker.pro; ADB has no attached device, so install/runtime remain blocked.
 P0: Cloud Build trigger 93fcf4aa-dcad-4d7a-b49c-299971ac957f still deploys `work/v3.0.9-cloud-store`, not `codex/planpasika-release`. Active revision is `wersja-1--2-od-eskejtpro-git-00021-9zx` at 100% traffic; latest successful trigger build 82a8a278 uses commit f1b27bcc3c3eed745fe837018688f6b197c8f82e. Reviewed release-branch server changes remain undeployed.
+P0: Trigger's inline config builds/pushes a Buildpack image then updates Cloud Run; manual-run is disabled. Execution uses the default Compute service account with broad project permissions. Least-privilege IAM and a rollback-safe deployment path must be established before changing the production trigger or identity.
 
 NEXT VERIFIED PATH:
 1. Reconnect Xiaomi, allow normal Android install prompt; retry ADB install and run launch/logcat/instrumentation without clearing data.
