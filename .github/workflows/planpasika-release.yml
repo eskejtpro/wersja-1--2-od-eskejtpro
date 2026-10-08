@@ -26,6 +26,7 @@ jobs:
       - run: npm ci --prefix ops-agent
       - run: npm run lint
       - run: npm test
+      - run: npm run test:update
       - run: npm run test:server
       - run: npm run test:cloud
       - run: npm run test:ai-transport

@@ -11,6 +11,7 @@ P1: AI model registry is centralized and covered by tests, but several capabilit
 P1: Dependency audit after pinning `http-cache-semantics@4.3.0`: 0 high/critical, 11 moderate full tree and 3 moderate production-only. GitHub Actions run 37836277574 passed on the pin commit; moderate advisories remain for review.
 P1: Android local unit-test example had stale source path `com.getcapacitor.myapp` despite declaring `com.gymtracker.pro`; moved it to the matching namespace. The real-package instrumented startup smoke test is already under `com.gymtracker.pro`.
 P1: Commit 750fb3f pushed. GitHub Actions run 37838879710 shows Node and Android jobs completed successfully; local Android unit test 1/1 and debug/test APK builds passed.
+P1: CI previously omitted `npm run test:update`; it is now added to the Node release workflow. Verify the next Actions run.
 
 NEXT VERIFIED PATH:
 1. Reconnect Xiaomi, allow normal Android install prompt; retry ADB install and run launch/logcat/instrumentation without clearing data.
