@@ -2,11 +2,13 @@ App version: 3.0.9
 versionCode: 309
 package: com.gymtracker.pro
 APK type: debug
-APK SHA-256: A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE
+APK SHA-256 (najnowszy lokalny): B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1
 Branch: codex/planpasika-release
-Latest local build: 2026-10-08, APK 7,228,723 bytes, SHA-256 A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE. Current ADB check detected no phone; installation not performed.
+Latest local build: 2026-10-09, APK SHA-256 B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1. The build embeds the configured public Google Web Client ID and Cloud Run URL. Debug signing certificate SHA-256: 7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c. ADB detected no phone; installation and signature match against the installed app are unverified.
 Integrated Cloud Ops Agent V1: commit 21500a1.
 Wydanie produkcyjne: NOT READY do czasu live Cloud/E2E.
+
+GitHub Actions run 37853747209 for commit 61c35a4: node-quality PASS, android-debug PASS, artifact 11583092856. CI uses the default debug signing configuration with no stable keystore provisioned in the workflow. Treat that artifact as CI test output, not a proven update for an existing installation or a proven Google OAuth build on a registered Android certificate. For data-preserving update, compare the signing certificate of the installed app with the candidate APK before `adb install -r`.
 
 2026-10-08 — lokalny APK po poprawce etykiet AI:
 3.0.9 (versionCode 309), debug, package `com.gymtracker.pro`; SHA-256 `A0E9B2CF26947258E681DC94AEF191D3AE477F82C7AD009E042F2BD384FD56BE`.

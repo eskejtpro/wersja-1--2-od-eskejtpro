@@ -1,0 +1,21 @@
+DATA: 2026-10-09 00:32 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT UNDER TEST: 61c35a401df6307057f17bf87819da5198f30d4c
+ENVIRONMENT: Windows local build + GitHub Actions ubuntu-latest; production Cloud Run read-only check
+TEST: Android OAuth bundle config, debug APK, CI, signature and live API availability
+CEL: ensure the APK actually includes Google login configuration and identify update/signing limits
+KOMENDY: npm run build; npx cap sync android; node scripts/verify-android-oauth-bundle.mjs; npm run lint; npm run test:google-ui; gradlew :app:assembleDebug --no-daemon; aapt dump badging; apksigner verify --print-certs; adb devices -l; public GET /api/health and /api/server/google-info
+STATUS:
+- Bundle contains configured Google Web Client ID and Cloud Run URL: PASS
+- Bundle verifier rejects wrong client ID: PASS
+- Local lint, Google UI tests, web/server build and Android Gradle build: PASS
+- GitHub Actions run 37853747209: node-quality PASS, android-debug PASS; artifact ID 11583092856
+- APK package com.gymtracker.pro, versionName 3.0.9, versionCode 309, minSdk 24, targetSdk 36: PASS
+- Android device install/login/data preservation: BLOCKED (ADB list empty)
+- CI artifact signature compatibility with existing installation/registered Android OAuth credential: UNKNOWN; default ephemeral debug signing is configured
+- Live Firestore authenticated round-trip and AI E2E: UNKNOWN
+WYNIKI: Local APK SHA-256 B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1; local signing certificate SHA-256 7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c. Public API /api/health returned status ok, version 3.0.9; /api/server/google-info returned online and durableCloudStorage:false. This is not a Firestore failure proof or durability proof.
+LOG SUMMARY: Gradle BUILD SUCCESSFUL; GitHub jobs completed successfully. No device logcat available.
+ARTIFACTS: local android/app/build/outputs/apk/debug/app-debug.apk; GitHub Actions run https://github.com/eskejtpro/wersja-1--2-od-eskejtpro/actions/runs/37853747209
+PROBLEMS: CI runner debug keystore is not stable/registered for this Android OAuth client and must not be treated as a final upgrade. No phone attached. Production Cloud Run remains on older source branch.
+CLEANUP: no synthetic records or cloud mutations created.

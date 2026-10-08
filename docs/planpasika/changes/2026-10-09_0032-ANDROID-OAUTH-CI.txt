@@ -1,0 +1,9 @@
+DATA: 2026-10-09 00:32 Europe/Warsaw
+MODUL: Android release CI
+COMMIT: 61c35a4
+PRZED: GitHub Actions built an Android APK without VITE_GOOGLE_WEB_CLIENT_ID or VITE_GYMTRACKER_SERVER_URL, so successful compilation did not prove usable Google login.
+PO: android-debug job supplies the public OAuth Web Client ID and Cloud Run URL; after Capacitor sync, a bundle verifier rejects missing/wrong configuration and placeholder values.
+DLACZEGO: release artifact must include the same public OAuth audience and backend address expected by the app.
+TESTY: local bundle verification PASS; negative mismatched-client test correctly failed; npm run lint PASS; npm run test:google-ui 3/3 PASS; local Gradle assembleDebug PASS; GitHub Actions run 37853747209 both jobs PASS.
+OGRANICZENIE: CI still uses an ephemeral debug signing key, so its artifact is not yet a proven upgrade or Android OAuth E2E candidate.
+ROLLBACK: 20ad93a

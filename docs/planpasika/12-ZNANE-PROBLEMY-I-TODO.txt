@@ -38,6 +38,8 @@ NEXT VERIFIED PATH:
 
 RELEASE VERDICT: NOT READY until durable Firestore, authenticated client sync, required Android device tests, backup/recovery and release gates pass.
 
+P0 2026-10-09: GitHub Actions debug artifact is signed by the runner's default debug key; the workflow does not provision a stable signing key. Thus a passing CI build and embedded OAuth Web Client ID do not prove Android OAuth on a registered signing certificate, nor a data-preserving update of a locally installed APK. Local candidate certificate SHA-256 is 7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c; installed-app certificate has not been checked because ADB detects no device. Establish a controlled signing/distribution path before final release. Do not uninstall or clear app data to work around a signature mismatch.
+
 2026-10-08 23:18 Europe/Warsaw — kontynuacja po potwierdzeniu wpłaty przez użytkownika:
 - Bezpieczne poprawki etykiet AI w interfejsie: brak fałszywego „Gemini 3.8”/„PRO”; nazwa modelu jest pokazywana tylko, gdy zwróci ją serwer. Dodano test regresyjny.
 - `npx cap sync android` uruchomiono z katalogu głównego repozytorium i zakończył się poprawnie; wcześniejszy błąd wynikał z uruchomienia w podkatalogu `android`.
