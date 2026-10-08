@@ -38,6 +38,9 @@ jobs:
 
   android-debug:
     runs-on: ubuntu-latest
+    env:
+      VITE_GOOGLE_WEB_CLIENT_ID: 761415655121-40dq7naiqar13bochgqtvgtvnsrfv2nd.apps.googleusercontent.com
+      VITE_GYMTRACKER_SERVER_URL: https://wersja-1--2-od-eskejtpro-git-761415655121.europe-central2.run.app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,6 +57,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx cap sync android
+      - run: node scripts/verify-android-oauth-bundle.mjs
       - uses: gradle/actions/setup-gradle@v4
       - run: bash android/gradlew -p android :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
       - uses: actions/upload-artifact@v4
