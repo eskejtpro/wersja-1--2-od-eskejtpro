@@ -81,7 +81,7 @@ test.after(async () => {
 test('health and version expose persistent-server capabilities', async () => {
   const health = await request('/api/health');
   assert.equal(health.response.status, 200);
-  assert.equal(health.body.version, '3.0.8');
+  assert.equal(health.body.version, '3.0.9');
   assert.equal(health.body.apiVersion, '1');
   assert.equal(health.body.capabilities.includes('google_oidc_login'), false);
   assert.equal(health.body.capabilities.includes('google_cloud_server'), false);
@@ -136,6 +136,15 @@ test('Cloud Run reports HTTPS ingress without advertising unavailable cloud stor
     assert.equal(info.ssl, 'HTTPS na wejściu Cloud Run');
     assert.equal(info.googleAuthAvailable, false);
     assert.equal(info.durableCloudStorage, false);
+    assert.equal(info.cloudStoreConfigured, false);
+    assert.equal(info.cloudStoreVerifiedInProcess, false);
+    assert.deepEqual(info.cloudStorage, {
+      connectivity: 'unavailable',
+      roundTripStatus: 'not_run',
+      lastVerifiedAt: null,
+      lastRoundTripAt: null,
+      lastError: null,
+    });
     const health = await (await fetch(`${url}/api/health`)).json();
     assert.equal(health.status, 'degraded');
     assert.match((await fetch(`${url}/api/health`)).headers.get('strict-transport-security') || '', /max-age=/);
@@ -145,6 +154,28 @@ test('Cloud Run reports HTTPS ingress without advertising unavailable cloud stor
     assert.equal(health.capabilities.includes('sync_status'), false);
   } finally {
     await new Promise((resolve) => cloudServer.close(resolve));
+  }
+});
+
+test('cold-start Cloud Run health separates configured Firestore from untested persistence', async () => {
+  const { app } = createApp({
+    config: { isCloudRun: true, bindHost: '0.0.0.0', port: 0, cloudStoreEnabled: true, firestoreProjectId: 'gen-lang-client-0836043899' },
+    firestoreStore: { selfTest: async () => ({ status: 'pass', steps: [], documentId: 'synthetic-diagnostic-id' }) },
+  });
+  const listener = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => listener.once('listening', resolve));
+  const base = `http://127.0.0.1:${listener.address().port}`;
+  try {
+    const coldHealth = await (await fetch(`${base}/api/health`)).json();
+    assert.equal(coldHealth.status, 'ok');
+    const coldInfo = await (await fetch(`${base}/api/server/google-info`)).json();
+    assert.equal(coldInfo.cloudStoreConfigured, true);
+    assert.equal(coldInfo.durableCloudStorage, false);
+    assert.equal(coldInfo.cloudStorage.connectivity, 'unknown');
+    assert.equal(coldInfo.cloudStorage.roundTripStatus, 'not_run');
+    assert.equal(coldInfo.cloudStorage.lastRoundTripAt, null);
+  } finally {
+    await new Promise((resolve) => listener.close(resolve));
   }
 });
 

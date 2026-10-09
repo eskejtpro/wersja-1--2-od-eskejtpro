@@ -107,6 +107,59 @@ test('Firestore preconditions prevent two concurrent stale writes from overwriti
   assert.ok(['writer-one', 'writer-two'].includes(current.data.settings.owner));
 });
 
+test('client-side CloudStoreError does not mark Firestore unavailable', async () => {
+  const fake = fakeFirestore();
+  const store = makeStore(fake);
+  store.saveData = async () => { throw new CloudStoreError('body_too_large', 413); };
+  const { app } = createApp({
+    config: { isCloudRun: true, bindHost: '127.0.0.1', googleClientIds: ['test-client'] },
+    firestoreStore: store,
+    verifyGoogleIdToken: async () => ({ sub: 'test-subject', email: 'test@example.invalid', displayName: 'Test' }),
+  });
+  const listener = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => listener.once('listening', resolve));
+  const base = `http://127.0.0.1:${listener.address().port}`;
+  try {
+    const login = await fetch(`${base}/api/auth/google/login`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ idToken: 'signed-id-token' }),
+    });
+    assert.equal(login.status, 200);
+    const { token } = await login.json();
+    const diagnostic = await fetch(`${base}/api/diagnostics/firestore`, {
+      method: 'POST', headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(diagnostic.status, 200);
+    const response = await fetch(`${base}/api/data`, {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ schemaVersion: 1, data: data('synthetic') }),
+    });
+    assert.equal(response.status, 413);
+    assert.equal((await response.json()).error, 'body_too_large');
+    const info = await (await fetch(`${base}/api/server/google-info`)).json();
+    assert.equal(info.cloudStorage.connectivity, 'available');
+    assert.equal(info.cloudStorage.roundTripStatus, 'pass');
+    assert.equal(info.durableCloudStorage, true);
+    assert.equal(info.cloudStorage.lastError, null);
+    assert.equal((await (await fetch(`${base}/api/health`)).json()).status, 'ok');
+    fake.failRequests = true;
+    const outage = await fetch(`${base}/api/data`, { headers: { authorization: `Bearer ${token}` } });
+    assert.equal(outage.status, 503);
+    assert.equal((await outage.json()).error, 'session_store_unavailable');
+    const outageInfo = await (await fetch(`${base}/api/server/google-info`)).json();
+    assert.equal(outageInfo.cloudStorage.connectivity, 'unavailable');
+    assert.equal(outageInfo.cloudStorage.roundTripStatus, 'fail');
+    assert.equal(outageInfo.durableCloudStorage, false);
+    assert.equal((await (await fetch(`${base}/api/health`)).json()).status, 'degraded');
+    fake.failRequests = false;
+    assert.equal((await fetch(`${base}/api/data`, { headers: { authorization: `Bearer ${token}` } })).status, 404);
+    const recoveredInfo = await (await fetch(`${base}/api/server/google-info`)).json();
+    assert.equal(recoveredInfo.cloudStorage.connectivity, 'available');
+    assert.equal(recoveredInfo.durableCloudStorage, false);
+  } finally {
+    await new Promise((resolve) => listener.close(resolve));
+  }
+});
+
 test('Firestore sessions survive restart, expire, and logout deletes only the selected session', async () => {
   const fake = fakeFirestore();
   const now = Date.UTC(2026, 9, 2);
@@ -208,7 +261,8 @@ test('Cloud Run API persists Google session and data across server restart, enfo
   try {
     const initialInfo = await (await fetch(`${first.base}/api/server/google-info`)).json();
     assert.equal(initialInfo.durableCloudStorage, false);
-    assert.equal(initialInfo.status, 'degraded');
+    assert.equal(initialInfo.status, 'online');
+    assert.equal((await (await fetch(`${first.base}/api/health`)).json()).status, 'ok');
     const login = await fetch(`${first.base}/api/auth/google/login`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ idToken: 'signed-id-token', email: 'forged@example.invalid' }),
@@ -219,7 +273,11 @@ test('Cloud Run API persists Google session and data across server restart, enfo
     assert.equal(loginBody.user.sub, 'verified-subject');
     assert.equal(loginBody.user.email, 'verified@example.invalid');
     const verifiedInfo = await (await fetch(`${first.base}/api/server/google-info`)).json();
-    assert.equal(verifiedInfo.durableCloudStorage, true);
+    assert.equal(verifiedInfo.durableCloudStorage, false);
+    assert.equal(verifiedInfo.cloudStoreConfigured, true);
+    assert.equal(verifiedInfo.cloudStoreVerifiedInProcess, false);
+    assert.equal(verifiedInfo.cloudStorage.connectivity, 'available');
+    assert.equal(verifiedInfo.cloudStorage.roundTripStatus, 'not_run');
     assert.equal(verifiedInfo.status, 'online');
     const response = await fetch(`${first.base}/api/data`, {
       method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${sessionToken}` },
@@ -228,6 +286,10 @@ test('Cloud Run API persists Google session and data across server restart, enfo
     assert.equal(response.status, 201);
     saved = await response.json();
     assert.equal(saved.revision, 1);
+    const afterSaveInfo = await (await fetch(`${first.base}/api/server/google-info`)).json();
+    assert.equal(afterSaveInfo.durableCloudStorage, false);
+    assert.equal(afterSaveInfo.cloudStorage.connectivity, 'available');
+    assert.equal(afterSaveInfo.cloudStorage.roundTripStatus, 'not_run');
   } finally {
     await first.close();
   }
@@ -243,6 +305,12 @@ test('Cloud Run API persists Google session and data across server restart, enfo
     });
     assert.equal(conflict.status, 409);
     assert.equal((await conflict.json()).revision, 1);
+    const afterConflictInfo = await (await fetch(`${second.base}/api/server/google-info`)).json();
+    assert.equal(afterConflictInfo.status, 'online');
+    assert.equal(afterConflictInfo.cloudStorage.connectivity, 'available');
+    assert.equal(afterConflictInfo.cloudStorage.roundTripStatus, 'not_run');
+    assert.equal(afterConflictInfo.durableCloudStorage, false);
+    assert.equal((await (await fetch(`${second.base}/api/health`)).json()).status, 'ok');
     const missingRevision = await fetch(`${second.base}/api/data`, {
       method: 'POST', headers: { ...headers, 'content-type': 'application/json' },
       body: JSON.stringify({ schemaVersion: 1, data: data('missing-revision') }),

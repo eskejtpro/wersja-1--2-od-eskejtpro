@@ -11,10 +11,11 @@ import { GoogleGenAI } from '@google/genai';
 import { GoogleIdentityError, type GoogleIdTokenVerifier, verifyGoogleIdToken } from './server/auth/googleIdentity.ts';
 import { CloudConflictError, CloudStoreError, FirestoreStore, type CloudSession } from './server/data/firestoreStore.ts';
 import { validateHealthAuditInput } from './server/validation/healthAudit.ts';
+import { AI_MODELS } from './server/ai/models.ts';
 
 dotenv.config();
 
-export const APP_VERSION = '3.0.8';
+export const APP_VERSION = '3.0.9';
 export const API_VERSION = '1';
 export const SCHEMA_VERSION = 1;
 
@@ -402,11 +403,30 @@ export function createApp(options: AppOptions = {}) {
   const localStore = dataStoreFor(localPrincipalId);
   const verifyIdToken = options.verifyGoogleIdToken || verifyGoogleIdToken;
   const availableCapabilities = config.isCloudRun && !cloudStore ? ['update_metadata_only'] : capabilities;
-  let cloudStoreVerified = false;
+  const cloudStorageState: {
+    connectivity: 'unknown' | 'available' | 'unavailable';
+    roundTripStatus: 'not_run' | 'pass' | 'fail';
+    lastVerifiedAt: string | null;
+    lastRoundTripAt: string | null;
+    lastError: string | null;
+  } = { connectivity: config.isCloudRun && cloudStore ? 'unknown' : 'unavailable', roundTripStatus: 'not_run', lastVerifiedAt: null, lastRoundTripAt: null, lastError: null };
+  const cloudStoreVerified = () => cloudStorageState.roundTripStatus === 'pass';
+  const recordCloudStoreSuccess = () => {
+    cloudStorageState.connectivity = 'available';
+    cloudStorageState.lastError = null;
+  };
   const sendCloudError = (res: Response, error: unknown) => {
-    cloudStoreVerified = false;
     if (error instanceof CloudConflictError) {
+      if (config.isCloudRun) recordCloudStoreSuccess();
       return res.status(409).json({ error: 'conflict', reason: error.reason, revision: error.revision, contentHash: error.contentHash });
+    }
+    if (error instanceof CloudStoreError && error.status >= 400 && error.status < 500) {
+      return res.status(error.status).json({ error: error.code });
+    }
+    if (config.isCloudRun) {
+      cloudStorageState.connectivity = 'unavailable';
+      cloudStorageState.roundTripStatus = 'fail';
+      cloudStorageState.lastError = error instanceof CloudStoreError ? error.code : 'cloud_store_unavailable';
     }
     if (error instanceof CloudStoreError) return res.status(error.status).json({ error: error.code });
     return res.status(503).json({ error: 'cloud_store_unavailable' });
@@ -459,9 +479,13 @@ export function createApp(options: AppOptions = {}) {
     let session: Session | null | undefined;
     try {
       session = config.isCloudRun ? await cloudStore?.readSession(tokenDigest(token)) : sessions.get(tokenDigest(token));
-      if (config.isCloudRun && session) cloudStoreVerified = true;
+      if (config.isCloudRun && session) recordCloudStoreSuccess();
     } catch {
-      cloudStoreVerified = false;
+      if (config.isCloudRun) {
+        cloudStorageState.connectivity = 'unavailable';
+        cloudStorageState.roundTripStatus = 'fail';
+        cloudStorageState.lastError = 'session_store_unavailable';
+      }
       return res.status(503).json({ error: 'session_store_unavailable' });
     }
     if (!session || session.expiresAt <= now()) {
@@ -479,7 +503,9 @@ export function createApp(options: AppOptions = {}) {
   };
 
   app.get('/api/health', (_req, res) => res.json({
-    status: config.isCloudRun ? (cloudStoreVerified ? 'ok' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'ok'),
+    status: config.isCloudRun
+      ? (!cloudStore ? 'degraded' : cloudStorageState.connectivity === 'unavailable' ? 'degraded' : 'ok')
+      : (!localStore || localStore.error ? 'degraded' : 'ok'),
     app: 'GymTracker Pro',
     version: APP_VERSION,
     apiVersion: API_VERSION,
@@ -560,10 +586,21 @@ export function createApp(options: AppOptions = {}) {
 
   app.get('/api/server/google-info', (_req, res) => {
     res.json({
-      status: config.isCloudRun ? (cloudStoreVerified ? 'online' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'online'),
+      status: config.isCloudRun ? (cloudStore ? 'online' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'online'),
       ...GOOGLE_CLOUD_INFO,
       activeUser: null,
-      durableCloudStorage: cloudStoreVerified,
+      // Configured storage is not proof of durable writes; expose the last
+      // process-local verification separately and keep the boolean conservative.
+      durableCloudStorage: cloudStoreVerified(),
+      cloudStoreConfigured: Boolean(config.isCloudRun && cloudStore),
+      cloudStorage: {
+        connectivity: cloudStorageState.connectivity,
+        roundTripStatus: cloudStorageState.roundTripStatus,
+        lastVerifiedAt: cloudStorageState.lastVerifiedAt,
+        lastRoundTripAt: cloudStorageState.lastRoundTripAt,
+        lastError: cloudStorageState.lastError,
+      },
+      cloudStoreVerifiedInProcess: cloudStoreVerified(),
       timestamp: new Date(now()).toISOString()
     });
   });
@@ -641,7 +678,7 @@ export function createApp(options: AppOptions = {}) {
     try {
       if (config.isCloudRun) {
         await cloudStore?.saveSession(session);
-        cloudStoreVerified = true;
+        recordCloudStoreSuccess();
       }
       else sessions.set(tokenHash, session);
     } catch (error) {
@@ -673,7 +710,7 @@ export function createApp(options: AppOptions = {}) {
       if (!cloudStore) return res.status(503).json({ error: 'cloud_store_not_configured' });
       try {
         const state = await cloudStore.readData(session.principalId);
-        cloudStoreVerified = true;
+        recordCloudStoreSuccess();
         return state ? res.json(state) : res.status(404).json({ error: 'data_unavailable' });
       } catch (error) {
         return sendCloudError(res, error);
@@ -706,7 +743,7 @@ export function createApp(options: AppOptions = {}) {
           typeof expectedRevision === 'number' ? expectedRevision : undefined,
           typeof expectedHash === 'string' ? expectedHash : undefined,
         );
-        cloudStoreVerified = true;
+        recordCloudStoreSuccess();
         return res.status(201).json(next);
       } catch (error) {
         return sendCloudError(res, error);
@@ -753,10 +790,22 @@ export function createApp(options: AppOptions = {}) {
     diagnosticsLastRun.set(session.principalId, now());
     try {
       const result = await cloudStore.selfTest((req as AuthenticatedRequest).requestId);
-      cloudStoreVerified = result.status === 'pass';
+      cloudStorageState.roundTripStatus = result.status;
+      cloudStorageState.lastVerifiedAt = new Date(now()).toISOString();
+      cloudStorageState.lastRoundTripAt = cloudStorageState.lastVerifiedAt;
+      if (result.status === 'pass') {
+        recordCloudStoreSuccess();
+        cloudStorageState.roundTripStatus = 'pass';
+      }
+      else {
+        cloudStorageState.connectivity = 'unavailable';
+        cloudStorageState.lastError = 'firestore_round_trip_failed';
+      }
       return res.status(result.status === 'pass' ? 200 : 503).json(result);
     } catch {
-      cloudStoreVerified = false;
+      cloudStorageState.connectivity = 'unavailable';
+      cloudStorageState.roundTripStatus = 'fail';
+      cloudStorageState.lastError = 'cloud_store_unavailable';
       return res.status(503).json({ status: 'fail', steps: [], error: 'cloud_store_unavailable' });
     }
   });
@@ -767,7 +816,7 @@ export function createApp(options: AppOptions = {}) {
       if (!cloudStore) return res.status(503).json({ error: 'cloud_store_not_configured' });
       try {
         const state = await cloudStore.readData(session.principalId);
-        cloudStoreVerified = true;
+        recordCloudStoreSuccess();
         return res.json({
           status: 'online', revision: state?.revision || 0,
           updatedAt: state?.updatedAt || null, contentHash: state?.contentHash || null,
@@ -1000,9 +1049,9 @@ ZASADY ODPOWIEDZI:
 
       // Czat używa tylko lekkiego modelu dostępnego w bezpłatnym poziomie Gemini API.
       // Nie przełączaj automatycznie na droższy model po wyczerpaniu limitu.
-      const modelCandidates = ['gemini-3.5-flash-lite'];
+      const modelCandidates = [AI_MODELS.coachChat];
       let replyText = '';
-      let successfulModel = 'gemini-3.5-flash-lite';
+      let successfulModel: string = AI_MODELS.coachChat;
 
       for (const candidate of modelCandidates) {
         try {
@@ -1074,7 +1123,7 @@ Podaj dla każdego dnia:
 3. Krótkie wskazówki techniczne dla głównych bojów.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.generatePlan,
         contents: prompt,
         config: {
           systemInstruction: 'Jesteś Elitarnym Trenerem i Metodykiem Treningu Siłowego. Tworzysz zbalansowane, zoptymalizowane biomechanicznie plany treningowe zgodne z najnowszą nauką o hipertrofii i periodyzacji.',
@@ -1084,7 +1133,7 @@ Podaj dla każdego dnia:
 
       return res.json({
         planText: response.text,
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.generatePlan,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -1119,7 +1168,7 @@ Zasady i zadanie:
 4. Nie wyciągaj wniosków z brakujących danych; jasno opisz ograniczenia.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.healthAudit,
         contents: prompt,
         config: {
           systemInstruction: 'Przygotowujesz wyłącznie edukacyjne, nie-diagnostyczne omówienie danych zdrowotnych. Nie diagnozujesz, nie ustalasz leczenia ani dawek. Nie deklarujesz normy bez podanego zakresu referencyjnego. Zachęcaj do konsultacji z wykwalifikowanym pracownikiem ochrony zdrowia.',
@@ -1134,7 +1183,7 @@ Zasady i zadanie:
 
       return res.json({
         auditText,
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.healthAudit,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -1181,7 +1230,7 @@ Podaj:
 4. Suplementację bazową (kreatyna, omega-3, witamina D3, elektrolity)`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.nutritionPlan,
         contents: prompt,
         config: {
           systemInstruction: 'Jesteś Elitarnym Dietetykiem Sportowym. Przygotowujesz precyzyjne rozpiski makroskładników i timing składników odżywczych poparte dowodami naukowymi.',
@@ -1198,7 +1247,7 @@ Podaj:
       return res.json({
         planText: response.text,
         macros: { dailyCalories: targetKcal, proteinGrams: protein, carbsGrams: carbs, fatsGrams: fats },
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.nutritionPlan,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -1234,7 +1283,7 @@ Dla każdego zamiennika podaj:
 3. Dlaczego to ćwiczenie jest świetnym substytutem biomechanicznym (profil oporu, bezpieczeństwo stawowe).`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.swapExercise,
         contents: prompt,
         config: {
           systemInstruction: 'Jesteś Ekspertem Biomechaniki i Fizjoterapii Sportowej. Dobierasz zamienniki ćwiczeń o zbliżonym ramieniu dźwigni i krzywej oporu.',
@@ -1244,7 +1293,7 @@ Dla każdego zamiennika podaj:
 
       return res.json({
         explanation: response.text,
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.swapExercise,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -1270,7 +1319,7 @@ Dla każdego zamiennika podaj:
       const cleanText = text.replace(/[*_#`[\]()]/g, '').slice(0, 400);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash-lite-tts',
+        model: AI_MODELS.tts,
         contents: [
           {
             role: 'user',
@@ -1295,7 +1344,7 @@ Dla każdego zamiennika podaj:
       return res.json({
         audioBase64: base64Audio,
         mimeType: 'audio/wav',
-        model: 'gemini-3.8-flash-lite-tts'
+        model: AI_MODELS.tts
       });
     } catch (err: any) {
       console.warn('[server] Błąd Gemini TTS:', err?.message || err);
@@ -1341,7 +1390,7 @@ Zwróć wyłącznie prawidłowy format JSON:
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.parseCommand,
         contents: prompt,
         config: {
           systemInstruction: 'Jesteś Kompilatorem Poleceń do Bazy Aplikacji Treningowej. Tłumaczysz naturalny język na ścisłe akcje JSON.',
@@ -1355,14 +1404,14 @@ Zwróć wyłącznie prawidłowy format JSON:
         return res.json({
           summary: parsed.summary || 'Przetworzono polecenie',
           actions: Array.isArray(parsed.actions) ? parsed.actions : [],
-          model: 'gemini-3.8-flash',
+          model: AI_MODELS.parseCommand,
           timestamp: new Date().toISOString()
         });
       } catch {
         return res.json({
           summary: 'Nie udało się sparsować akcji',
           actions: [],
-          model: 'gemini-3.8-flash'
+          model: AI_MODELS.parseCommand
         });
       }
     } catch (err: any) {
@@ -1439,7 +1488,7 @@ ${exerciseSummaryList.slice(0, 15).join('\n')}
 Wygeneruj wyczerpujący i praktyczny raport trenerski.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.analyze,
         contents: prompt,
         config: {
           systemInstruction,
@@ -1449,7 +1498,7 @@ Wygeneruj wyczerpujący i praktyczny raport trenerski.`;
 
       return res.json({
         analysis: response.text,
-        model: 'gemini-3.8-flash',
+        model: AI_MODELS.analyze,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {

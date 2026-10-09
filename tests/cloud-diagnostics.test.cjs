@@ -81,6 +81,11 @@ test('Firestore diagnostics is auth protected and proves write/read/update/hash/
     assert.match(response.headers.get('x-request-id'), /^[0-9a-f-]{36}$/);
     const result = await response.json();
     assert.equal(result.status, 'pass');
+    const postDiagnosticInfo = await (await fetch(`${base}/api/server/google-info`)).json();
+    assert.equal(postDiagnosticInfo.durableCloudStorage, true);
+    assert.equal(postDiagnosticInfo.cloudStorage.connectivity, 'available');
+    assert.equal(postDiagnosticInfo.cloudStorage.roundTripStatus, 'pass');
+    assert.ok(postDiagnosticInfo.cloudStorage.lastRoundTripAt);
     assert.deepEqual(result.steps.map((step) => step.name), ['write', 'read', 'update', 'revision/hash', 'STALE_WRITE expect conflict', 'post-stale verification', 'cleanup']);
     assert.ok(result.steps.every((step) => step.status === 'pass'));
     assert.equal([...fake.documents.keys()].some((name) => name.includes('/gymtracker_v1_data/')), false);
