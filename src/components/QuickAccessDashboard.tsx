@@ -46,7 +46,9 @@ import {
   ListOrdered,
   PlusCircle,
   HelpCircle,
+  ChevronLeft,
   ChevronRight,
+  History,
   RefreshCw,
   Search,
   GripVertical,
@@ -58,8 +60,10 @@ import {
   QuickAccessWidgetConfig, 
   QuickAccessWidgetId, 
   Exercise, 
-  BodyWeightEntry 
+  BodyWeightEntry,
+  HydrationDayRecord
 } from '../types';
+import { clearWaterDay, DEFAULT_DAILY_WATER_TARGET_ML, getHydrationDay, getRecentHydrationStats, getTodayDateKey, loadHydrationHistory, logWaterIntake, removeWaterEntry } from '../utils/hydrationService';
 import { 
   DEFAULT_QUICK_ACCESS_WIDGETS, 
   AVAILABLE_WIDGET_CATALOG, 
@@ -139,15 +143,11 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
   const [intervalPhase, setIntervalPhase] = useState<'idle' | 'work' | 'rest'>('idle');
   const [intervalRemaining, setIntervalRemaining] = useState<number>(20);
 
-  // Quick Water Hydration state
-  const [waterMl, setWaterMl] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('gymtracker_water_today');
-      return saved ? parseInt(saved, 10) : 1250;
-    } catch {
-      return 1250;
-    }
-  });
+  // Hydration history remains backward compatible with the former daily counter.
+  const [hydrationHistory, setHydrationHistory] = useState<Record<string, HydrationDayRecord>>(() => loadHydrationHistory());
+  const [selectedWaterDate, setSelectedWaterDate] = useState(() => getTodayDateKey());
+  const [showHydrationHistoryPanel, setShowHydrationHistoryPanel] = useState(false);
+  const [customWaterAmount, setCustomWaterAmount] = useState('');
 
   // Quick Macro / Calories state
   const [todayCalories, setTodayCalories] = useState<number>(() => {
@@ -361,12 +361,15 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
     setTimerRemaining(timerSeconds);
   };
 
-  const handleAddWater = (amount: number) => {
-    const next = Math.max(0, waterMl + amount);
-    setWaterMl(next);
-    try {
-      localStorage.setItem('gymtracker_water_today', next.toString());
-    } catch {}
+  const currentWaterDay = getHydrationDay(hydrationHistory, selectedWaterDate);
+  const waterMl = currentWaterDay.totalMl;
+  const handleAddWater = (amount: number) => setHydrationHistory((current) => logWaterIntake(current, selectedWaterDate, amount));
+  const handleRemoveWaterItem = (entryId: string) => setHydrationHistory((current) => removeWaterEntry(current, selectedWaterDate, entryId));
+  const handleClearWaterDay = () => setHydrationHistory((current) => clearWaterDay(current, selectedWaterDate));
+  const shiftWaterDay = (delta: number) => {
+    const date = new Date(`${selectedWaterDate}T12:00:00`);
+    date.setDate(date.getDate() + delta);
+    setSelectedWaterDate(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`);
   };
 
   const handleAddCalories = (amount: number) => {
@@ -1254,8 +1257,10 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
 
       // 8. LICZNIK NAWODNIENIA (H₂O)
       case 'water_hydration': {
-        const targetWater = 3000;
+        const targetWater = currentWaterDay.targetMl || DEFAULT_DAILY_WATER_TARGET_ML;
         const pct = Math.min(100, Math.round((waterMl / targetWater) * 100));
+        const recentStats = getRecentHydrationStats(hydrationHistory, 7, selectedWaterDate);
+        const isToday = selectedWaterDate === getTodayDateKey();
 
         return (
           <>
@@ -1266,21 +1271,21 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-white">{widget.title}</h3>
-                  <p className="text-[11px] text-slate-400">{waterMl} ml / {targetWater} ml ({pct}%)</p>
+                  <p className="text-[11px] text-slate-400">{waterMl} ml / {targetWater} ml ({pct}%) · {isToday ? 'Dzisiaj' : selectedWaterDate}</p>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => handleAddWater(-waterMl)}
-                className="p-1 rounded-lg text-slate-500 hover:text-slate-300 text-[10px] cursor-pointer"
-                title="Resetuj dzień"
-              >
-                Reset
-              </button>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => setShowHydrationHistoryPanel((value) => !value)} className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-cyan-300 cursor-pointer" title="Historia ostatnich 7 dni"><History className="w-3.5 h-3.5" /></button>
+                {waterMl > 0 && <button type="button" onClick={handleClearWaterDay} className="p-1 rounded-lg text-slate-500 hover:text-rose-300 text-[10px] cursor-pointer" title="Wyczyść wybrany dzień">Reset</button>}
+              </div>
             </div>
 
             <div className="pt-3 space-y-2.5">
+              <div className="flex items-center justify-between bg-slate-950/70 p-1 rounded-xl border border-slate-800">
+                <button type="button" onClick={() => shiftWaterDay(-1)} className="p-1 rounded-lg text-slate-400 hover:text-white cursor-pointer" aria-label="Poprzedni dzień nawodnienia"><ChevronLeft className="w-4 h-4" /></button>
+                <button type="button" onClick={() => setSelectedWaterDate(getTodayDateKey())} className="text-[10px] font-bold text-cyan-300 hover:text-cyan-100 cursor-pointer">{isToday ? 'Dzisiaj' : `Wróć do dzisiaj (${selectedWaterDate})`}</button>
+                <button type="button" onClick={() => shiftWaterDay(1)} className="p-1 rounded-lg text-slate-400 hover:text-white cursor-pointer" aria-label="Następny dzień nawodnienia"><ChevronRight className="w-4 h-4" /></button>
+              </div>
               <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden border border-slate-800">
                 <div 
                   className="h-full bg-blue-500 transition-all duration-300"
@@ -1288,7 +1293,7 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-4 gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleAddWater(250)}
@@ -1310,7 +1315,18 @@ export const QuickAccessDashboard: React.FC<QuickAccessDashboardProps> = ({
                 >
                   +750ml
                 </button>
+                <form onSubmit={(event) => { event.preventDefault(); const amount = Number.parseInt(customWaterAmount, 10); if (amount > 0) { handleAddWater(amount); setCustomWaterAmount(''); } }} className="flex gap-1">
+                  <input aria-label="Własna ilość wody w ml" value={customWaterAmount} onChange={(event) => setCustomWaterAmount(event.target.value)} inputMode="numeric" placeholder="ml" className="min-w-0 w-full px-1 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-cyan-200" />
+                  <button type="submit" className="px-1.5 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-[10px] font-bold text-white cursor-pointer">+</button>
+                </form>
               </div>
+
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-[11px] font-bold text-slate-400"><span>Wpisy dnia ({currentWaterDay.entries.length})</span><span className="font-mono text-cyan-400">Suma: {waterMl} ml</span></div>
+                {currentWaterDay.entries.length === 0 ? <p className="p-2 text-center text-[11px] text-slate-500 bg-slate-950/60 rounded-xl border border-slate-800">Brak wpisów — dodaj porcję powyżej.</p> : <div className="max-h-32 overflow-y-auto space-y-1 pr-0.5">{currentWaterDay.entries.map((entry) => <div key={entry.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-950/80 border border-slate-800/80 text-xs"><span className="font-mono text-cyan-300">{entry.time} · +{entry.amountMl} ml</span><button type="button" onClick={() => handleRemoveWaterItem(entry.id)} className="text-slate-500 hover:text-rose-400 cursor-pointer" aria-label={`Usuń wpis ${entry.amountMl} ml`}><Trash2 className="w-3 h-3" /></button></div>)}</div>}
+              </div>
+
+              {showHydrationHistoryPanel && <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2"><div className="flex items-center justify-between text-[11px]"><span className="font-bold text-slate-300">Ostatnie 7 dni</span><span className="font-mono text-cyan-300">Śr. {recentStats.averageMl} ml</span></div><div className="grid grid-cols-7 gap-1">{recentStats.days.map((day) => <button key={day.date} type="button" onClick={() => setSelectedWaterDate(day.date)} className={`p-1 rounded-lg text-[9px] font-mono border cursor-pointer ${day.date === selectedWaterDate ? 'border-cyan-400 bg-cyan-500/15 text-cyan-200' : 'border-slate-800 text-slate-400'}`} title={`${day.date}: ${day.totalMl} ml`}>{Math.round(day.totalMl / 100)}<span className="block text-[8px] text-slate-500">dl</span></button>)}</div><p className="text-[10px] text-slate-500">Cel osiągnięty: {recentStats.daysMetGoalCount}/7 dni</p></div>}
             </div>
           </>
         );

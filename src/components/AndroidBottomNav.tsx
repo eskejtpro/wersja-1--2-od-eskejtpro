@@ -78,7 +78,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
     if (avatarUrl?.startsWith('preset:')) {
       const preset = PRESET_EMOJIS[avatarUrl];
       return (
-        <div className={`w-7 h-7 rounded-xl bg-gradient-to-br ${preset?.bg || 'from-emerald-500 to-teal-700'} flex items-center justify-center text-xs shadow-xs font-bold border border-emerald-400/40`}>
+        <div className={`w-8.5 h-8.5 rounded-xl bg-gradient-to-br ${preset?.bg || 'from-emerald-500 to-teal-700'} flex items-center justify-center text-sm shadow-xs font-bold border border-emerald-400/40`}>
           <span>{preset?.emoji || '💪'}</span>
         </div>
       );
@@ -89,13 +89,13 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
         <img
           src={avatarUrl}
           alt={athleteName}
-          className="w-7 h-7 rounded-xl object-cover border border-emerald-500/40 shadow-xs"
+          className="w-8.5 h-8.5 rounded-xl object-cover border border-emerald-500/40 shadow-xs"
         />
       );
     }
 
     return (
-      <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-black tracking-tight text-white shadow-xs border ${
+      <div className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center text-xs font-black tracking-tight text-white shadow-xs border ${
         isProfileActive 
           ? 'bg-gradient-to-br from-emerald-500 to-teal-700 border-emerald-300 ring-2 ring-emerald-400/60' 
           : 'bg-gradient-to-br from-emerald-600 to-teal-800 border-emerald-400/40'
@@ -106,14 +106,14 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
   };
 
   const getMinHeightClass = () => {
-    if (navHeightMode === 'compact') return 'min-h-[42px] py-0.5';
-    if (navHeightMode === 'large') return 'min-h-[56px] py-1.5';
-    return 'min-h-[48px] py-1';
+    if (navHeightMode === 'compact') return 'min-h-[52px] py-1';
+    if (navHeightMode === 'large') return 'min-h-[74px] py-2';
+    return 'min-h-[66px] py-1.5';
   };
 
   const getContainerStyle = () => {
     if (navStyle === 'floating_dock') {
-      return `fixed bottom-[max(0.5rem,calc(0.25rem+env(safe-area-inset-bottom,0px)))] left-2 right-2 z-40 md:hidden border rounded-2xl dock-3d px-1.5 py-1 ${
+      return `fixed bottom-[max(0.6rem,calc(0.35rem+env(safe-area-inset-bottom,0px)))] left-2 right-2 z-40 md:hidden border rounded-2xl dock-3d px-2 py-1.5 shadow-2xl ${
         isAmoled
           ? 'bg-black/95 border-zinc-800/90 text-slate-200'
           : isDark 
@@ -122,7 +122,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
       }`;
     }
     if (navStyle === 'minimal_capsule') {
-      return `fixed bottom-[max(0.75rem,calc(0.5rem+env(safe-area-inset-bottom,0px)))] left-4 right-4 z-40 md:hidden border rounded-full dock-3d px-3 py-1 ${
+      return `fixed bottom-[max(0.85rem,calc(0.6rem+env(safe-area-inset-bottom,0px)))] left-3 right-3 z-40 md:hidden border rounded-full dock-3d px-3 py-1.5 ${
         isAmoled
           ? 'bg-black/90 border-zinc-800/90 text-slate-200'
           : isDark 
@@ -131,7 +131,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
       }`;
     }
     // Classic docked full width bar
-    return `fixed bottom-0 left-0 right-0 z-40 md:hidden border-t backdrop-blur-2xl select-none px-1 pt-1 pb-[max(0.5rem,calc(0.3rem+env(safe-area-inset-bottom)))] transition-colors shadow-2xl ${
+    return `fixed bottom-0 left-0 right-0 z-40 md:hidden border-t backdrop-blur-2xl select-none px-2 pt-1.5 pb-[max(0.85rem,calc(0.55rem+env(safe-area-inset-bottom)))] transition-colors shadow-2xl ${
       isAmoled
         ? 'bg-black border-zinc-800 text-slate-200'
         : isDark 
@@ -158,7 +158,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
               type="button"
               id={`android-tab-${item.id}`}
               onClick={() => onSelectView(item.id)}
-              className={`flex-1 min-w-[36px] max-w-[54px] flex flex-col items-center justify-center px-0.5 rounded-xl transition-all cursor-pointer group active:translate-y-0.5 ${getMinHeightClass()} ${
+              className={`flex-1 min-w-[38px] max-w-[60px] flex flex-col items-center justify-center px-0.5 rounded-xl transition-all cursor-pointer group active:translate-y-0.5 ${getMinHeightClass()} ${
                 isActive
                   ? isDark
                     ? 'text-emerald-400 font-bold'
@@ -169,17 +169,17 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
               }`}
               title={item.title}
             >
-              <div className={`w-8 h-7 rounded-xl transition-all flex items-center justify-center ${showLabel ? 'mb-0.5' : ''} ${
+              <div className={`w-9 h-8 sm:w-10 sm:h-8.5 rounded-xl transition-all flex items-center justify-center ${showLabel ? 'mb-1' : ''} ${
                 isActive 
                   ? isDark 
                     ? 'bg-gradient-to-b from-emerald-500/30 to-emerald-600/10 text-emerald-400 border border-emerald-400/50 shadow-lg shadow-emerald-500/20 scale-105' 
                     : 'bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-md scale-105'
                   : 'bg-transparent'
               }`}>
-                <Icon className={`w-4 h-4 transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
+                <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
               </div>
               {showLabel && (
-                <span className="text-[8.5px] sm:text-[9px] font-bold tracking-tighter leading-none truncate w-full text-center">
+                <span className="text-[9.5px] sm:text-[10px] font-bold tracking-tight leading-none truncate w-full text-center">
                   {item.label}
                 </span>
               )}
@@ -192,7 +192,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
           type="button"
           id="android-tab-profile"
           onClick={() => onSelectView('profile')}
-          className={`flex-1 min-w-[36px] max-w-[54px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all cursor-pointer min-h-[48px] group ${
+          className={`flex-1 min-w-[38px] max-w-[60px] flex flex-col items-center justify-center px-0.5 rounded-xl transition-all cursor-pointer group active:translate-y-0.5 ${getMinHeightClass()} ${
             isProfileActive
               ? isDark
                 ? 'text-emerald-400 font-bold'
@@ -203,18 +203,18 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
           }`}
           title="Centrum Synchronizacji & Profil Zawodnika"
         >
-          <div className="relative flex items-center justify-center mb-0.5">
+          <div className="relative flex items-center justify-center mb-1">
             {renderProfileAvatar()}
             {/* Live Sync Status Indicator Dot */}
             <span 
-              className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-slate-950 ${
+              className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-950 ${
                 isOnline ? 'bg-emerald-400' : 'bg-amber-400'
               }`}
               title={isOnline ? 'Zsynchronizowano' : 'Tryb lokalny'}
             />
           </div>
           {navLabelsMode === 'all' && (
-            <span className="text-[8.5px] font-semibold tracking-tight leading-none truncate max-w-full">
+            <span className="text-[9.5px] sm:text-[10px] font-bold tracking-tight leading-none truncate max-w-full text-center">
               Profil
             </span>
           )}

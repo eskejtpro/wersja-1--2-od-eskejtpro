@@ -132,6 +132,7 @@ export const CycleProtocolView: React.FC<CycleProtocolViewProps> = ({
   // Form State: Calendar Note
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
+  const [noteTime, setNoteTime] = useState('');
   const [noteCategory, setNoteCategory] = useState<typeof NOTE_CATEGORIES[number]['id']>('general');
   const [noteColor, setNoteColor] = useState<typeof CALENDAR_COLOR_PALETTE[number]['id']>('emerald');
   const [noteIsImportant, setNoteIsImportant] = useState(false);
@@ -329,6 +330,7 @@ export const CycleProtocolView: React.FC<CycleProtocolViewProps> = ({
 
     onAddCalendarNote?.({
       date: selectedDateStr,
+      time: noteTime || undefined,
       title: noteTitle.trim() || undefined,
       content: noteContent.trim(),
       category: noteCategory,
@@ -338,6 +340,7 @@ export const CycleProtocolView: React.FC<CycleProtocolViewProps> = ({
 
     setNoteTitle('');
     setNoteContent('');
+    setNoteTime('');
     setNoteIsImportant(false);
   };
 
@@ -1111,6 +1114,16 @@ export const CycleProtocolView: React.FC<CycleProtocolViewProps> = ({
                   </div>
 
                   <div>
+                    <label className="text-[11px] font-bold text-slate-400 block mb-1">Godzina (opcjonalnie)</label>
+                    <input
+                      type="time"
+                      value={noteTime}
+                      onChange={e => setNoteTime(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div>
                     <label className="text-[11px] font-bold text-slate-400 block mb-1">Treść notatki / Przypomnienia</label>
                     <textarea
                       rows={3}
@@ -1211,21 +1224,37 @@ export const CycleProtocolView: React.FC<CycleProtocolViewProps> = ({
                             )}
                           </div>
                           {n.title && (
-                            <h5 className="font-extrabold text-xs text-white truncate">{n.title}</h5>
+                            <h5 className={`font-extrabold text-xs truncate ${n.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>{n.title}</h5>
                           )}
-                          <p className="text-xs text-slate-300 whitespace-pre-wrap mt-0.5 leading-relaxed">{n.content}</p>
+                          <p className={`text-xs whitespace-pre-wrap mt-0.5 leading-relaxed ${n.isCompleted ? 'text-slate-500 line-through' : 'text-slate-300'}`}>{n.content}</p>
+                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400">
+                            {n.time && <span>🕒 {n.time}</span>}
+                            {n.isCompleted && <span className="text-emerald-300 font-bold">✓ Wykonano</span>}
+                          </div>
                         </div>
 
-                        {onDeleteCalendarNote && (
-                          <button
-                            type="button"
-                            onClick={() => onDeleteCalendarNote(n.id)}
-                            className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer"
-                            title="Usuń notatkę"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {onUpdateCalendarNote && (
+                            <button
+                              type="button"
+                              onClick={() => onUpdateCalendarNote(n.id, { isCompleted: !n.isCompleted })}
+                              className={`p-1 rounded-lg transition-colors cursor-pointer ${n.isCompleted ? 'text-emerald-300 bg-emerald-500/10' : 'text-slate-500 hover:text-emerald-300 hover:bg-emerald-500/10'}`}
+                              title={n.isCompleted ? 'Oznacz jako niewykonaną' : 'Oznacz jako wykonaną'}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {onDeleteCalendarNote && (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteCalendarNote(n.id)}
+                              className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                              title="Usuń notatkę"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

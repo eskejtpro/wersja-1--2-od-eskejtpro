@@ -14,7 +14,9 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  Pencil
+  Pencil,
+  FoldVertical,
+  UnfoldVertical
 } from 'lucide-react';
 import { TrainingWeek, TrainingDay, Exercise, LoggedSet, AppSettings } from '../types';
 import { calculateVolume } from '../utils/calculations';
@@ -131,6 +133,29 @@ export const WorkoutPlanView: React.FC<WorkoutPlanViewProps> = ({
     return acc + (ex.loggedSets ? ex.loggedSets.filter((s) => s.completed).length : 0);
   }, 0);
   const dayProgressPercent = totalPlannedSets > 0 ? Math.round((totalCompletedSets / totalPlannedSets) * 100) : 0;
+
+  const [collapsedExerciseIds, setCollapsedExerciseIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('gymtracker_collapsed_exercises');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  const updateCollapsedExercises = (transform: (current: Set<string>) => Set<string>) => {
+    setCollapsedExerciseIds((previous) => {
+      const next = transform(new Set(previous));
+      try { localStorage.setItem('gymtracker_collapsed_exercises', JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  };
+  const dayExerciseIds = dayExercises.map((exercise) => exercise.id);
+  const collapsedCountInDay = dayExerciseIds.filter((id) => collapsedExerciseIds.has(id)).length;
+  const allCollapsed = dayExerciseIds.length > 0 && collapsedCountInDay === dayExerciseIds.length;
+  const noneCollapsed = collapsedCountInDay === 0;
+  const handleToggleExerciseCollapse = (exerciseId: string) => updateCollapsedExercises((next) => { next.has(exerciseId) ? next.delete(exerciseId) : next.add(exerciseId); return next; });
+  const handleCollapseAll = () => updateCollapsedExercises((next) => { dayExerciseIds.forEach((id) => next.add(id)); return next; });
+  const handleExpandAll = () => updateCollapsedExercises((next) => { dayExerciseIds.forEach((id) => next.delete(id)); return next; });
 
   // Week completed days count
   const weekCompletedDaysCount = currentWeek?.days.filter((d) => d.completed).length || 0;
@@ -558,11 +583,14 @@ export const WorkoutPlanView: React.FC<WorkoutPlanViewProps> = ({
 
         {/* 4. Exercises List Section */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-emerald-400" />
-              <span>Lista Ćwiczeń ({dayExercises.length})</span>
-            </h3>
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2"><Layers className="w-4 h-4 text-emerald-400" /><span>Lista Ćwiczeń ({dayExercises.length})</span></h3>
+              {dayExercises.length > 0 && <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-800 rounded-xl p-1 text-xs">
+                <button type="button" onClick={handleCollapseAll} className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${allCollapsed ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`} id="btn-collapse-all-exercises"><FoldVertical className="w-3.5 h-3.5 text-emerald-400" /><span>Zwiń wszystkie</span>{collapsedCountInDay > 0 && <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 font-mono">{collapsedCountInDay}</span>}</button>
+                <button type="button" onClick={handleExpandAll} className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${noneCollapsed ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`} id="btn-expand-all-exercises"><UnfoldVertical className="w-3.5 h-3.5 text-slate-400" /><span>Rozwiń wszystkie</span></button>
+              </div>}
+            </div>
 
             <button
               type="button"
@@ -603,6 +631,8 @@ export const WorkoutPlanView: React.FC<WorkoutPlanViewProps> = ({
                   weekId={currentWeek.id}
                   dayId={currentDay.id}
                   unit={unit}
+                  isCollapsed={collapsedExerciseIds.has(exercise.id)}
+                  onToggleCollapse={handleToggleExerciseCollapse}
                   previousPerformance={getPreviousPerformance(exercise)}
                   onSavePerformance={onSaveExercisePerformance}
                   onRenameExercise={onRenameExercise}
