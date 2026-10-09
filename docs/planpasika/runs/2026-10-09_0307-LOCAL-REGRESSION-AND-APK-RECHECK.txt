@@ -1,0 +1,35 @@
+DATA: 2026-10-09 03:07 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 873e395d (documentation baseline before this run-report update)
+ENVIRONMENT: Windows 10; Node.js/npm; Android Gradle wrapper; Android SDK/ADB; Google Cloud Run public endpoints.
+TEST: Local release regression suite, web/server build, Gradle tasks, APK metadata/security, ADB presence, and public Cloud GETs.
+CEL: Revalidate the current release checkout after documenting the billing clarification.
+KOMENDY:
+- `npm test`
+- `npm run lint`
+- `npm run test:server`
+- `npm run test:cloud`
+- `npm run test:ai-transport`
+- `npm run test:ops-agent`
+- `npm run build`
+- `android/gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`
+- `node scripts/verify-android-package-security.mjs`
+- `adb devices -l`
+- GET `/api/health`, `/api/version`, `/api/server/google-info`
+STATUS: Local test/build gates PASS. Production authenticated data/AI tests and physical-device tests UNKNOWN/BLOCKED.
+WYNIKI:
+- Application tests 112/112; TypeScript lint PASS.
+- Server/auth/Firestore tests 28/28; cloud sync/diagnostics tests 40/40; AI transport 6/6; read-only Cloud Ops tests 7/7.
+- Web/server build PASS with existing Vite large-chunk warning (~1.66 MB largest JS chunk).
+- Gradle unit/debug/androidTest build SUCCESSFUL; Gradle tasks reported UP-TO-DATE.
+- Existing APK: `com.gymtracker.pro`, 3.0.9/309, 7,228,723 bytes, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`; APK credential scan PASS. Its artifact timestamp is 2026-10-09 02:47 local; no fresh APK rebuild is claimed.
+- `adb devices -l`: no connected devices, so no install or device-runtime tests.
+- Public `/api/health` and `/api/version` return HTTP 200; `/api/server/google-info` is online but `durableCloudStorage=false` and `activeUser=null`.
+LOG SUMMARY: Local functional gates pass. Simulated Firestore tests do not prove production persistence. No authenticated production session was available; no live Firestore or Gemini mutation/request was made.
+ARTIFACTS: `android/app/build/outputs/apk/debug/app-debug.apk`; this report.
+PROBLEMS:
+- P0: authenticated production Firestore write/read/update/conflict/cleanup and cross-device retrieval remain unverified.
+- P0: physical-device runtime/auth/sync and app data-preservation tests remain blocked because ADB sees no device.
+- P1: live Gemini endpoint/model access unverified; AI Studio prepaid wallet showed zero balance in the billing review.
+- P1: Vite emits a large-chunk warning; build succeeds.
+CLEANUP: No production, billing, IAM, Firestore, secret, or user data changed. No device app was installed or removed.

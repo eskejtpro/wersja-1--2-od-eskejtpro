@@ -34,3 +34,5 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - Zbudowano z publicznym OAuth Web Client ID i URL-em serwera zgodnymi z release workflow; `npx cap sync android` i `verify-android-oauth-bundle.mjs` PASS.
 - To dowodzi obecności ustawień w bundle, nie pomyślnego Google login ani trwałości. Live `/api/server/google-info` nadal `roundTripStatus=not_run`, `durableCloudStorage=false`.
 - Nie wykonano deployu ani zmian konfiguracji Cloud.
+
+2026-10-09 03:07 Europe/Warsaw — regression suite rerun: server 28/28 and cloud/sync/diagnostics 40/40 PASS, AI transport 6/6 PASS, Ops Agent 7/7 PASS; npm app tests 112/112 PASS. These are local tests (Firestore transport is simulated); they do not replace the authenticated production self-test. Cloud GET health/version remains available but durability stays UNVERIFIED.

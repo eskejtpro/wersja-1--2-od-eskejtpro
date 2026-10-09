@@ -54,3 +54,12 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - Current local APK: 3.0.9/309, `com.gymtracker.pro`, minSdk 24, targetSdk 36, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`.
 - `adb devices -l` returned no devices. Physical device, login, UI, backup/restore and two-device sync are not tested.
 - Run report: `runs/2026-10-09_1100-RELEASE-AI-CLOUD-RECHECK.txt`.
+
+2026-10-09 03:07 Europe/Warsaw — fresh local verification on commit 873e395:
+- `npm test`: 112/112 PASS; `npm run lint`: PASS.
+- `npm run test:server`: 28/28 PASS; `npm run test:cloud`: 40/40 PASS; `npm run test:ai-transport`: 6/6 PASS; `npm run test:ops-agent`: 7/7 PASS.
+- `npm run build`: PASS; known Vite chunk warning remains (largest JS chunk ~1.66 MB).
+- Gradle `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`: BUILD SUCCESSFUL (tasks up-to-date).
+- Existing configured APK re-verified: `com.gymtracker.pro`, 3.0.9/309, 7,228,723 bytes, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`; credential-pattern scan PASS. Artifact timestamp 2026-10-09 02:47 local; no claim of a new APK build.
+- ADB devices list empty: install, instrumentation, startup, login, UI and real-device E2E NOT RUN.
+- Production GET health/version PASS; `google-info` still has `durableCloudStorage=false`; authenticated Firestore and Gemini E2E UNKNOWN.

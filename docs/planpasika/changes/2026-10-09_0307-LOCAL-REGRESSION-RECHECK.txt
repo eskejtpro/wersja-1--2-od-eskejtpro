@@ -1,0 +1,7 @@
+DATA: 2026-10-09 03:07 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT BAZOWY: 873e395d
+ZMIANA: Udokumentowano świeże wyniki lokalnego regresyjnego zestawu testów oraz ponowną inspekcję istniejącego APK. Nie zmieniono kodu aplikacji.
+WYNIKI: app 112/112, server 28/28, cloud/sync 40/40, AI transport 6/6, Ops Agent 7/7; lint, web/server build, Gradle unit/debug/androidTest build i skan APK PASS.
+OGRANICZENIA: Brak urządzenia ADB; Firestore/Gemini produkcyjne E2E niewykonane; lokalne testy nie są dowodem live persistence.
+PLIKI: 03-ZMIANY-HISTORIA.txt, 04-TESTY-I-WERYFIKACJA.txt, 09-GOOGLE-CLOUD-TESTY.txt i nowy raport runs.
