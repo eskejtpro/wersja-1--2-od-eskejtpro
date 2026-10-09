@@ -2,9 +2,9 @@ App version: 3.0.9
 versionCode: 309
 package: com.gymtracker.pro
 APK type: debug
-APK SHA-256 (najnowszy lokalny): B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1
+APK SHA-256 (najnowszy lokalny): 9811AD7146CEFCB7F04E75E70C0259D6BA9DDE12B2E4864A1E6651F25D92B7D8
 Branch: codex/planpasika-release
-Latest local build: 2026-10-09, configured APK SHA-256 CE44EE6787F8052ABDD008019B8CEC6D19DD4115B22F4D8D91A86946B9EB3C02 (7,228,723 bytes). OAuth bundle verifier confirms the public Google Web Client ID and Cloud Run URL are embedded. Credential-pattern scan and APK signer verification pass. Debug signing certificate SHA-256: 7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c. ADB detected no phone; installation and signature match against the installed app are unverified.
+Latest local build: 2026-10-09, configured APK SHA-256 9811AD7146CEFCB7F04E75E70C0259D6BA9DDE12B2E4864A1E6651F25D92B7D8 (7,238,445 bytes). Package inspection confirms `com.gymtracker.pro`, versionName `3.0.9`, versionCode `309`, minSdk 24 and targetSdk 36. Credential-pattern scan and APK signer verification pass. Debug signing certificate SHA-256: 7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c. ADB was intentionally not used; installation and signature match against the installed app are unverified.
 Integrated Cloud Ops Agent V1: commit 21500a1.
 Wydanie produkcyjne: NOT READY do czasu live Cloud/E2E.
 

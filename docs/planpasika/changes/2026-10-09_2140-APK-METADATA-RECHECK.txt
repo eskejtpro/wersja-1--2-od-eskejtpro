@@ -1,0 +1,34 @@
+PlanPasika / GymTracker Pro — recheck metadanych świeżego APK
+
+BEFORE
+- Dokumentacja wydania wskazywała starszy hash APK jako najnowszy lokalny.
+
+ROOT CAUSE
+- Każdy build debug ma inny hash; po naprawie Androida wpis wersji nie został jeszcze zaktualizowany.
+
+CHANGE
+- Zaktualizowano nagłówek `13-WERSJE-I-WYDANIA.txt` do świeżego artefaktu.
+
+FILES
+- `docs/planpasika/13-WERSJE-I-WYDANIA.txt`
+
+TESTS
+- `aapt2 dump badging`: package `com.gymtracker.pro`, versionName `3.0.9`, versionCode `309`, minSdk 24, targetSdk 36.
+- `apksigner verify --print-certs`: PASS; debug certificate SHA-256 `7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c`.
+- Fresh SHA-256: `9811AD7146CEFCB7F04E75E70C0259D6BA9DDE12B2E4864A1E6651F25D92B7D8`.
+
+DEVICE/CLOUD
+- ADB: nieużywane.
+- Cloud: bez zmian.
+
+EVIDENCE
+- `android/app/build/outputs/apk/debug/app-debug.apk`, 7,238,445 bytes.
+
+ROLLBACK
+- Przywrócenie poprzedniego wpisu dokumentacji; nie zmienia APK.
+
+RESULT
+- Dokumentacja wskazuje właściwy świeży artefakt; instalacja i runtime pozostają niezweryfikowane.
+
+FOLLOW-UP
+- Przy ADB porównać certyfikat z instalacją przed `adb install -r`.
