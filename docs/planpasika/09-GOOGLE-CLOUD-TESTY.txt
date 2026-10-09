@@ -48,6 +48,8 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 2026-10-09 live follow-up after secret correction:
 - Anonymous `POST /api/ai/coach/chat` with synthetic non-personal payload returned 401 `unauthorized` (expected protection; Gemini not invoked).
 - Cloud Logging query for backend HTTP 5xx over the last 30 minutes returned 0 entries.
+- Authenticated read-only Cloud Ops diagnostics after the deployment returned HTTP 200: revision, configuration, health, version, Google Auth, Firestore metadata, APIs and metrics PASS. Overall WARN due to one generic log warning and expected UNKNOWN persistence/sync checks.
+- The sole WARNING log was the intentional anonymous `/api/ai/coach/chat` probe: revision `00023-5z7`, HTTP 401. This is expected auth rejection, not a backend failure; 5xx count remained zero.
 - Direct server-side metadata test previously confirmed Secret Manager key access: HTTP 200 to Gemini model catalog, old inline key HTTP 403.
 - Minimal direct `generateContent` against `gemini-3.5-flash-lite` with synthetic prompt “Reply with exactly OK.” returned HTTP 200, reply `OK`, usage 6 tokens; no personal data used. This checks Google Gemini access only, not our backend route/auth/session or other model IDs.
 - Do not label app AI end-to-end PASS until a valid app Google session exercises the protected backend endpoint. ADB currently shows no connected device.

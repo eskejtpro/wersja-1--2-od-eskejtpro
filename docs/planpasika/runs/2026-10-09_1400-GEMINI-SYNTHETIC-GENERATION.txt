@@ -15,6 +15,7 @@ WYNIKI:
 - The secret value and response body from Secret Manager were not logged; synthetic prompt contained no personal/health data.
 - Unauthenticated backend POST returned HTTP 401 `unauthorized`, so no backend Gemini request was made.
 - Cloud Logging query returned zero backend 5xx entries for the 30-minute window.
+- Authenticated read-only Cloud Ops diagnostics returned HTTP 200. Infrastructure/revision/config/health/version/Auth/Firestore metadata/APIs/metrics checks PASS; overall WARN because the sole warning log was the deliberate anonymous HTTP 401 probe, while persistence and cross-device sync remain UNKNOWN.
 LOG SUMMARY: no backend error logs in queried window; no key material exposed.
 ARTIFACTS: production revision `00023-5z7` uses Secret Manager version `latest`; revision has 100% traffic.
 PROBLEMS:
