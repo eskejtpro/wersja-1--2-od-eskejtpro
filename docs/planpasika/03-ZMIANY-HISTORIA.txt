@@ -29,3 +29,4 @@ Commity: 5663977, f2566f1, 9257cf9.
 2026-10-09: skróty widgetu przekazują teraz cel do Reacta i otwierają właściwe widoki (plan, quick_access, cycles). Test strukturalny widgetu PASS; APK debug zbudowany bez ADB.
 2026-10-09: dodano wymagane diagramy Mermaid/CSV: timeline, model danych i aktualny wykres testów. Diagramy zachowują BLOCKED/WARN dla niezweryfikowanych testów urządzenia i live round-trip. Commit `f135053`.
 2026-10-09: naprawiono status `/api/server/google-info`: awaria runtime Firestore nie może być raportowana jako `online`; dodano regresję degraded→online po odzyskaniu. Testy server 28/28 PASS.
+2026-10-09: dodano matrix wszystkich tras AI z modelem, auth, callerem i rozdzieleniem live/contract/phone status. Nieoznaczone E2E jako PASS bez urządzenia. Commit pending.

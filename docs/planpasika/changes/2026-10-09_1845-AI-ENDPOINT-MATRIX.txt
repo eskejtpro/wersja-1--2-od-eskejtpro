@@ -1,0 +1,29 @@
+BEFORE
+Modele AI były w centralnym rejestrze i trasach, ale brakowało osobnej tabeli audytowej wymaganej przez master prompt.
+
+ROOT CAUSE
+Status testów lokalnych, bezpośrednich testów modeli i testów telefonu był rozproszony w dokumentacji.
+
+CHANGE
+Dodano matrix funkcja → route → model → auth → caller → live access → test server → phone UI → wynik. Statusy UNKNOWN/BLOCKED są zachowane tam, gdzie brak aktualnego dowodu.
+
+FILES
+docs/planpasika/16-AI-ENDPOINT-MATRIX.txt
+
+TESTS
+Matrix porównano z `server/ai/models.ts`, `server.ts`, `src/utils/aiRemoteClient.ts` i callerami UI. Istniejące testy pozostają PASS; nie uruchamiano generowania z prawdziwym credentialem w tej sesji.
+
+DEVICE/CLOUD
+Bez ADB i bez zmiany Cloud Run. Telefoniczne E2E BLOCKED.
+
+EVIDENCE
+Centralny registry obejmuje osiem funkcji; każda ma osobny wiersz, również route `analyze` bez obecnego calleru UI.
+
+ROLLBACK
+Usunąć plik matrix i wpisy dokumentacyjne; brak wpływu na kod i dane.
+
+RESULT
+Zakres AI jest jawny i nie zawyża statusu do PASS na podstawie samego istnienia modelu lub trasy.
+
+FOLLOW-UP
+Po autoryzowanym live teście uzupełnić statusy backend E2E i telefonu, zachowując syntetyczne dane.

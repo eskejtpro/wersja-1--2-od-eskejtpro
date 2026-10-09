@@ -1,0 +1,28 @@
+PLANPASIKA — MATRIX ENDPOINTÓW AI
+Stan audytu: 2026-10-09, bez ADB
+
+Legenda: PASS oznacza test faktycznie wykonany w danym zakresie. UNKNOWN nie oznacza awarii. BLOCKED oznacza brak testu wymagającego urządzenia lub aktywnej sesji.
+
+| Funkcja | Trasa | Model z rejestru | Auth | Caller | Live model access | Server/contract test | Phone UI E2E | Wynik |
+|---|---|---|---|---|---|---|---|---|
+| Chat | POST /api/ai/coach/chat, /api/ai/chat | gemini-3.5-flash-lite | Bearer | AiCoachView, QuickAccessDashboard | PASS direct synthetic model check; backend E2E UNKNOWN | PASS | BLOCKED | WARN |
+| Generate plan | POST /api/ai/coach/generate-plan | gemini-3.8-flash | Bearer | AiCoachView | PASS direct synthetic model check; backend E2E UNKNOWN | PASS | BLOCKED | WARN |
+| Health audit | POST /api/ai/coach/audit-health | gemini-3.8-flash | Bearer | AiCoachView | metadata only; generation UNKNOWN | PASS safety/contract | BLOCKED | UNKNOWN |
+| Nutrition plan | POST /api/ai/coach/nutrition-plan | gemini-3.8-flash | Bearer | AiCoachView | metadata only; generation UNKNOWN | PASS contract | BLOCKED | UNKNOWN |
+| Swap exercise | POST /api/ai/coach/swap-exercise | gemini-3.8-flash | Bearer | AiCoachView | metadata only; generation UNKNOWN | PASS contract | BLOCKED | UNKNOWN |
+| TTS | POST /api/ai/coach/tts | gemini-3.8-flash-lite-tts | Bearer | AiCoachView | metadata only; audio generation UNKNOWN | PASS contract | BLOCKED | UNKNOWN |
+| Parse command | POST /api/ai/agent/parse-command | gemini-3.8-flash | Bearer | AI agent transport | metadata only; generation UNKNOWN | PASS parser/action safety | BLOCKED | UNKNOWN |
+| Analyze | POST /api/ai/coach/analyze | gemini-3.8-flash | Bearer | No current UI caller found | metadata only; generation UNKNOWN | Route exists; caller E2E N/A | N/A | UNUSED/UNKNOWN |
+
+EVIDENCE
+- Single source of truth: `server/ai/models.ts`.
+- Client allow-list: `src/utils/aiRemoteClient.ts`.
+- Auth guard: `requireAiSession` in `server.ts`.
+- Local tests: `npm test`, `npm run test:server`, `npm run test:cloud`.
+- Direct synthetic Gemini checks from prior run prove model/key access only for the models explicitly recorded in `07-AI-AGENT-JAK-DZIALA.txt`; they do not prove backend endpoint E2E.
+
+OPEN GATES
+- Authenticated backend request for each endpoint with synthetic input.
+- Phone UI chat smoke test and second neutral smoke test.
+- Timeout, 401, 429, malformed output and 5xx behavior are contract-tested where available; device/runtime confirmation remains BLOCKED without ADB.
+- Do not expose Gemini credentials in APK, frontend, logs or documentation.

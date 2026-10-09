@@ -125,3 +125,4 @@ AKTUALIZACJA 2026-10-09 13:52 Europe/Warsaw:
 - `adb devices -l` jest puste. Google login, Firestore diagnostic, AI E2E, UI/settings i drugi telefon pozostają BLOCKED, a nie PASS.
 - Diagramy audytu zostały dodane w `docs/planpasika/diagrams/`; ich statusy celowo nie podnoszą BLOCKED/WARN do PASS bez testu urządzenia i aktualnego live round-trip.
 - Statusy health/google-info są teraz spójne podczas awarii Firestore; live Cloud Run nadal wymaga ponownego odczytu po wdrożeniu.
+- Matrix AI jest jawna w `16-AI-ENDPOINT-MATRIX.txt`; generowanie backendowe i telefoniczne E2E pozostają UNKNOWN/BLOCKED bez bieżącej sesji i urządzenia.
