@@ -86,3 +86,5 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - Cloud Run `/api/health`, `/api/version`, `/api/server/google-info`: HTTP 200; wersja 3.0.9, health `ok`.
 - ADB puste. Instalacja, runtime, Google OAuth, UI/AI E2E i sync dwóch klientów BLOCKED/UNKNOWN.
 - Raport: `runs/2026-10-09_0435-ANDROID-AND-CLOUD-RECHECK.txt`.
+- Dodatkowo: OAuth bundle verifier PASS z publicznymi wartościami release; autoryzowany, tylko odczytowy Cloud Ops diagnostic zwrócił WARN (persistence/sync UNKNOWN), revision `00023-5z7` Ready, 100% traffic; Firestore delete protection ON, backup schedule 7d, lista snapshotów nadal pusta. Szczegóły w run report.
+- GitHub Actions run `37875366689` dla commita `68e1450517b9491b8efe2002138284bffc3235f0`: oba zadania `node-quality` i `android-debug` PASS.

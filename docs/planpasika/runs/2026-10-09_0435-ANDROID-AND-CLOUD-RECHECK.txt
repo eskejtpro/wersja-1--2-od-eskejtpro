@@ -37,5 +37,15 @@ STATUS / PROBLEMS
 - Pierwszy backup snapshot i restore: UNKNOWN; stan harmonogramu w raporcie `2026-10-09_1600-CLOUD-PREPAYMENT-FOLLOWUP.txt`.
 - Nie zmieniano billing/IAM/secrets ani nie wdrażano backendu.
 
+LIVE CLOUD FOLLOW-UP 2026-10-09 04:38 Europe/Warsaw
+- Cloud Shell active account eskejtpro@gmail.com; project gen-lang-client-0836043899.
+- Cloud Ops POST /api/diagnostics/run (uwierzytelniony, read-only): HTTP 200, overall WARN; Cloud Run/revision/version/config/metadane Firestore/logi/metryki PASS.
+- Revision 00023-5z7 Ready, 100% traffic; health 3.0.9 `ok`; 6 requestów w próbce, 0 5xx; średnia latencja 2.0 ms.
+- Firestore `(default)` europe-central2, delete protection ENABLED, PITR DISABLED; schedule retention 604800s (7d). `gcloud firestore backups list` bez pozycji — brak potwierdzonego snapshotu.
+- Cloud Ops pozostawia GymData persistence i client sync UNKNOWN; nie wykonano zalogowanego testu danych.
+- Bundle verifier `verify-android-oauth-bundle.mjs`: PASS po ustawieniu publicznego Web Client ID i URL w środowisku procesu. Jedno wcześniejsze uruchomienie bez zmiennych środowiskowych odrzuciło pusty input; nie jest to błąd APK.
+- GitHub Actions run 37875366689 dla commita `68e1450517b9491b8efe2002138284bffc3235f0`: PASS; `node-quality` i `android-debug` zakończone sukcesem, w tym OAuth bundle verifier, Gradle debug/test APK i APK security scan.
+- Backup schedule `dailyRecurrence: {}`; utworzony 2026-10-09T02:08:30Z (04:08 CEST), retention 604800s. Pierwszy snapshot jeszcze nie figuruje na liście backupów.
+
 CLEANUP
 - Bez zmian źródeł; artefakt pozostaje lokalnym debug APK.

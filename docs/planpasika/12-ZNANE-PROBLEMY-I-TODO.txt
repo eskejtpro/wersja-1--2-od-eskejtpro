@@ -100,3 +100,10 @@ AKTUALIZACJA 2026-10-09 04:11 Europe/Warsaw:
 - Nadal BLOCKED/UNKNOWN: fizyczny telefon nie jest wykrywany przez ADB, więc brak instalacji, startup, Google login, UI, AI i testu aktualizacji zachowującej dane.
 - Android app debug build PASS, app-specific instrumentation APK build PASS. Zadanie agregujące instrumented APK dla wszystkich bibliotek FAIL z duplikatem Kotlin stdlib w wygenerowanym module `capacitor-cordova-android-plugins`; nie blokuje budowy APK aplikacji.
 - Ostatni fresh APK lokalny: 3.0.9/309, `com.gymtracker.pro`, 6,684,565 B, SHA-256 `0AD099991F20046AD1D2A6AECDEF21A6FE68C7C9E88272A474E52D5A9AF05DBA`; debug signer, nie testowany na urządzeniu.
+
+AKTUALNY RECHECK 2026-10-09 04:38 Europe/Warsaw (zastępuje historyczny wpis o ostatnim APK):
+- APK debug 3.0.9/309, 6,680,461 B, SHA-256 `E3E064CAE4AFE33D3489069CFC0D973F8A0DA71AA8D5226248379F0B71A2340F`; ADB puste, nie ma instalacji/runtime.
+- Lint, app 112/112, server 28/28, cloud 40/40, AI transport 6/6, registry 3/3, Ops 7/7, OAuth bundle, security scan, web build, Capacitor sync i Gradle APK/test APK: PASS.
+- Live Ops overall WARN: użytkownika Firestore write/read oraz synchronizacji nie sprawdzono. Firestore protection ENABLED, PITR OFF, backup schedule 7 dni, ale lista snapshotów jest pusta.
+- Cloud Run revision 00023-5z7 Ready, ruch 100%, status health `ok`; to nie jest dowód E2E.
+- Run report: `runs/2026-10-09_0435-ANDROID-AND-CLOUD-RECHECK.txt`.
