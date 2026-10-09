@@ -1,0 +1,23 @@
+PlanPasika / GymTracker Pro — świeży publiczny recheck Cloud Run
+
+DATE: 2026-10-09
+SCOPE: wyłącznie bezpieczne GET; bez tokenu użytkownika i bez mutacji danych.
+BASE: https://wersja-1--2-od-eskejtpro-git-761415655121.europe-central2.run.app
+
+RESULTS
+- GET /api/health: HTTP 200, status `ok`, version `3.0.9`.
+- GET /api/version: HTTP 200, status `ok`, appVersion `3.0.9`, schemaVersion `1`.
+- GET /api/server/google-info: HTTP 200, status `online`, region `europe-central2`, googleAuthAvailable `true`.
+
+STORAGE INTERPRETATION
+- cloudStoreConfigured: `true`.
+- durableCloudStorage: `false`.
+- cloudStorage.connectivity: `unknown`.
+- cloudStorage.roundTripStatus: `not_run`.
+- cloudStorage.lastVerifiedAt/lastRoundTripAt: `null`.
+- No authenticated Firestore write/read/delete was attempted in this check.
+
+VERDICT
+- Cloud Run process and public API are reachable and serving version 3.0.9.
+- Firestore durability remains UNKNOWN, not PASS; public health metadata is not a persistence proof.
+- No ADB and no production data mutation used.

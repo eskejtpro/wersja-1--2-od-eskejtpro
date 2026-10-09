@@ -92,3 +92,4 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - Firestore durable round-trip UNKNOWN: `roundTripStatus=not_run`, `durableCloudStorage=false`; no authenticated write/read/update/conflict/cleanup was performed.
 - Device E2E BLOCKED: `adb devices -l` returned no device.
 - No Cloud, IAM, billing, database, service or user-data mutation was made in this recheck.
+- 2026-10-09 22:25: świeży publiczny GET recheck potwierdził `/api/health`, `/api/version` i `/api/server/google-info` HTTP 200 oraz backend 3.0.9. Google Auth skonfigurowany; `durableCloudStorage=false`, connectivity `unknown`, round-trip `not_run`. Nie wykonano mutacji. Szczegóły: `runs/2026-10-09_2225-PUBLIC-CLOUD-RECHECK.txt`.
