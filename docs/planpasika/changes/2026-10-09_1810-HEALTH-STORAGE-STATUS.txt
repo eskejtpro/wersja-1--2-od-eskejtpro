@@ -1,0 +1,31 @@
+BEFORE
+Podczas runtime awarii Firestore `/api/health` zwracał `degraded`, ale `/api/server/google-info` mógł nadal zwrócić `online`, bo sprawdzał wyłącznie istnienie klienta storage.
+
+ROOT CAUSE
+Status google-info nie uwzględniał process-local `cloudStorageState.connectivity`.
+
+CHANGE
+google-info zwraca `degraded`, gdy Cloud Run nie ma storage albo ostatnia operacja oznaczyła storage jako `unavailable`. Po udanym żądaniu stan wraca do `online`.
+
+FILES
+server.ts
+tests/firestore-store.test.cjs
+
+TESTS
+`npm run test:server`: 28/28 PASS.
+Dodano asercje dla outage status `degraded` i recovery status `online`.
+
+DEVICE/CLOUD
+Bez ADB. Bez wdrożenia Cloud Run w tej sesji; live status po deploy pozostaje do odczytu.
+
+EVIDENCE
+Test używa kontrolowanego syntetycznego transportu Firestore i wymusza błąd sesji, następnie recovery.
+
+ROLLBACK
+Revert commit tego fixu; brak migracji danych.
+
+RESULT
+Semantyka obu publicznych statusów jest spójna i nie maskuje bieżącej awarii storage.
+
+FOLLOW-UP
+Po kolejnym wdrożeniu wykonać read-only `/api/health` i `/api/server/google-info` oraz sprawdzić live round-trip przez autoryzowany endpoint diagnostyczny.

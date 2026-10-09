@@ -586,7 +586,9 @@ export function createApp(options: AppOptions = {}) {
 
   app.get('/api/server/google-info', (_req, res) => {
     res.json({
-      status: config.isCloudRun ? (cloudStore ? 'online' : 'degraded') : (!localStore || localStore.error ? 'degraded' : 'online'),
+      status: config.isCloudRun
+        ? (!cloudStore || cloudStorageState.connectivity === 'unavailable' ? 'degraded' : 'online')
+        : (!localStore || localStore.error ? 'degraded' : 'online'),
       ...GOOGLE_CLOUD_INFO,
       activeUser: null,
       // Configured storage is not proof of durable writes; expose the last

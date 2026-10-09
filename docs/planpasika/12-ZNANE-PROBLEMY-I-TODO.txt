@@ -124,3 +124,4 @@ AKTUALIZACJA 2026-10-09 13:52 Europe/Warsaw:
 - P0 pozostaje bez zmiany: zalogowana sesja aplikacji musi uruchomić syntetyczny Firestore round-trip, a drugi klient musi potwierdzić synchronizację.
 - `adb devices -l` jest puste. Google login, Firestore diagnostic, AI E2E, UI/settings i drugi telefon pozostają BLOCKED, a nie PASS.
 - Diagramy audytu zostały dodane w `docs/planpasika/diagrams/`; ich statusy celowo nie podnoszą BLOCKED/WARN do PASS bez testu urządzenia i aktualnego live round-trip.
+- Statusy health/google-info są teraz spójne podczas awarii Firestore; live Cloud Run nadal wymaga ponownego odczytu po wdrożeniu.

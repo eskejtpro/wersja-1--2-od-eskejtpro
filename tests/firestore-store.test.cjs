@@ -149,12 +149,14 @@ test('client-side CloudStoreError does not mark Firestore unavailable', async ()
     assert.equal(outageInfo.cloudStorage.connectivity, 'unavailable');
     assert.equal(outageInfo.cloudStorage.roundTripStatus, 'fail');
     assert.equal(outageInfo.durableCloudStorage, false);
+    assert.equal(outageInfo.status, 'degraded');
     assert.equal((await (await fetch(`${base}/api/health`)).json()).status, 'degraded');
     fake.failRequests = false;
     assert.equal((await fetch(`${base}/api/data`, { headers: { authorization: `Bearer ${token}` } })).status, 404);
     const recoveredInfo = await (await fetch(`${base}/api/server/google-info`)).json();
     assert.equal(recoveredInfo.cloudStorage.connectivity, 'available');
     assert.equal(recoveredInfo.durableCloudStorage, false);
+    assert.equal(recoveredInfo.status, 'online');
   } finally {
     await new Promise((resolve) => listener.close(resolve));
   }
