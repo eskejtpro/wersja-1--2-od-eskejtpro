@@ -33,6 +33,8 @@ Poprzednia kontrola przed rejestracją wpłaty/aktywacją wykazała `open=false`
 
 Aktualizacja live 2026-10-09 03:15 Europe/Warsaw: backend revision `wersja-1--2-od-eskejtpro-git-00022-xxt` gotowa i obsługuje 100% ruchu. Cloud Ops raportuje `/api/health` HTTP 200/status `ok`, wersję API 3.0.9 i konfigurację Google Auth/Firestore. Metadane `(default)` = Firestore Native/europe-central2; API Run, Logging, Monitoring, Firestore i Service Usage ENABLED. Nie jest to dowód trwałości danych: `roundTripStatus=not_run`, `durableCloudStorage=false`; diagnostyka Ops celowo nie zapisuje ani nie odczytuje GymData.
 
+Aktualizacja live 2026-10-09: backend runtime korzysta teraz z Secret Managera dla `GEMINI_API_KEY`. Aktywne konto runtime `761415655121-compute@developer.gserviceaccount.com` otrzymało `roles/secretmanager.secretAccessor` wyłącznie na sekrecie `planpasika-gemini-free-chat-key`; nie nadano tej roli na poziomie projektu. Wdrożono rewizję `wersja-1--2-od-eskejtpro-git-00023-5z7`, która otrzymała 100% ruchu. Sekret przeszedł metadane-only GET katalogu modeli Gemini (HTTP 200), podczas gdy poprzednia inline wartość zwracała 403. To nie testuje generowania tekstu ani endpointów AI aplikacji. Health i version GET po wdrożeniu zwróciły HTTP 200; health=`ok`, appVersion=`3.0.9`. Nie wyświetlano ani nie zapisywano wartości klucza.
+
 Cloud Ops prywatne, revision `planpasika-cloud-ops-00002-pjt` 100% traffic. `OPS_EXPECTED_VERSION=3.0.9`; `roles/run.invoker` nadane tylko użytkownikowi `eskejtpro@gmail.com` na usłudze Ops. Brak zmian IAM dla backendu i brak zmian Firestore.
 
 KOPIE I OCHRONA BAZY — LIVE 2026-10-09
