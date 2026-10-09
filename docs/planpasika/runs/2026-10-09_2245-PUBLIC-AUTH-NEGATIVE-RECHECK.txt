@@ -1,0 +1,16 @@
+PlanPasika / GymTracker Pro — publiczny recheck ochrony endpointów
+
+DATE: 2026-10-09
+SCOPE: anonimowe żądania syntetyczne; bez tokenu i bez mutacji danych.
+
+RESULTS
+- GET `/api/data`: HTTP 401.
+- GET `/api/auth/google/user`: HTTP 401.
+- POST `/api/ai/coach/chat` bez Bearer: HTTP 401.
+- POST `/api/diagnostics/firestore` bez sesji: HTTP 401.
+- POST `/api/diagnostics/run`: HTTP 404; endpoint nie jest publicznie wystawiony przez główną usługę backendu.
+
+VERDICT
+- Protected data, user, AI and Firestore diagnostic routes reject anonymous access.
+- No user token, Firestore mutation, Gemini request or ADB was used.
+- HTTP 401 proves the negative auth boundary only; it does not prove positive login/session or persistence.
