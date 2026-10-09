@@ -1,0 +1,26 @@
+DATA: 2026-10-09 03:40 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: pending documentation commit
+ENVIRONMENT: Windows 10/PowerShell, release worktree
+TEST: configured Android debug build and package verification
+CEL: produce a fresh candidate APK with the public OAuth Web Client ID and production backend URL from release CI
+KOMENDY:
+- `npm run build`
+- `npx cap sync android`
+- `node scripts/verify-android-oauth-bundle.mjs`
+- `android/gradlew.bat -p android :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --rerun-tasks --console=plain`
+- `node scripts/verify-android-package-security.mjs`
+- `aapt dump badging`, `apksigner verify --print-certs`, SHA-256, ADB device inventory
+STATUS: PASS build/config/package checks; BLOCKED device install and UI/E2E.
+WYNIKI:
+- Web build PASS; Vite emitted existing large-chunk advisory (main JS ~1.66 MB minified, gzip ~431 KB), not a build failure.
+- Capacitor sync PASS; Google provider enabled; OAuth bundle verifier PASS.
+- Forced Gradle invocation: BUILD SUCCESSFUL in 1m11s; all 179 actionable tasks executed. `testDebugUnitTest`: 1 test, 0 failures, 0 errors. Debug and androidTest APKs assembled.
+- Credential-pattern APK scan PASS.
+- APK metadata: `com.gymtracker.pro`, versionName 3.0.9, versionCode 309, minSdk 24, targetSdk 36; size 6,679,661 bytes.
+- APK SHA-256 `AD4873B77D5312165B98683B9C2844A0F3AB0A51568B59F752CB7D0CBB4E7934`. Debug signer certificate SHA-256 `7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c`.
+- `adb devices -l` returned an empty device list; no installation, preserve-data update, startup, Google login, UI, or logcat test.
+LOG SUMMARY: Gradle printed benign `flatDir`/unused Facebook provider manifest warnings; no build failure. Vite reported a large JS chunk advisory.
+ARTIFACTS: `android/app/build/outputs/apk/debug/app-debug.apk` (debug/test only).
+PROBLEMS: Google login and Firestore/AI client E2E still require a connected Android device or valid app session. Existing debug/CI signing is not a stable release signing path.
+CLEANUP: no device, app data, Cloud Run, IAM, Firestore, billing, or secrets modified.

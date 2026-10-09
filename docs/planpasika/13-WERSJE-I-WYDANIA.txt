@@ -8,6 +8,13 @@ Latest local build: 2026-10-09, configured APK SHA-256 CE44EE6787F8052ABDD008019
 Integrated Cloud Ops Agent V1: commit 21500a1.
 Wydanie produkcyjne: NOT READY do czasu live Cloud/E2E.
 
+AKTUALIZACJA 2026-10-09 03:40 Europe/Warsaw — ponowny wymuszony build po aktualizacji release branch:
+- App `3.0.9`, versionCode `309`, package `com.gymtracker.pro`, APK debug.
+- APK: `android/app/build/outputs/apk/debug/app-debug.apk`, 6,679,661 bytes, SHA-256 `AD4873B77D5312165B98683B9C2844A0F3AB0A51568B59F752CB7D0CBB4E7934`.
+- Build bundle used public Google Web Client ID and Cloud Run URL; Capacitor sync and `verify-android-oauth-bundle.mjs` PASS.
+- Forced `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --rerun-tasks` — BUILD SUCCESSFUL, all 179 actionable tasks executed; unit XML reports 1 test, 0 failures/errors. Credential-pattern scan PASS. aapt confirms package/version/minSdk 24/targetSdk 36.
+- This is a test/debug artifact signed with the debug certificate, not a Play release. ADB device list is empty; no install/runtime/login proof.
+
 GitHub Actions run 37853747209 for commit 61c35a4: node-quality PASS, android-debug PASS, artifact 11583092856. CI uses the default debug signing configuration with no stable keystore provisioned in the workflow. Treat that artifact as CI test output, not a proven update for an existing installation or a proven Google OAuth build on a registered Android certificate. For data-preserving update, compare the signing certificate of the installed app with the candidate APK before `adb install -r`.
 Next workflow labels the uploaded APK as `ci-test-only-android-debug-ephemeral-signature-*`. The Windows script `scripts/install-android-candidate.ps1 -Serial <ADB_SERIAL>` checks the installed app's signing certificate against the local candidate, then uses only `adb install -r`. It never uninstalls or clears app data. Its actual-device path is unverified until ADB detects the phone.
 GitHub Actions run 37854330789 for commit aef281f: node-quality PASS, android-debug PASS, test-only artifact 11583308048. This is build evidence, not on-device or signer-compatibility evidence.
