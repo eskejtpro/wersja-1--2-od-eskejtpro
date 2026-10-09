@@ -62,3 +62,11 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - Latest Firestore metadata: PITR disabled; deletion protection disabled.
 - `gcloud billing budgets list` could not be read because `billingbudgets.googleapis.com` is disabled. The CLI offered activation; declined. No API or billing configuration changed. Budget alert state remains UNKNOWN.
 - No backup schedule, PITR, budget API, billing, or deletion-protection change performed. Scheduled backups/PITR incur additional storage charges; approval of cadence, retention, and cost limit is needed before enabling.
+
+2026-10-09 03:50 Europe/Warsaw — fresh read-only Cloud Ops diagnostics:
+- Cloud Ops `POST /api/diagnostics/run` returned HTTP 200; no production data or configuration was changed.
+- PASS: Cloud Run Ready, revision `00023-5z7` at 100% traffic, required backend environment-variable names, health/version (3.0.9), Google Auth configuration, Firestore metadata and required APIs.
+- PASS: no warning/error logs in the latest 15-minute window; 3 requests, 0 HTTP 5xx, one active-instance sample, reported mean latency 2.5 ms.
+- Firestore `(default)` exists as Firestore Native in `europe-central2`; deletion protection and PITR are disabled. No backup schedule was listed.
+- UNKNOWN: authenticated GymData write/read/update/conflict/cleanup and two-device synchronization. Ops metadata does not read user data and cannot prove durability.
+- Overall WARN is expected while persistence and client synchronization remain UNKNOWN. No user GymData was accessed.

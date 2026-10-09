@@ -76,3 +76,11 @@ AKTUALIZACJA STANU LIVE 2026-10-09 03:20 Europe/Warsaw (koryguje starsze wpisy o
 - `adb devices -l` nadal pusta: fizyczne logowanie Google, write/read Firestore, AI E2E oraz instalacja/runtime na Oppo/Xiaomi pozostają BLOCKED/UNKNOWN.
 - Firestore recovery: brak harmonogramów backupu (`[]`), PITR wyłączone i delete protection wyłączone. Cloud Billing Budgets API nieaktywne, więc stan alertów kosztowych UNKNOWN. Nie włączano żadnej opcji płatnej; przed konfiguracją potrzebna jest decyzja cadence/retention i akceptowanego kosztu.
 - Starsze wpisy o aktywnej backend rewizji `00021-9zx`, braku live Cloud Ops i niewdrożeniu poprawki health należy traktować jako historyczne; aktualny odczyt wskazuje rewizję `00022-xxt` i source commit `d36fd42`.
+
+AKTUALIZACJA LIVE 2026-10-09 03:50 Europe/Warsaw:
+- Cloud Ops potwierdza rewizję `00023-5z7` z 100% ruchu, health/version 3.0.9, konfigurację Google Auth, metadane Firestore, wymagane API, logi i metryki jako PASS.
+- `/api/server/google-info`: `cloudStoreConfigured=true`, `connectivity=unknown`, `roundTripStatus=not_run`, `durableCloudStorage=false`. To stan niezweryfikowany, a nie dowód awarii.
+- Dane GymData i synchronizacja wielourządzeniowa pozostają UNKNOWN do czasu zalogowania w aplikacji i wykonania syntetycznego testu diagnostycznego oraz testu drugiego klienta.
+- Kopie Firestore: brak harmonogramu; PITR i delete protection są wyłączone. Nie zmieniano ustawień ani kosztów.
+- Porównanie gałęzi nie uzasadnia merge: starsza gałąź cofa Androida do 3.0.8 i usuwa część aktualnych zabezpieczeń; pozostawiono integracyjną gałąź wydaniową bez zmian źródeł.
+- `adb devices -l` puste; fizyczna instalacja, Google login i runtime E2E nie zostały wykonane.

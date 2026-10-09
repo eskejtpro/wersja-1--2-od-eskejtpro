@@ -1,0 +1,43 @@
+TEST_ID: CLOUD-OPS-LIVE-RECHECK-20261009-0350
+DATA: 2026-10-09 03:50 Europe/Warsaw
+CHECKOUT: codex/planpasika-release
+CHECKOUT_HEAD: fdba3f5bbf246c59f3a0dfb5d3c38939caa979ba
+DEPLOYED_SOURCE_COMMIT: d36fd42242a99b7c10b32051f867d27dba7a2b5f
+ENVIRONMENT: Cloud Run / europe-central2
+TARGET: wersja-1--2-od-eskejtpro-git
+METHOD: private read-only Cloud Ops POST /api/diagnostics/run
+MUTATIONS: none
+USER_DATA: none accessed
+
+RESULTS:
+- Cloud Run Ready: PASS
+- Latest revision: 00023-5z7, 100% traffic: PASS
+- Backend health and version: PASS, 3.0.9
+- Required config names and Google Auth configuration: PASS
+- Firestore metadata/API availability: PASS; Firestore Native `(default)` in europe-central2
+- Recent warning/error logs: PASS, none in the last 15 minutes
+- Metrics: 3 requests, 0 HTTP 5xx, one active-instance sample, mean latency 2.5 ms
+- Firestore user-data round-trip: UNKNOWN, not performed
+- Two-device client synchronization: UNKNOWN, not performed
+- Backup schedule: none listed; PITR and deletion protection disabled
+
+OVERALL: WARN
+REASON: infrastructure checks pass, but authenticated GymData write/read/update/conflict/cleanup and client synchronization are not proven by metadata diagnostics.
+
+LOCAL REGRESSION:
+- `npm run lint`: PASS
+- `npm test`: 112/112 PASS
+- `npm run test:server`: 28/28 PASS
+- `npm run test:cloud`: 40/40 PASS
+- `npm run test:ops-agent`: 7/7 PASS
+- Android ADB device enumeration: empty; device install/runtime not run
+
+NEXT REQUIRED EVIDENCE:
+1. Connect/authorize the physical Android device over ADB.
+2. Install the verified 3.0.9 APK without clearing app data.
+3. Sign in from the app and run the authenticated synthetic Firestore diagnostic.
+4. Verify retrieval/sync from a second client and complete backup/restore.
+
+LIMITATIONS:
+- Cloud Ops is read-only and intentionally does not access GymData.
+- No billing controls, IAM, Firestore settings, or production services were changed.

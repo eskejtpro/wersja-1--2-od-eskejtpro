@@ -64,3 +64,8 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - ADB devices list empty: install, instrumentation, startup, login, UI and real-device E2E NOT RUN.
 - Production GET health/version PASS; `google-info` still has `durableCloudStorage=false`; authenticated Firestore and Gemini E2E UNKNOWN.
 - Additional current-run gates: AI model registry 3/3, Google UI 3/3, update service 4/4; OAuth bundle verifier PASS with the public CI build values supplied to this verification session; apksigner and zipalign PASS.
+
+2026-10-09 03:50 Europe/Warsaw — continuation verification:
+- `npm run lint` PASS; `npm test` 112/112; `npm run test:server` 28/28; `npm run test:cloud` 40/40; `npm run test:ops-agent` 7/7 PASS.
+- Live Cloud Ops: infrastructure, health/version/Auth configuration, Firestore metadata, APIs, recent logs and metrics PASS; overall WARN because user-data persistence and two-device sync remain UNKNOWN.
+- Fresh ADB enumeration returned no devices; no install or device-runtime claim is made.
