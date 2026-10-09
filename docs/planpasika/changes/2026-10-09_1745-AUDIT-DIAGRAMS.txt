@@ -1,0 +1,32 @@
+BEFORE
+Repozytorium nie zawierało wymaganych diagramów timeline, ER i wyników testów wskazanych w master prompt.
+
+ROOT CAUSE
+Dokumentacja opisywała testy tekstowo, ale brakowało maszynowo użytecznych artefaktów podsumowujących stan.
+
+CHANGE
+Dodano timeline Mermaid, diagram relacji danych Mermaid, wykres wyników Mermaid i źródło CSV. Statusy BLOCKED/WARN zachowują niepewność testów bez ADB i live round-trip.
+
+FILES
+docs/planpasika/diagrams/PLANPASIKA-TIMELINE.mmd
+docs/planpasika/diagrams/DATA-ER.mmd
+docs/planpasika/diagrams/TEST-RESULTS.mmd
+docs/planpasika/diagrams/TEST-RESULTS.csv
+
+TESTS
+git diff --check PASS. Artefakty sprawdzone pod kątem obecności wymaganych sekcji i zgodności z bieżącymi wynikami audytu.
+
+DEVICE/CLOUD
+Bez ADB; brak nowych operacji Cloud. Device runtime pozostaje BLOCKED, live Firestore round-trip pozostaje WARN/UNVERIFIED.
+
+EVIDENCE
+Lokalny HEAD przed commitem: bbdc282. Liczby bazują na świeżych testach: app 114/114, server 28/28, cloud contract 40/40, widget 1/1.
+
+ROLLBACK
+Usunąć cztery pliki diagramów i wpisy dokumentacyjne; brak wpływu na kod, dane lub infrastrukturę.
+
+RESULT
+Dokumentacja spełnia wymaganie diagramów bez przedstawiania niezweryfikowanych testów jako PASS.
+
+FOLLOW-UP
+Po ręcznym teście telefonu i aktualnym live audycie zaktualizować CSV/diagramy oraz statusy, nie zmieniając historycznych wpisów.

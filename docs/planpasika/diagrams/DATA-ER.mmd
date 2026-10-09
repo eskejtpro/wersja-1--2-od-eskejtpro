@@ -1,0 +1,53 @@
+erDiagram
+    USER ||--o{ CLOUD_SESSION : owns
+    USER ||--o| GYM_DATA : owns
+    GYM_DATA ||--o{ WORKOUT_PLAN : contains
+    WORKOUT_PLAN ||--o{ TRAINING_WEEK : contains
+    TRAINING_WEEK ||--o{ TRAINING_DAY : contains
+    TRAINING_DAY ||--o{ EXERCISE : contains
+    EXERCISE ||--o{ LOGGED_SET : records
+    USER ||--o{ BACKUP_ENTRY : creates
+    GYM_DATA ||--o{ SYNC_LOG_ENTRY : produces
+    USER {
+        string verified_subject PK
+        string email_redacted
+    }
+    CLOUD_SESSION {
+        string session_id PK
+        datetime expires_at
+    }
+    GYM_DATA {
+        int schema_version
+        string revision
+        string content_hash
+    }
+    WORKOUT_PLAN {
+        string id PK
+        string name
+    }
+    TRAINING_WEEK {
+        string id PK
+        int number
+    }
+    TRAINING_DAY {
+        string id PK
+        boolean completed
+    }
+    EXERCISE {
+        string id PK
+        string name
+    }
+    LOGGED_SET {
+        string id PK
+        float weight
+        int reps
+    }
+    BACKUP_ENTRY {
+        string id PK
+        datetime created_at
+    }
+    SYNC_LOG_ENTRY {
+        string id PK
+        string direction
+        string status
+    }
