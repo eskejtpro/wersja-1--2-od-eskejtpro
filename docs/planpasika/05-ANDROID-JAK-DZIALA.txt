@@ -1,4 +1,4 @@
 Technologie: Capacitor, Android Gradle Plugin, JDK 21, Gradle wrapper, ADB.
 Package: com.gymtracker.pro. Debug APK: android/app/build/outputs/apk/debug/app-debug.apk.
 Instalacja aktualizacyjna: adb install -r APK. Nie odinstalowywać przed testem migracji danych.
-Urządzenie potwierdzone: Oppo CPH2269, Android 11. Xiaomi 14T nieobecny w bieżącym adb devices -l.
+Historycznie testowany Oppo CPH2269, Android 11. Bieżący `adb devices -l` (2026-10-09) nie wykrywa żadnego telefonu; świeża instalacja i E2E pozostają niezweryfikowane.

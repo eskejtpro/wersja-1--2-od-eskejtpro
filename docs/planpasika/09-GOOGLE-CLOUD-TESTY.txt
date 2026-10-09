@@ -9,6 +9,8 @@ Live status: UNVERIFIED.
 
 2026-10-08 22:36 Europe/Warsaw: Cloud Run revision list showed `wersja-1--2-od-eskejtpro-git-00021-9zx` receiving 100% traffic. Cloud Build trigger `93fcf4aa-dcad-4d7a-b49c-299971ac957f` targets `work/v3.0.9-cloud-store`; latest visible successful build `82a8a278` used commit `f1b27bcc3c3eed745fe837018688f6b197c8f82e`. The release integration branch is not currently deployed by this trigger.
 
+2026-10-09 live read-only follow-up: Cloud Billing project reports enabled=true, linked account `01C2B5-858010-1DCF54`. Backend latestReady revision `00022-xxt` is at 100%; private Ops service latestReady revision `00001-qn8` is at 100%, dedicated Ops runtime identity. Firestore default database is Native/europe-central2 but deletion protection is disabled. No authenticated Ops endpoint or Firestore round-trip completed; do not infer durable persistence from enabled billing, database existence, or 100% traffic.
+
 CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f6123e36b7` completed successfully; `node-quality` and `android-debug` both passed. This is build/test evidence, not production deployment or physical-device E2E.
 2026-10-08 22:49 Europe/Warsaw: follow-up run `37841574567` for commit `9aa5e21edd24bf1bb00c304892565dc2312905f7`: `node-quality` and `android-debug` both completed successfully. Latest local gates: TypeScript lint PASS; AI model registry 2/2; cloud/Firestore 40/40; AI transport 6/6. Production Firestore round-trip remains unverified.
 
@@ -20,3 +22,8 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - Gradle `testDebugUnitTest`, `assembleDebug`, `assembleDebugAndroidTest`: BUILD SUCCESSFUL (42 s; zadania w większości UP-TO-DATE). APK 3.0.9/309, `com.gymtracker.pro`, SHA-256 `B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1`.
 - Brak `gcloud` i ADC w tej sesji Windows; przedpłata/saldo/billing nie odczytywane ponownie.
 - Wniosek: nadal NOT READY do potwierdzenia trwałości. Wymagane zalogowanie w aplikacji i pełny test Firestore write/read/update/conflict/cleanup.
+
+2026-10-09 02:35 Europe/Warsaw — skonfigurowany klient Android:
+- Zbudowano z publicznym OAuth Web Client ID i URL-em serwera zgodnymi z release workflow; `npx cap sync android` i `verify-android-oauth-bundle.mjs` PASS.
+- To dowodzi obecności ustawień w bundle, nie pomyślnego Google login ani trwałości. Live `/api/server/google-info` nadal `roundTripStatus=not_run`, `durableCloudStorage=false`.
+- Nie wykonano deployu ani zmian konfiguracji Cloud.

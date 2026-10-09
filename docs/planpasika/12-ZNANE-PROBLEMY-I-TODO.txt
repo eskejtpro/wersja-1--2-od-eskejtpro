@@ -44,6 +44,7 @@ P0 safeguard: `scripts/install-android-candidate.ps1` now aborts on candidate/in
 
 P0 recheck 2026-10-09 02:30 Europe/Warsaw: live public endpoints return health=ok/version=3.0.9, but google-info reports `cloudStoreConfigured:true`, `durableCloudStorage:false`, `roundTripStatus:not_run`, `activeUser:null`. This is not a Firestore failure signal by itself and is not proof of successful persistence; authenticated diagnostic has not run.
 P1 recheck 2026-10-09 02:30: fresh local app/server/cloud/AI/UI/update/Ops gates pass (112/28/40/6/3/3/4/7); lint, web/server/Ops builds pass. Gradle unit/debug/androidTest builds succeed; APK 3.0.9/309 SHA-256 `B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1`. ADB device list empty, so install and device tests remain BLOCKED. No Cloud configuration or billing changed.
+P0 OAuth package recheck 2026-10-09 02:35: fresh build embeds expected public Web Client ID and Cloud Run URL (Capacitor sync + bundle verifier PASS). APK `com.gymtracker.pro` 3.0.9/309; SHA-256 `CE44EE6787F8052ABDD008019B8CEC6D19DD4115B22F4D8D91A86946B9EB3C02`; signer fingerprint matches local debug certificate. This does not prove account picker/login; no ADB device is connected.
 
 2026-10-08 23:18 Europe/Warsaw — kontynuacja po potwierdzeniu wpłaty przez użytkownika:
 - Bezpieczne poprawki etykiet AI w interfejsie: brak fałszywego „Gemini 3.8”/„PRO”; nazwa modelu jest pokazywana tylko, gdy zwróci ją serwer. Dodano test regresyjny.
@@ -59,3 +60,5 @@ P1 recheck 2026-10-09 02:30: fresh local app/server/cloud/AI/UI/update/Ops gates
 - Minimalna liczba instancji 1 może ograniczyć cold start, ale generuje koszt także podczas bezczynności; maksimum 1 ogranicza pojemność i może powodować throttling przy pikach. Nie zmieniano tych ustawień bez limitu kosztowego/zgody użytkownika.
 - GitHub Actions dla `320e3c8`: node-quality i android-debug PASS. Dla `3b7a83f` node-quality PASS; android-debug w toku podczas kontroli.
 - `adb devices -l`: lista pusta; brak testu telefonu.
+
+P0 live Cloud follow-up 2026-10-09: billing is enabled and backend latest-ready revision `00022-xxt` receives 100% traffic; default Firestore exists in europe-central2, but deletion protection is disabled. Private Ops service is deployed on dedicated identity; its authenticated health/diagnostic request and Firestore write/read round-trip are still not verified. ADB has no connected device. Do not mark durable storage, OAuth E2E, or cross-device sync PASS.

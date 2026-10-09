@@ -15,7 +15,13 @@ TESTY:
 app 112/112; server 28/28; cloud/sync 40/40; AI transport 6/6; Google UI 3/3; model registry 3/3; update 4/4; Cloud Ops 7/7.
 Lint, web/server build, Ops build, Gradle testDebugUnitTest/assembleDebug/assembleDebugAndroidTest: PASS.
 Cloud GET health/version/google-info: HTTP 200; Firestore round-trip: NOT RUN.
-APK: com.gymtracker.pro 3.0.9/309, SHA-256 B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1.
+APK at initial report: com.gymtracker.pro 3.0.9/309, SHA-256 B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1. Superseded by configured rebuild below.
 
 ROLLBACK:
 Dokumentacja-only commit; revert tego commitu usuwa wyłącznie ten wpis.
+
+FOLLOW-UP 2026-10-09 02:35:
+- Build z VITE_GOOGLE_WEB_CLIENT_ID i VITE_GYMTRACKER_SERVER_URL zgodnymi z workflow; OAuth bundle verification PASS; credential scan PASS; Gradle build PASS.
+- Najnowszy skonfigurowany APK `com.gymtracker.pro` 3.0.9/309, 7,228,723 bytes, SHA-256 CE44EE6787F8052ABDD008019B8CEC6D19DD4115B22F4D8D91A86946B9EB3C02.
+- `zipalign` verification PASS; `npm audit --omit=dev` 0 vulnerabilities. Billing console read-only shows `Płatne konto`; Gemini AI Studio prepaid balance was not checked.
+- ADB nadal nie wykrywa telefonu; login i Firestore real round-trip niezweryfikowane.

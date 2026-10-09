@@ -25,6 +25,14 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - APK identity/hash and device availability recorded in 12-ZNANE-PROBLEMY-I-TODO.txt.
 - Runtime E2E on device: NOT RUN (ADB device list empty). Cloud authenticated Firestore round-trip: NOT RUN.
 
+2026-10-09 02:35 Europe/Warsaw — poprawnie skonfigurowany APK:
+- Zmienne CI `VITE_GOOGLE_WEB_CLIENT_ID` oraz `VITE_GYMTRACKER_SERVER_URL` ustawiono na wartości z release workflow; `npm run build` PASS; `npx cap sync android` PASS; `verify-android-oauth-bundle.mjs` PASS.
+- Gradle `testDebugUnitTest`, `assembleDebug`, `assembleDebugAndroidTest`: BUILD SUCCESSFUL.
+- APK credential-pattern scan PASS; `apksigner verify --print-certs` PASS; cert SHA-256 `7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c`; package metadata `com.gymtracker.pro`, version 3.0.9/309, minSdk 24, targetSdk 36.
+- APK SHA-256 `CE44EE6787F8052ABDD008019B8CEC6D19DD4115B22F4D8D91A86946B9EB3C02`, 7,228,723 bytes.
+- `zipalign -c -v 4`: PASS; `npm audit --omit=dev`: 0 vulnerabilities.
+- ADB list empty: install, installed-signer comparison, login, runtime and UI E2E NOT RUN.
+
 2026-10-09 02:30 Europe/Warsaw — re-run on codex/planpasika-release:
 - npm test 112/112; lint PASS; server 28/28; cloud/sync 40/40; AI transport 6/6; Google UI 3/3; model registry 3/3; update 4/4; Ops Agent 7/7.
 - Web/server build and Ops Agent build PASS (known Vite large-chunk warning). Gradle `testDebugUnitTest`, `assembleDebug`, `assembleDebugAndroidTest`: BUILD SUCCESSFUL.
