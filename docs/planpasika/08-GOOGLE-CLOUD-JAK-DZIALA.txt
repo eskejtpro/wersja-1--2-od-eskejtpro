@@ -47,3 +47,13 @@ AKTUALIZACJA 2026-10-09 04:11 Europe/Warsaw:
 - Po informacji użytkowniczki o przedpłacie i poleceniu kontynuacji utworzono harmonogram Firestore: daily, retention 7d (604800s), schedule ID `2cebefda-25aa-4f02-979a-a8e622c39215`; odczyt listy potwierdził konfigurację.
 - Pierwsza kopia nie jest jeszcze potwierdzona. Backup Storage w Firestore nie jest objęty bezpłatnym limitem; rozliczenie zależy od rozmiaru snapshotów i czasu retencji. Budżet/alert nie został skonfigurowany.
 - PITR nadal wyłączone. Publiczny `/api/server/google-info` zgłasza `durableCloudStorage=false`, `connectivity=unknown`, `roundTripStatus=not_run`; Google Auth jest dostępne, ale nie wykonano sesji aplikacji.
+
+STAN NADRZĘDNY LIVE 2026-10-09 13:52 Europe/Warsaw (zastępuje starsze sprzeczne wpisy powyżej):
+- aktywne konto Cloud Shell: `eskejtpro@gmail.com`; projekt: `gen-lang-client-0836043899`;
+- Firestore `(default)`, `europe-central2`: `DELETE_PROTECTION_ENABLED`, PITR `DISABLED`;
+- harmonogram kopii istnieje: codziennie, retencja 7 dni (`604800s`), ID `2cebefda-25aa-4f02-979a-a8e622c39215`;
+- lista wykonanych kopii jest nadal pusta, więc pierwszego snapshotu ani odtworzenia nie potwierdzono;
+- backend `00023-5z7` i Cloud Ops `00002-pjt` obsługują po 100% ruchu;
+- `/api/health` i `/api/version` zwracają HTTP 200, wersję 3.0.9 i status `ok`;
+- `/api/server/google-info` zwraca HTTP 200/online i potwierdza konfigurację Firestore, lecz `roundTripStatus=not_run`, `durableCloudStorage=false` — pełny syntetyczny test Firestore wymaga aktywnej sesji aplikacji;
+- ADB nie wykrywa telefonu; test logowania, chronionego Firestore, AI i synchronizacji pozostaje BLOCKED do ponownego połączenia urządzenia.

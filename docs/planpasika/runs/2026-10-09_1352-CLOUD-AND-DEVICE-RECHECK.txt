@@ -1,0 +1,27 @@
+DATA: 2026-10-09 13:52 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT BAZOWY: 802d28613584b276a1bc6c38972d320ef645a1dc
+ENVIRONMENT: Google Cloud project gen-lang-client-0836043899 / Windows / ADB
+
+CEL:
+Potwierdzić bieżący stan Cloud Run, Firestore, kopii i dostępności telefonu bez modyfikowania produkcji ani danych użytkownika.
+
+STATUS:
+- konto/projekt Cloud Shell: PASS (`eskejtpro@gmail.com`, `gen-lang-client-0836043899`)
+- Firestore metadata: PASS (`(default)`, europe-central2, delete protection ENABLED, PITR DISABLED)
+- backup schedule: PASS (daily, retention 604800s, schedule `2cebefda-25aa-4f02-979a-a8e622c39215`)
+- wykonany snapshot/restore: UNKNOWN (lista backupów pusta)
+- backend Cloud Run: PASS (`00023-5z7`, 100% traffic)
+- Cloud Ops: PASS (`00002-pjt`, 100% traffic)
+- health/version: PASS (HTTP 200, status ok, version 3.0.9)
+- server google-info: PASS jako status procesu; trwałość UNKNOWN (`roundTripStatus=not_run`, `durableCloudStorage=false`)
+- telefon ADB: BLOCKED (brak urządzeń)
+
+WYNIKI:
+Serwer działa prawidłowo i nie raportuje już `degraded`. Konfiguracja Firestore istnieje, lecz pełny syntetyczny write/read/update/conflict/cleanup nie został uruchomiony bez aktywnej sesji aplikacji. Harmonogram kopii jest skonfigurowany, ale nie ma jeszcze widocznego snapshotu. Brak urządzenia uniemożliwia rzetelny login, Firestore, AI, UI i sync E2E.
+
+MUTACJE CLOUD/DANYCH:
+Brak. Wykonano wyłącznie odczyty.
+
+CLEANUP:
+Nie utworzono danych testowych ani tymczasowych zasobów.

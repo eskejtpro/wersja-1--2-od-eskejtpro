@@ -82,3 +82,13 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - Read-after-write `gcloud firestore databases describe` confirms `DELETE_PROTECTION_ENABLED`.
 - PITR remains disabled; no backup schedule was created. This safeguard prevents deleting the whole database, not individual documents, and does not replace backups.
 - No user documents, billing, IAM, Cloud Run, or app configuration were changed. See `runs/2026-10-09_0357-FIRESTORE-DELETE-PROTECTION.txt`.
+
+2026-10-09 13:52 Europe/Warsaw — current live read-only recheck:
+- Cloud Shell account/project PASS: `eskejtpro@gmail.com`, `gen-lang-client-0836043899`.
+- Firestore metadata PASS: Native database in `europe-central2`, deletion protection ENABLED, PITR DISABLED.
+- Daily/7-day backup schedule PASS; completed backup list is empty, therefore snapshot creation and restore remain UNKNOWN.
+- Cloud Run PASS: backend revision `00023-5z7` and Cloud Ops revision `00002-pjt`, both 100% traffic.
+- Public HTTP PASS: health 200/ok/3.0.9, version 200/3.0.9, google-info 200/online.
+- Firestore durable round-trip UNKNOWN: `roundTripStatus=not_run`, `durableCloudStorage=false`; no authenticated write/read/update/conflict/cleanup was performed.
+- Device E2E BLOCKED: `adb devices -l` returned no device.
+- No Cloud, IAM, billing, database, service or user-data mutation was made in this recheck.

@@ -117,3 +117,9 @@ AKTUALIZACJA 2026-10-09 04:55 Europe/Warsaw:
 - Naprawiono błąd instalatora świeżego pakietu oraz domyślnej ścieżki APK. Parser i no-device fail-closed PASS.
 - Telefon pozostał widoczny w Windows jako Xiaomi 14T, ale po zrzucie UI zniknął z `adb devices`; interaktywne E2E pozostaje BLOCKED do ponownego autoryzowania debugowania USB.
 - Raport: `runs/2026-10-09_0455-ANDROID-INSTALLER-FIX.txt`.
+
+AKTUALIZACJA 2026-10-09 13:52 Europe/Warsaw:
+- Stan Cloud pozostaje zdrowy: backend `00023-5z7` i Ops `00002-pjt` mają po 100% ruchu; health/version HTTP 200, 3.0.9.
+- Firestore ma ochronę przed usunięciem i daily/7-day backup schedule. Lista gotowych snapshotów jest nadal pusta; test odtworzenia pozostaje UNKNOWN.
+- P0 pozostaje bez zmiany: zalogowana sesja aplikacji musi uruchomić syntetyczny Firestore round-trip, a drugi klient musi potwierdzić synchronizację.
+- `adb devices -l` jest puste. Google login, Firestore diagnostic, AI E2E, UI/settings i drugi telefon pozostają BLOCKED, a nie PASS.

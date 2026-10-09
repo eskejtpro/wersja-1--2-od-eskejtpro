@@ -104,3 +104,10 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - Pełna ścieżka podpisu i aktualizacji istniejącego pakietu pozostaje do ponownego uruchomienia po powrocie telefonu do ADB.
 - Raport: `runs/2026-10-09_0455-ANDROID-INSTALLER-FIX.txt`.
 - GitHub Actions run `37876877075` dla `034e6f2`: `node-quality` PASS i `android-debug` PASS, w tym OAuth bundle verifier, Gradle app unit/debug/androidTest build oraz skan bezpieczeństwa APK.
+
+2026-10-09 13:52 Europe/Warsaw — wznowienie i live recheck:
+- Git clean na `codex/planpasika-release`, commit `802d28613584b276a1bc6c38972d320ef645a1dc` przed aktualizacją raportów.
+- Cloud Run backend/Ops, publiczne endpointy, ochrona Firestore i harmonogram kopii: PASS.
+- Gotowy snapshot Firestore: UNKNOWN (lista kopii pusta).
+- Autoryzowany Firestore round-trip, login/AI/sync/UI na telefonie: BLOCKED, ponieważ ADB nie wykrywa urządzenia.
+- Szczegóły: `runs/2026-10-09_1352-CLOUD-AND-DEVICE-RECHECK.txt`.
