@@ -1,0 +1,26 @@
+DATA: 2026-10-09 03:04 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 69767d15247332656d70456171e1bcef332eaa01 (before this documentation update)
+ENVIRONMENT: Windows 10; Google Cloud Console signed in as project billing user; project gen-lang-client-0836043899; region europe-central2; backend wersja-1--2-od-eskejtpro-git.
+TEST: Read-only billing-method review and live public API check.
+CEL: Distinguish Cloud pay-as-you-go payment from Gemini AI Studio prepaid balance after user's reported payment; recheck service readiness.
+KOMENDY:
+- Read Google Cloud Console Billing -> Payment settings, including both payment sections.
+- GET /api/health
+- GET /api/version
+- GET /api/server/google-info
+STATUS: PASS for billing distinction and public endpoint availability; Firestore durability and Gemini generation UNKNOWN.
+WYNIKI:
+- Cloud Billing is pay-as-you-go; the UI records a manual payment against Cloud usage.
+- Gemini API's separate AI Studio prepaid wallet shows zero balance and no transactions.
+- No payment instrument details or monetary amounts are recorded in this report.
+- Health/version returned HTTP 200; backend version 3.0.9.
+- google-info returned online, googleAuthAvailable=true, durableCloudStorage=false, activeUser=null.
+- ADB `devices -l` returned no connected devices in the current Windows session.
+LOG SUMMARY: Billing evidence distinguishes two billing paths. Public process health is good; no authenticated user token was available, so no Firestore diagnostic or AI call was attempted.
+ARTIFACTS: docs/planpasika/08-GOOGLE-CLOUD-JAK-DZIALA.txt; docs/planpasika/09-GOOGLE-CLOUD-TESTY.txt; this run report.
+PROBLEMS:
+- P0: authenticated Firestore write/read/update/conflict/cleanup and cross-client retrieval remain unverified; do not infer durability from database existence or health response.
+- P1: Gemini prepaid balance is zero; live Gemini calls remain unverified.
+- P1: no Android device currently visible to ADB; runtime authentication/sync E2E remain blocked.
+CLEANUP: No Cloud Run, Firestore, IAM, billing, secret, or payment configuration was modified. No test records or user data were created.

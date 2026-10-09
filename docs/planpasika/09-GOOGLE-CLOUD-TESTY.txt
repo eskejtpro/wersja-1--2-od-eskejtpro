@@ -15,6 +15,9 @@ Live status: UNVERIFIED.
 2026-10-09 continuation: server/Firestore-store tests 28/28 and cloud/sync/diagnostics tests 40/40 PASS locally using fake/in-process transports. No live Cloud Run diagnostic POST or Firestore document mutation was executed; production round-trip remains UNKNOWN.
 2026-10-09 fresh live check: health/version/google-info returned HTTP 200 and version 3.0.9; google-info says online/configured but `durableCloudStorage=false`, connectivity unknown and `roundTripStatus=not_run`. Anonymous GET `/api/data` and synthetic POST `/api/ai/coach/chat` returned 401 as expected. No AI generation or Firestore write was invoked.
 
+2026-10-09 03:04 Europe/Warsaw — billing/payment-state clarification (read-only): Cloud Billing UI shows post-use billing and a recorded manual payment for Cloud usage; the separate Gemini API prepaid wallet in AI Studio shows zero balance and no transactions. Do not interpret the Cloud payment as Gemini prepaid credit. No purchase, billing configuration, or payment-method action was performed. Amounts and payment-instrument details intentionally omitted.
+Same-time public API recheck: `/api/health`=200/ok, `/api/version`=200/3.0.9, `/api/server/google-info`=online, `googleAuthAvailable=true`, `durableCloudStorage=false`, `activeUser=null`. Authenticated Firestore round-trip and live Gemini call remain untested; no mutation was attempted.
+
 CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f6123e36b7` completed successfully; `node-quality` and `android-debug` both passed. This is build/test evidence, not production deployment or physical-device E2E.
 2026-10-08 22:49 Europe/Warsaw: follow-up run `37841574567` for commit `9aa5e21edd24bf1bb00c304892565dc2312905f7`: `node-quality` and `android-debug` both completed successfully. Latest local gates: TypeScript lint PASS; AI model registry 2/2; cloud/Firestore 40/40; AI transport 6/6. Production Firestore round-trip remains unverified.
 

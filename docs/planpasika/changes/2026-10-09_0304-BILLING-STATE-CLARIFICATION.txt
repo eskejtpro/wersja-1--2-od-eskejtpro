@@ -1,0 +1,6 @@
+DATA: 2026-10-09 03:04 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT BAZOWY: 69767d15247332656d70456171e1bcef332eaa01
+ZMIANA: Udokumentowano, że rozliczenie Cloud po użyciu i przedpłata Gemini AI Studio to odrębne ścieżki; saldo AI Studio widoczne podczas audytu wynosiło zero. Dopisano świeże wyniki publicznych GET endpointów i granice dowodów.
+PLIKI: 03-ZMIANY-HISTORIA.txt, 08-GOOGLE-CLOUD-JAK-DZIALA.txt, 09-GOOGLE-CLOUD-TESTY.txt, runs/2026-10-09_0304-BILLING-AND-CLOUD-RECHECK.txt.
+BEZPIECZENSTWO: Pominięto kwoty i dane instrumentu płatniczego. Żaden zakup ani zapis do produkcji nie został wykonany.
