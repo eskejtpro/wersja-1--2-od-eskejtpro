@@ -1,0 +1,17 @@
+DATA: 2026-10-09 03:20 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 5669fa85bf0528a5763adc6ca38926c195a9ad3f (przed tą aktualizacją)
+ENVIRONMENT: Google Cloud project gen-lang-client-0836043899, europe-central2; local Git worktree
+TEST: production provenance + repeat read-only Cloud Ops + device availability
+CEL: ustalić, czy poprawki backendowe z integracyjnej gałęzi są już na produkcji i odświeżyć fakty.
+KOMENDY/CHECKS: `git fetch origin`; `git diff origin/work/v3.0.9-cloud-store HEAD -- server.ts server/ai/models.ts`; `gcloud run revisions describe ... --format=yaml(metadata.labels,metadata.annotations,spec.containers[0].image)`; authenticated POST `/api/diagnostics/run`; `adb devices -l`.
+STATUS: PASS for infrastructure/provenance; UNKNOWN for user-data persistence/device E2E.
+WYNIKI:
+- Active backend revision `wersja-1--2-od-eskejtpro-git-00022-xxt`, 100% traffic, commit-sha label `d36fd42242a99b7c10b32051f867d27dba7a2b5f`.
+- Current release branch server.ts and AI model registry have no diff from active deploy branch source.
+- Cloud Ops repeat diagnostic: HTTP 200, health PASS, API version PASS (3.0.9 expected 3.0.9), Cloud Run/revision/config/Auth/Firestore metadata/API/logging/metrics PASS; overall WARN only for persistence and client sync UNKNOWN.
+- `adb devices -l`: no devices.
+LOG SUMMARY: no user records, OAuth tokens, or secret values read. Ops diagnostic is infrastructure-only/read-only.
+ARTIFACTS: active backend revision `00022-xxt`; Cloud Ops revision `00002-pjt`.
+PROBLEMS: authenticated Firestore data round-trip and phones remain unavailable for E2E.
+CLEANUP: no data mutation; no rollback required.
