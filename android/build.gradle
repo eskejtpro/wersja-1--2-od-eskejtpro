@@ -21,6 +21,18 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Capacitor/Cordova plugins can bring older split Kotlin stdlib artifacts
+    // into the androidTest classpath. Keep all Kotlin modules on one version
+    // so AGP's duplicate-class check remains deterministic.
+    configurations.configureEach {
+        resolutionStrategy.eachDependency { dependency ->
+            if (dependency.requested.group == 'org.jetbrains.kotlin') {
+                dependency.useVersion '1.8.22'
+                dependency.because 'Align Kotlin stdlib modules for Android test packaging'
+            }
+        }
+    }
 }
 
 task clean(type: Delete) {

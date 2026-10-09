@@ -1,0 +1,45 @@
+PlanPasika / GymTracker Pro — poprawa bramki Android test APK
+
+BEFORE
+- `assembleDebug` przechodził, ale pełny `assembleAndroidTest` kończył się błędem duplicate classes.
+- Konflikt: `kotlin-stdlib:1.8.22` oraz `kotlin-stdlib-jdk7/jdk8:1.6.21` w module Capacitor/Cordova.
+
+ROOT CAUSE
+- Różne wersje modułów Kotlin trafiały do classpath testowego APK; AGP odrzucał je podczas `checkDebugAndroidTestDuplicateClasses`.
+
+CHANGE
+- Dodano globalne wyrównanie zależności `org.jetbrains.kotlin` do wersji `1.8.22` w Android root build.
+
+FILES
+- `android/build.gradle`
+
+TESTS
+- `npm run lint`: PASS
+- `npm test`: PASS, 114/114
+- `npm run test:server`: PASS, 28/28
+- `npm run test:cloud`: PASS, 40/40
+- `npm run test:ai-model-registry`: PASS, 3/3
+- `npm run test:ai-transport`: PASS, 6/6
+- `npm run test:update`: PASS, 4/4
+- `npm run test:ops-agent`: PASS, 7/7
+- `npm run build`: PASS
+- `npm run build:ops-agent`: PASS
+- `gradlew test assembleDebug assembleAndroidTest`: PASS, BUILD SUCCESSFUL
+
+DEVICE/CLOUD
+- ADB: niewykonane na żądanie użytkownika.
+- Cloud live E2E: nie było częścią tego lokalnego fixu.
+
+EVIDENCE
+- APK: `android/app/build/outputs/apk/debug/app-debug.apk`
+- Rozmiar: 7,238,445 bytes
+- SHA-256: `9811AD7146CEFCB7F04E75E70C0259D6BA9DDE12B2E4864A1E6651F25D92B7D8`
+
+ROLLBACK
+- Cofnięcie zmiany w `android/build.gradle` przywraca poprzednią konfigurację, ale ponownie otworzy konflikt Kotlin.
+
+RESULT
+- Lokalny Android release gate jest zielony; brak testu urządzenia pozostaje jawnie niezweryfikowany.
+
+FOLLOW-UP
+- Po zleceniu ADB wykonać instalację zachowującą dane, sprawdzić podpis, wersję i UI.
