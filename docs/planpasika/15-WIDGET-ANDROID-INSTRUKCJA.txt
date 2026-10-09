@@ -1,0 +1,30 @@
+GYMTRACKER PRO — WIDGET ANDROIDA
+
+STATUS
+Widget jest zawarty w debug APK 3.0.9 / 309. Skróty Trening, Woda i Kalendarz otwierają odpowiednie ekrany aplikacji. Widget nie przechowuje osobnych danych.
+
+APK
+Plik: android/app/build/outputs/apk/debug/app-debug.apk
+SHA-256: B0E4B7314BC9E4B0769ABBB8A06F028DB31CEC44E4C9BE23CC1FD5E1B188B2EB
+
+INSTALACJA BEZ ADB
+1. Skopiuj plik APK na telefon albo udostępnij go sobie przez Dysk Google, e-mail lub komunikator.
+2. Otwórz APK na telefonie.
+3. Jeżeli Android zapyta o zgodę, zezwól używanej aplikacji Pliki/Chrome na instalowanie nieznanych aplikacji.
+4. Zainstaluj lub zaktualizuj GymTracker Pro.
+5. Uruchom aplikację przynajmniej raz, aby zakończyć inicjalizację WebView.
+
+DODANIE WIDGETU
+1. Przytrzymaj puste miejsce na pulpicie Androida.
+2. Wybierz „Widgety”.
+3. Znajdź „GymTracker Pro”.
+4. Przytrzymaj widget i przeciągnij go na pulpit.
+
+SKRÓTY
+Trening — otwiera plan treningowy.
+Woda — otwiera szybki dostęp z modułem nawodnienia.
+Kalendarz — otwiera kalendarz cyklu.
+Otwórz aplikację — otwiera główny ekran aplikacji.
+
+UWAGA WERYFIKACYJNA
+Kod, testy i APK zostały zweryfikowane lokalnie. Bez ADB nie da się potwierdzić na tym komputerze faktycznej instalacji oraz kliknięcia widgetu na konkretnym telefonie. Po ręcznej instalacji sprawdź każdy z czterech skrótów.
