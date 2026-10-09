@@ -1,0 +1,29 @@
+DATA: 2026-10-09
+MODUL: dokumentacja operacyjna Cloud / release
+BRANCH: codex/planpasika-release
+BAZOWY COMMIT: 1dea56d152be75e67a3672a1cec6adb1570911c1
+
+PRZED
+- W TODO znajdowały się starsze wpisy w czasie teraźniejszym, że Firestore deletion protection jest wyłączona i że harmonogram kopii nie istnieje.
+- Stan produkcji później się zmienił: delete protection włączona, daily schedule 7 dni istnieje.
+
+PO
+- Dodano datowany blok aktualnego stanu live na początku 12-ZNANE-PROBLEMY-I-TODO.txt.
+- Starsze obserwacje oznaczono jako historyczne, bez usuwania historii.
+- Rozdzielono: zaplanowany harmonogram, brak potwierdzonego snapshotu, wyłączone PITR oraz niezweryfikowane trwałe GymData/sync.
+- Run report zawiera wyniki bieżących testów lokalnych i GET Cloud Run.
+
+DOWODY
+- Cloud Shell `gcloud firestore databases describe`: DELETE_PROTECTION_ENABLED; PITR DISABLED.
+- Cloud Shell `gcloud firestore backups schedules list`: schedule istnieje, retention 604800s; lista backupów pusta.
+- npm run lint PASS; npm test 112/112; test:server 28/28; test:cloud 40/40; AI 6/6 + 3/3.
+- Cloud Run health/version/google-info HTTP 200, version 3.0.9; to nie dowodzi round-trip.
+- ADB lista urządzeń pusta; fizyczne E2E nadal zablokowane.
+
+KOSZT / BEZPIECZENSTWO
+- Nie włączano PITR, nie zmieniano planu billing, IAM ani sekretów.
+- Nie wykonywano zapisu/odczytu GymData ani zmian danych użytkownika.
+- Nie włączano Cloud Billing Budgets API; kwota przedpłaty i docelowy limit alertu nie zostały określone.
+
+ROLLBACK
+- Dokumentacyjne zmiany można cofnąć osobnym commitem; brak zmian kodu lub produkcji.

@@ -1,0 +1,54 @@
+DATA: 2026-10-09 16:00 Europe/Warsaw
+CEL: kontynuacja po potwierdzeniu przedpłaty Cloud; rozdzielić billing od zabezpieczenia/dowodu danych
+
+KONTEKST
+- Projekt: gen-lang-client-0836043899.
+- Cloud Shell aktywne konto: eskejtpro@gmail.com. Nie przełączano kont.
+- Użytkownik potwierdził przedpłatę; nie zmieniano planu rozliczeniowego ani nie wykonano transakcji.
+
+LIVE FIRESTORE (Cloud Shell; odczyt zwrotny)
+- Baza `(default)` w europe-central2 istnieje.
+- deleteProtectionState: DELETE_PROTECTION_ENABLED.
+- pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED.
+- Backup schedule istnieje: projects/gen-lang-client-0836043899/databases/(default)/backupSchedules/2cebefda-25aa-4f02-979a-a8e622c39215.
+- Retencja schedule: 604800s (7 dni). Nie włączano PITR.
+- Backup list nie zwrócił żadnej pozycji: pierwszy snapshot nie jest potwierdzony.
+- Ochrona przed usunięciem blokuje przypadkowe usunięcie bazy; nie zastępuje kopii danych.
+
+REPO / CI
+- Branch codex/planpasika-release, bazowy HEAD 1dea56d152be75e67a3672a1cec6adb1570911c1; po kontroli dodano dokumentacyjne zmiany opisane w changelogu.
+- GitHub Actions run 37873615204 dla tego SHA zakończony success: Node Quality + Android Debug.
+- APK lokalny 3.0.9/309: SHA-256 0AD099991F20046AD1D2A6AECDEF21A6FE68C7C9E88272A474E52D5A9AF05DBA.
+- ADB nie wykrywa telefonu; instalacja/runtime i logowanie niezweryfikowane.
+
+NIEZWERYFIKOWANE / OGRANICZENIA
+- Brak authenticated Firestore write/read w aplikacji i brak cross-device sync proof.
+- Nie utworzono ręcznej kopii natychmiastowej; lista backupów pusta. Nie włączano PITR ani nie zmieniano billing.
+- Cloud Billing Budgets API było zgłoszone jako SERVICE_DISABLED w poprzednim terminalu; nie włączano go bez ustalenia limitu/alertu.
+- Nie wyświetlono ani nie skopiowano sekretów.
+
+REGRESJA 2026-10-09 (bieżący checkout)
+- `npm run lint`: PASS (tsc --noEmit, exit 0).
+- `npm test`: PASS 112/112.
+- `npm run test:server`: PASS 28/28.
+- `npm run test:cloud`: PASS 40/40.
+- `npm run test:ai-transport`: PASS 6/6.
+- `npm run test:ai-model-registry`: PASS 3/3.
+- Produkcyjne GET `/api/health`, `/api/version`, `/api/server/google-info`: HTTP 200; health/version 3.0.9. `google-info` pozostaje metadanymi i nie potwierdza write/read.
+- `git diff --check`: PASS.
+
+WYNIK
+- Ochrona bazy przed usunięciem: PASS.
+- Harmonogram codzienny 7 dni: PASS (odczyt schedule).
+- Gotowy snapshot do odtworzenia: UNKNOWN (brak backupu na liście).
+- Trwały zapis GymData / synchronizacja: UNKNOWN.
+- PITR: OFF; kosztowa funkcja świadomie niezmieniona.
+- lokal lint + testy app/server/cloud/AI: PASS.
+- Cloud Run health/version: PASS (HTTP/API availability only).
+
+KOLEJNE KROKI
+1. Potwierdzić pierwszy snapshot w Firestore Backups po uruchomieniu harmonogramu; wykonać testowy restore wyłącznie w odrębnej bazie, nigdy nadpisując produkcyjnej.
+2. Po podłączeniu telefonu: zaktualizować APK i wykonać zalogowany diagnostyczny test Firestore write/read/update/conflict/cleanup, tylko na testowym rekordzie.
+3. Wykonać pobranie z drugiego urządzenia/konta testowego, by potwierdzić synchronizację między klientami.
+4. Ustawić budżet/alert po podaniu konkretnego limitu kosztów; przedpłata nie jest limitem wydatków.
+5. `adb devices -l` pusta: po podłączeniu telefonu przeprowadzić build/install -r i testy runtime bez odinstalowania/wyczyszczenia danych.

@@ -1,3 +1,11 @@
+AKTUALNY STAN LIVE 2026-10-09 16:00 Europe/Warsaw:
+- Cloud Run /api/health, /api/version, /api/server/google-info: wcześniejszy fresh check tego przebiegu HTTP 200 / version 3.0.9; nie jest to dowód trwałego zapisu.
+- Firestore `(default)` europe-central2: DELETE_PROTECTION_ENABLED (świeży odczyt Cloud Shell); PITR DISABLED.
+- Daily backup schedule retencja 604800s/7 dni istnieje (odczyt listy harmonogramów); lista backupów zwróciła pusty wynik, więc snapshot/restore niepotwierdzone.
+- Aktywne konto Cloud Shell: eskejtpro@gmail.com; projekt gen-lang-client-0836043899.
+- CI dla `codex/planpasika-release` HEAD `1dea56d152be75e67a3672a1cec6adb1570911c1` zakończył się sukcesem (Node Quality + Android Debug, run 37873615204). ADB obecnie nie wykrywa urządzenia.
+- Firestore authenticated GymData round-trip, synchronizacja na drugim kliencie, fizyczny Android E2E oraz AI app E2E nadal UNKNOWN/BLOCKED.
+
 P0: Cloud Run is currently reachable: GET /api/health, /api/version and /api/server/google-info returned HTTP 200 on 2026-10-09; deployed version 3.0.9. This proves process/API availability only.
 P0: `/api/server/google-info` currently reports `durableCloudStorage:false`. No live authenticated Firestore write/read/update/conflict/cleanup result has been observed; durable storage and cross-device sync remain UNVERIFIED.
 P0: Local code now separates Firestore connectivity from an explicit diagnostic round-trip. Cold start reports configured/unverified (health remains healthy); a real failed operation marks storage unavailable; only the complete synthetic diagnostic proves `durableCloudStorage:true`. Unit/integration transport tests pass; production code is not deployed yet.
@@ -61,7 +69,7 @@ P0 OAuth package recheck 2026-10-09 02:35: fresh build embeds expected public We
 - GitHub Actions dla `320e3c8`: node-quality i android-debug PASS. Dla `3b7a83f` node-quality PASS; android-debug w toku podczas kontroli.
 - `adb devices -l`: lista pusta; brak testu telefonu.
 
-P0 live Cloud follow-up 2026-10-09: billing is enabled and backend latest-ready revision `00022-xxt` receives 100% traffic; default Firestore exists in europe-central2, but deletion protection is disabled. Private Ops service is deployed on dedicated identity; its authenticated health/diagnostic request and Firestore write/read round-trip are still not verified. ADB has no connected device. Do not mark durable storage, OAuth E2E, or cross-device sync PASS.
+P0 live Cloud follow-up 2026-10-09 (history; updated by current state above): billing is enabled and backend latest-ready revision `00022-xxt` receives 100% traffic; default Firestore exists in europe-central2. Protection/backups were subsequently configured and their current state is recorded at the top. Private Ops service is deployed on dedicated identity; authenticated health/diagnostic and Firestore write/read round-trip need fresh verification. ADB has no connected device. Do not mark durable storage, OAuth E2E, or cross-device sync PASS.
 
 P0 Google Sign-In native bridge: fixed in commit `abc92bb` and pushed. Before: MainActivity lacked the marker interface and result callback required by Capgo Social Login 8.5.12 for scopes/AuthorizationClient. After: bridge present and Android Gradle build passes. Account-picker to ID-token/backend login remains UNKNOWN until device runtime; ADB phone absent and AVD hardware acceleration unavailable.
 P0 Firestore durability remains UNKNOWN: latest public google-info reports configured but no round-trip (`not_run`, durable=false); requires authenticated app write/read/update/conflict/cleanup and second-client retrieval.
@@ -77,11 +85,11 @@ AKTUALIZACJA STANU LIVE 2026-10-09 03:20 Europe/Warsaw (koryguje starsze wpisy o
 - Firestore recovery: brak harmonogramów backupu (`[]`), PITR wyłączone i delete protection wyłączone. Cloud Billing Budgets API nieaktywne, więc stan alertów kosztowych UNKNOWN. Nie włączano żadnej opcji płatnej; przed konfiguracją potrzebna jest decyzja cadence/retention i akceptowanego kosztu.
 - Starsze wpisy o aktywnej backend rewizji `00021-9zx`, braku live Cloud Ops i niewdrożeniu poprawki health należy traktować jako historyczne; aktualny odczyt wskazuje rewizję `00022-xxt` i source commit `d36fd42`.
 
-AKTUALIZACJA LIVE 2026-10-09 03:50 Europe/Warsaw:
+AKTUALIZACJA LIVE 2026-10-09 03:50 Europe/Warsaw (history; later corrected below):
 - Cloud Ops potwierdza rewizję `00023-5z7` z 100% ruchu, health/version 3.0.9, konfigurację Google Auth, metadane Firestore, wymagane API, logi i metryki jako PASS.
 - `/api/server/google-info`: `cloudStoreConfigured=true`, `connectivity=unknown`, `roundTripStatus=not_run`, `durableCloudStorage=false`. To stan niezweryfikowany, a nie dowód awarii.
 - Dane GymData i synchronizacja wielourządzeniowa pozostają UNKNOWN do czasu zalogowania w aplikacji i wykonania syntetycznego testu diagnostycznego oraz testu drugiego klienta.
-- Kopie Firestore: brak harmonogramu; PITR i delete protection są wyłączone. Nie zmieniano ustawień ani kosztów.
+- Kopie Firestore: w tym historycznym odczycie brak harmonogramu; później utworzono harmonogram i potwierdzono ochronę przed usunięciem (stan bieżący wyżej).
 - Porównanie gałęzi nie uzasadnia merge: starsza gałąź cofa Androida do 3.0.8 i usuwa część aktualnych zabezpieczeń; pozostawiono integracyjną gałąź wydaniową bez zmian źródeł.
 - `adb devices -l` puste; fizyczna instalacja, Google login i runtime E2E nie zostały wykonane.
 - AKTUALIZACJA 2026-10-09 03:57: włączono i odczytem potwierdzono `DELETE_PROTECTION_ENABLED` dla Firestore `(default)`. PITR i harmonogram kopii pozostają wyłączone/brak — nadal wymagają decyzji o retencji i akceptowanym koszcie.
