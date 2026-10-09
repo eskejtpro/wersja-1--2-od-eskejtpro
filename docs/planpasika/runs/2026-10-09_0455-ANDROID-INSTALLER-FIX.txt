@@ -21,9 +21,10 @@ WERYFIKACJA
 - Domyślna ścieżka APK: PASS (skrypt dochodzi do kontroli urządzenia bez wcześniejszego Join-Path error).
 - Nieistniejący serial: PASS fail-closed, bez próby instalacji.
 - `git diff --check`: PASS.
+- GitHub Actions run `37876877075` dla commita `034e6f2836c0c29ec934e0b6f578f87a8dd9159b`: `node-quality` PASS, `android-debug` PASS.
 
 STATUS
-PASS dla parsera i ścieżki no-device. Pełny update istniejącej aplikacji z porównaniem podpisu wymaga ponownie dostępnego ADB.
+PASS dla parsera, ścieżki no-device i pełnego CI. Pełny update istniejącej aplikacji z porównaniem podpisu wymaga ponownie dostępnego ADB.
 
 CLEANUP
 Brak zmian na telefonie podczas testu poprawki.
