@@ -21,6 +21,8 @@ WYNIKI:
 - ADB device list empty. No install, Google account flow, UI smoke, logcat, backup/restore, or two-device sync.
 - Local Firestore tests use simulated/in-process transport. No production diagnostic write/read/cleanup performed.
 - Live Secret Manager binding, active production revision/source, IAM minimality, Gemini model request and quotas were not rechecked in this run.
+- Fresh public GET `/api/health`, `/api/version`, `/api/server/google-info`: HTTP 200; service online/version 3.0.9, but `durableCloudStorage=false`, connectivity unknown, `roundTripStatus=not_run`, no active user.
+- Live anonymous `GET /api/data` and synthetic `POST /api/ai/coach/chat` both returned HTTP 401; auth guards work without invoking Gemini. This does not prove a valid Google session or AI operation.
 LOG SUMMARY: no test failures; package scanner does not print credential values.
 ARTIFACTS: `android/app/build/outputs/apk/debug/app-debug.apk`.
 PROBLEMS: No current Android device; no app session token; ADB is not available on PATH (checked by absolute path).
