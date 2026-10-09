@@ -1,0 +1,41 @@
+PlanPasika / GymTracker Pro — kompletność listy endpointów AI
+
+BEFORE
+- Backend udostępniał `/api/ai/coach/analyze`, ale panel `AppUpdateServerPanel` nie pokazywał tej trasy.
+- Matrix audytu klasyfikowała ją jako UNUSED/UNKNOWN; brak wpisu w panelu utrudniał audyt.
+
+ROOT CAUSE
+- Lista endpointów UI nie była synchronizowana automatycznie z trasami backendu.
+
+CHANGE
+- Dodano `/api/ai/coach/analyze` do panelowej listy endpointów z jawną informacją, że nie ma aktywnego callera UI.
+- Dodano test sprawdzający obecność trasy backendu i wpisu panelu.
+
+FILES
+- `src/components/AppUpdateServerPanel.tsx`
+- `tests/google-ui-no-fakes.test.cjs`
+
+TESTS
+- `npm run test:google-ui`: PASS, 4/4.
+- `npm run lint`: PASS.
+- `npm test`: PASS, 115/115.
+- `npm run build`: PASS.
+- `git diff --check`: PASS.
+
+DEVICE/CLOUD
+- ADB: niewykonane.
+- Cloud: bez zmian.
+
+EVIDENCE
+- Backend route: `server.ts` `/api/ai/coach/analyze`.
+- UI inventory: `AppUpdateServerPanel.tsx`.
+- Matrix: `docs/planpasika/16-AI-ENDPOINT-MATRIX.txt`.
+
+ROLLBACK
+- Cofnięcie dwóch zmian kodu przywraca poprzednią listę i test.
+
+RESULT
+- Panel endpointów obejmuje również nieużywaną trasę AI zamiast ukrywać ją przed audytem.
+
+FOLLOW-UP
+- Po podłączeniu urządzenia testować tylko aktywne trasy UI; `analyze` pozostaje UNUSED, dopóki nie pojawi się caller.

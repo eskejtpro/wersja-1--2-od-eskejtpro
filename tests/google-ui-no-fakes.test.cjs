@@ -38,3 +38,10 @@ test('production Android config does not allow cleartext or mixed content', () =
   const config = source('capacitor.config.ts');
   assert.doesNotMatch(config, /cleartext:\s*true|allowMixedContent:\s*true/);
 });
+
+test('server endpoint inventory includes every AI route exposed by the backend', () => {
+  const panel = source('src/components/AppUpdateServerPanel.tsx');
+  const server = source('server.ts');
+  assert.match(server, /app\.post\('\/api\/ai\/coach\/analyze'/);
+  assert.match(panel, /path: "\/api\/ai\/coach\/analyze"/);
+});

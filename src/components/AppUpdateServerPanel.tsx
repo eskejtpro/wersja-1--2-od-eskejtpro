@@ -44,6 +44,7 @@ const ENDPOINTS = [
   { method: "POST", path: "/api/ai/coach/nutrition-plan", auth: true, desc: "Plan żywieniowy AI — uwierzytelnienie przy nasłuchu sieciowym." },
   { method: "POST", path: "/api/ai/coach/swap-exercise", auth: true, desc: "Zamiana ćwiczenia AI — uwierzytelnienie przy nasłuchu sieciowym." },
   { method: "POST", path: "/api/ai/coach/audit-health", auth: true, desc: "Audyt zdrowia AI — uwierzytelnienie przy nasłuchu sieciowym." },
+  { method: "POST", path: "/api/ai/coach/analyze", auth: true, desc: "Analiza AI — trasa dostępna w backendzie; brak aktywnego callera UI." },
   { method: "POST", path: "/api/ai/coach/tts", auth: true, desc: "TTS — uwierzytelnienie przy nasłuchu sieciowym." },
   { method: "POST", path: "/api/ai/agent/parse-command", auth: true, desc: "Parsowanie komend AI — uwierzytelnienie przy nasłuchu sieciowym." },
 ];
