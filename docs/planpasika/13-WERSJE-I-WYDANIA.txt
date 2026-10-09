@@ -2,11 +2,17 @@ App version: 3.0.9
 versionCode: 309
 package: com.gymtracker.pro
 APK type: debug
-APK SHA-256 (najnowszy lokalny): 9811AD7146CEFCB7F04E75E70C0259D6BA9DDE12B2E4864A1E6651F25D92B7D8
+APK SHA-256 (najnowszy lokalny): 1949FB3BFB39F5D420BE85F8077F6BE35447816360E33E8B9809D0D42D9BB783
 Branch: codex/planpasika-release
-Latest local build: 2026-10-09, configured APK SHA-256 9811AD7146CEFCB7F04E75E70C0259D6BA9DDE12B2E4864A1E6651F25D92B7D8 (7,238,445 bytes). Package inspection confirms `com.gymtracker.pro`, versionName `3.0.9`, versionCode `309`, minSdk 24 and targetSdk 36. Credential-pattern scan and APK signer verification pass. Debug signing certificate SHA-256: 7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c. ADB was intentionally not used; installation and signature match against the installed app are unverified.
+Latest local build: 2026-10-09, configured APK SHA-256 1949FB3BFB39F5D420BE85F8077F6BE35447816360E33E8B9809D0D42D9BB783 (7,238,445 bytes). Package inspection confirms `com.gymtracker.pro`, versionName `3.0.9`, versionCode `309`, minSdk 24 and targetSdk 36. Credential-pattern scan and APK signer verification pass. Debug signing certificate SHA-256: 7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c. ADB was intentionally not used; installation and signature match against the installed app are unverified.
 Integrated Cloud Ops Agent V1: commit 21500a1.
 Wydanie produkcyjne: NOT READY do czasu live Cloud/E2E.
+
+AKTUALIZACJA 2026-10-09 18:40 Europe/Warsaw — świeży build po commicie `8f797cb`:
+- `npx cap sync android`, Gradle `test`, `assembleDebug` i `assembleAndroidTest`: PASS.
+- APK `3.0.9`/`309`, `com.gymtracker.pro`, 7,238,445 B, SHA-256 `1949FB3BFB39F5D420BE85F8077F6BE35447816360E33E8B9809D0D42D9BB783`.
+- Podpis debug SHA-256 `7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c`.
+- ADB nieużywane; instalacja, zgodność podpisu z urządzeniem i test runtime pozostają niezweryfikowane.
 
 AKTUALIZACJA 2026-10-09 03:40 Europe/Warsaw — ponowny wymuszony build po aktualizacji release branch:
 - App `3.0.9`, versionCode `309`, package `com.gymtracker.pro`, APK debug.
