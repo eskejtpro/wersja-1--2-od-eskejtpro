@@ -1,11 +1,11 @@
 DATA: 2026-10-09 02:07 Europe/Warsaw
 BRANCH: codex/planpasika-release
-COMMIT UNDER TEST: working tree after 685db3f
+COMMIT UNDER TEST: 579cbd1da90b8b33b72ea26a27c788e0dcfaef43
 ENVIRONMENT: local Node/TypeScript, synthetic in-memory Firestore transport
 TEST: HTTP 413 vs session-store 503 after synthetic successful diagnostic
 CEL: prevent false degraded health from client errors and stale durable=true during an observed Firestore outage
 KOMENDY: node --import tsx --test tests/firestore-store.test.cjs; npm run test:server; npm run test:cloud; npm run lint; npm run build
-STATUS: local PASS; production UNKNOWN (release server branch not deployed)
+STATUS: local PASS; GitHub Actions run 37863172431 node-quality PASS and android-debug PASS; production UNKNOWN (release server branch not deployed)
 WYNIKI: 413 leaves connectivity available and roundTripStatus pass. Simulated 503 turns connectivity unavailable, roundTripStatus fail, durableCloudStorage false, health degraded. Recovery read restores connectivity but not durable true. Server 28/28, Cloud 40/40, lint and build PASS.
 LOG SUMMARY: Vite warns about a large JS chunk; no test failure.
 ARTIFACTS: server.ts and tests/firestore-store.test.cjs.
