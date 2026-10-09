@@ -5,7 +5,7 @@ ROOT CAUSE
 Brak natywnego AppWidgetProvider, layoutu widgetu i deklaracji receivera w AndroidManifest.
 
 CHANGE
-Dodano natywny widget skrótów do Treningu, Wody, Kalendarza i uruchomienia aplikacji. Widget nie tworzy drugiego magazynu danych; otwiera istniejącą aplikację i zachowuje jej model synchronizacji.
+Dodano natywny widget skrótów do Treningu, Wody, Kalendarza i uruchomienia aplikacji. Skrót przekazuje cel przez Intent do MainActivity, a następnie przez CustomEvent do Reacta, który przełącza właściwy widok. Widget nie tworzy drugiego magazynu danych.
 
 FILES
 android/app/src/main/java/com/gymtracker/pro/GymTrackerWidgetProvider.java
@@ -13,6 +13,7 @@ android/app/src/main/res/layout/widget_gymtracker.xml
 android/app/src/main/res/xml/gymtracker_widget_info.xml
 android/app/src/main/res/values/styles.xml
 android/app/src/main/AndroidManifest.xml
+tests/android-home-widget.test.cjs
 
 TESTS
 Web build PASS.
@@ -20,20 +21,20 @@ Capacitor sync PASS.
 Gradle resource/manifest compilation reached APK output.
 APK manifest inspection PASS: receiver `GymTrackerWidgetProvider` and `APPWIDGET_UPDATE` present.
 APK package inspection PASS: `com.gymtracker.pro`, version 3.0.9 / 309.
-ADB install/runtime: BLOCKED, device disconnected before installation.
+Structural widget navigation test PASS. ADB install/runtime: BLOCKED, device disconnected before installation.
 
 DEVICE/CLOUD
 No Cloud Run or Firestore changes. No ADB device available for this run.
 
 EVIDENCE
-APK SHA-256: A4A57302E1CAAAD5BC96C84192FFB491CECDFC7591ADAA2BC61291EE7C3718AA.
-Commit: ccb75fc.
+APK SHA-256: generated after navigation forwarding build; retrieve from the local APK when ADB is reconnected.
+Commit: pending.
 
 ROLLBACK
 Revert commit `ccb75fc`; no user data or server state is modified by the widget.
 
 RESULT
-Implemented and locally verified; device verification remains blocked until ADB reconnects.
+Implemented and locally verified; widget navigation is included in the APK build. Device verification remains blocked until ADB reconnects.
 
 FOLLOW-UP
 Install APK with `adb install -r`, add the widget to the launcher, and verify each shortcut on Xiaomi 14T.

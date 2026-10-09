@@ -122,7 +122,7 @@ export default function App() {
   const [activeView, setActiveView] = useState<string>(data.settings.startupView || 'plan');
   const [weightSubcategory, setWeightSubcategory] = useState<WeightSubcategoryType>('all');
 
-  const handleSelectView = (view: string) => {
+  const handleSelectView = useCallback((view: string) => {
     if (view.startsWith('weight:')) {
       const sub = view.slice(7) as WeightSubcategoryType;
       setWeightSubcategory(sub);
@@ -132,7 +132,24 @@ export default function App() {
     } else {
       setActiveView(view);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const destinationToView: Record<string, string> = {
+      plan: 'plan',
+      hydration: 'quick_access',
+      calendar: 'cycles',
+      home: 'quick_access',
+    };
+    const handleWidgetNavigation = (event: Event) => {
+      const destination = (event as CustomEvent<{ destination?: string }>).detail?.destination;
+      const view = destination ? destinationToView[destination] : undefined;
+      if (view) handleSelectView(view);
+    };
+
+    window.addEventListener('gymtracker-widget-navigation', handleWidgetNavigation);
+    return () => window.removeEventListener('gymtracker-widget-navigation', handleWidgetNavigation);
+  }, [handleSelectView]);
 
   useEffect(() => {
     if (data.settings.rememberLastView && data.settings.startupView !== activeView) {
