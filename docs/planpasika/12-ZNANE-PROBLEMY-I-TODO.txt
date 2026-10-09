@@ -62,3 +62,6 @@ P0 OAuth package recheck 2026-10-09 02:35: fresh build embeds expected public We
 - `adb devices -l`: lista pusta; brak testu telefonu.
 
 P0 live Cloud follow-up 2026-10-09: billing is enabled and backend latest-ready revision `00022-xxt` receives 100% traffic; default Firestore exists in europe-central2, but deletion protection is disabled. Private Ops service is deployed on dedicated identity; its authenticated health/diagnostic request and Firestore write/read round-trip are still not verified. ADB has no connected device. Do not mark durable storage, OAuth E2E, or cross-device sync PASS.
+
+P0 Google Sign-In native bridge: fixed in commit `abc92bb` and pushed. Before: MainActivity lacked the marker interface and result callback required by Capgo Social Login 8.5.12 for scopes/AuthorizationClient. After: bridge present and Android Gradle build passes. Account-picker to ID-token/backend login remains UNKNOWN until device runtime; ADB phone absent and AVD hardware acceleration unavailable.
+P0 Firestore durability remains UNKNOWN: latest public google-info reports configured but no round-trip (`not_run`, durable=false); requires authenticated app write/read/update/conflict/cleanup and second-client retrieval.

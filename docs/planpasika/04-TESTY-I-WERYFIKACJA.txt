@@ -38,3 +38,12 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - Web/server build and Ops Agent build PASS (known Vite large-chunk warning). Gradle `testDebugUnitTest`, `assembleDebug`, `assembleDebugAndroidTest`: BUILD SUCCESSFUL.
 - APK 3.0.9/309, package `com.gymtracker.pro`, SHA-256 `B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1`.
 - ADB device list empty; no install or device runtime test. Public Cloud Run GETs pass, but Firestore round-trip, user sync, and AI E2E remain unverified.
+
+2026-10-09 02:50 Europe/Warsaw - fresh verification after native Google Sign-In bridge, commit `abc92bbdd0353bf0c9a0099f2b6b76dd155c4f3f`:
+- Before fix, MainActivity was a plain BridgeActivity without the plugin interface/result callback. It now implements `ModifiedMainActivityForSocialLoginPlugin` and routes the Google request-code range to `handleGoogleLoginIntent`.
+- Unchanged JS baseline: app 112/112; server 28/28; cloud/sync 40/40; AI transport 6/6; model registry 3/3; Google UI 3/3; update 4/4; Ops 7/7; lint and web/server/Ops builds PASS.
+- After native fix: `npx cap sync android` PASS; OAuth bundle verifier PASS; Gradle unit/debug/androidTest assembly exit 0; APK security scan, apksigner, zipalign PASS.
+- APK: `com.gymtracker.pro` 3.0.9/309, 7,228,723 bytes, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`; signer SHA-256 `7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c`.
+- Instrumentation APK built, but tests not run. ADB has no device; AVD fails without Android Emulator hypervisor driver/hardware acceleration. No driver/system setting changed.
+- Public GET: `/api/health`=200/ok, `/api/version`=200/3.0.9, `/api/server/google-info`=online, cloudStoreConfigured=true, durableCloudStorage=false, connectivity=unknown, roundTripStatus=not_run. No user token; no diagnostic write/read.
+- GitHub Actions run `37866837865` for this commit completed with conclusion `success` (Node and Android release gates).
