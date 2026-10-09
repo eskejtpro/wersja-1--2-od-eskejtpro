@@ -1832,7 +1832,7 @@ export default function App() {
       )}
 
       {/* Android Floating Action Button (FAB) if enabled */}
-      {data.settings.floatingActionButton && data.settings.floatingActionButton !== 'none' && (
+      {activeView !== 'ai' && data.settings.floatingActionButton && data.settings.floatingActionButton !== 'none' && (
         <div className="fixed bottom-20 right-4 z-30 md:hidden animate-bounce-short">
           {data.settings.floatingActionButton === 'timer' && (
             <button

@@ -1187,6 +1187,8 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
             >
               <input
                 type="text"
+                aria-label="Wiadomość do Trenera AI"
+                enterKeyHint="send"
                 value={inputPrompt}
                 onChange={(e) => setInputPrompt(e.target.value)}
                 placeholder="Wydaj polecenie (np. 'Zapisz wagę 84.5kg', 'Zwiększ wyciskanie o 5kg', 'Stwórz plan')..."
@@ -1195,6 +1197,7 @@ Napisz mi dowolne polecenie w języku naturalnym lub wybierz szybką akcję z me
               />
               <button
                 type="submit"
+                aria-label="Wyślij wiadomość do Trenera AI"
                 disabled={isLoading || !inputPrompt.trim()}
                 className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >

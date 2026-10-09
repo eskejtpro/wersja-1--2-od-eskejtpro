@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 test('Trener AI Online: Endpointy i heurystyka offline zwracają prawidłową strukturę', async () => {
   // Symulacja logiki heurystycznej Trenera AI dla trybu offline
@@ -70,4 +72,18 @@ test('Trener AI Online: Pamięć trwała czatu oraz fakty długoterminowe są za
   assert.equal(gymDataMock.aiAgentMemories.length, 2, 'Pamięć agenta musi zawierać 2 fakty');
   assert.equal(gymDataMock.aiAgentMemories[0].category, 'goal');
   assert.equal(gymDataMock.aiAgentMemories[1].category, 'injury');
+});
+
+test('Trener AI Online: pływający FAB nie zasłania pola i przycisku wysyłania', () => {
+  const appSource = fs.readFileSync(path.join(process.cwd(), 'src', 'App.tsx'), 'utf8');
+  const coachSource = fs.readFileSync(path.join(process.cwd(), 'src', 'components', 'AiCoachView.tsx'), 'utf8');
+
+  assert.match(
+    appSource,
+    /activeView !== 'ai' && data\.settings\.floatingActionButton/,
+    'Globalny FAB powinien być ukryty w pełnoekranowym widoku Trenera AI'
+  );
+  assert.match(coachSource, /aria-label="Wiadomość do Trenera AI"/);
+  assert.match(coachSource, /aria-label="Wyślij wiadomość do Trenera AI"/);
+  assert.match(coachSource, /enterKeyHint="send"/);
 });
