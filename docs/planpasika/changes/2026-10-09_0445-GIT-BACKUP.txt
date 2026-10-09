@@ -1,0 +1,14 @@
+DATA: 2026-10-09 04:45 Europe/Warsaw
+BRANCH: codex/planpasika-release
+
+ZAKRES
+Kopia odzyskiwalnego stanu Git bieżącej gałęzi wydaniowej.
+
+ZMIANY
+- Utworzono `A:\PlanPasikaBackups\2026-10-09\planpasika-release-8e0b411.bundle`, zweryfikowany przez Git.
+- Wypchnięto/zweryfikowano zdalną gałąź `backup/planpasika-release-2026-10-09`.
+- Zaktualizowano instrukcję odtwarzania i rejestr wydań; starego checkoutu na A: nie ruszano.
+
+WERYFIKACJA
+- Bundle zawiera release + backup refs, complete history; SHA-256 zapisano w run report.
+- Główna branch pozostaje clean i zgodna z origin.

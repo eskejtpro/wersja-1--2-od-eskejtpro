@@ -1,0 +1,27 @@
+DATA: 2026-10-09 04:45 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 8e0b4115eb9aba6a4c39587d8526c1b20cdbcbe3
+
+CEL
+Wykonać i sprawdzić wymagane kopie Git bez ingerencji w starszy, nieczysty checkout na A:.
+
+KOMENDY
+- `git bundle create A:\PlanPasikaBackups\2026-10-09\planpasika-release-8e0b411.bundle refs/heads/codex/planpasika-release refs/heads/backup/planpasika-release-2026-10-09`
+- `git bundle verify` oraz `git bundle list-heads`.
+- Zweryfikowano `git status`, HEAD, lokalne/remote refs i wolne miejsce przed utworzeniem.
+
+WYNIKI
+- Lokalny bundle: `A:\PlanPasikaBackups\2026-10-09\planpasika-release-8e0b411.bundle` (1,213,749 B).
+- SHA-256: `150630AB7829C34537859591FC80BC4D8886C5156C03A34A4578C47BF9C06BF5`.
+- `git bundle verify`: PASS; bundle ma complete history i dokładnie dwie refs wskazujące commit `8e0b4115eb9aba6a4c39587d8526c1b20cdbcbe3`.
+- Zdalna kopia: `origin/backup/planpasika-release-2026-10-09` istnieje na tym samym commicie.
+- Główna branch: `codex/planpasika-release`, push zgodny z origin, working tree czysty.
+- Istniejący `A:\wersja-1--2-od-eskejtpro` jest innym, starszym checkoutem z nieśledzonymi plikami; nie zmieniano go.
+
+STATUS
+- Git backup remote: PASS.
+- Git bundle local na A:: PASS.
+- Backup danych Firestore i test restore: UNKNOWN — brak snapshotu na liście; opisane osobno w aktualnym run report Cloud.
+
+CLEANUP
+- Bez usuwania lub nadpisywania plików. Utworzono tylko nowy katalog datowany i nowy bundle.

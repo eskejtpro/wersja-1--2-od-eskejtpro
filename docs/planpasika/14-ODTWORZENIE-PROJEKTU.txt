@@ -20,3 +20,11 @@ ODTWORZENIE I OCHRONA DANYCH
 - APK debug jest testowe i podpisane debug key; nie jest APK do Google Play. Stabilny release wymaga kontrolowanego signing/distribution path.
 - Przed zmianą schematu albo migracją: osobny branch/backup, kopia wyeksportowana poza localStorage i test importu. Nie wykonuj destructive resetu localStorage/Preferences.
 - Po odbudowie zapisz wersje narzędzi, commit, wyniki build/test oraz APK hash w run report. Brak credentials/telefonu zapisuj jako UNKNOWN/BLOCKED, nie PASS.
+
+LOKALNY GIT BUNDLE — CHECKPOINT 2026-10-09
+- Plik: `A:\PlanPasikaBackups\2026-10-09\planpasika-release-8e0b411.bundle`.
+- Zweryfikuj przed użyciem: `git bundle verify A:\PlanPasikaBackups\2026-10-09\planpasika-release-8e0b411.bundle`.
+- Odtwórz do nowego, pustego katalogu (nie nadpisuj istniejącego checkoutu): `git clone A:\PlanPasikaBackups\2026-10-09\planpasika-release-8e0b411.bundle <NOWY_KATALOG>`.
+- Zawiera refs `codex/planpasika-release` i `backup/planpasika-release-2026-10-09`, obie na commicie `8e0b4115eb9aba6a4c39587d8526c1b20cdbcbe3`.
+- SHA-256 bundle: `150630AB7829C34537859591FC80BC4D8886C5156C03A34A4578C47BF9C06BF5`.
+- Nie zawiera runtime danych, logowania, tokenów ani Firestore snapshotu.
