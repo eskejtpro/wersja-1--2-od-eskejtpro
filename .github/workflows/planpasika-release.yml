@@ -16,6 +16,7 @@ concurrency:
 jobs:
   node-quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,6 +40,7 @@ jobs:
 
   android-debug:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       VITE_GOOGLE_WEB_CLIENT_ID: 761415655121-40dq7naiqar13bochgqtvgtvnsrfv2nd.apps.googleusercontent.com
       VITE_GYMTRACKER_SERVER_URL: https://wersja-1--2-od-eskejtpro-git-761415655121.europe-central2.run.app
