@@ -5,8 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const clientId = process.env.VITE_GOOGLE_WEB_CLIENT_ID?.trim();
 const serverUrl = process.env.VITE_GYMTRACKER_SERVER_URL?.trim();
-assert.match(clientId || '', /^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/);
-assert.match(serverUrl || '', /^https:\/\/[^\s/]+\.run\.app$/);
+assert.ok(clientId, 'Missing VITE_GOOGLE_WEB_CLIENT_ID. Set the public OAuth Web Client ID for this build.');
+assert.ok(serverUrl, 'Missing VITE_GYMTRACKER_SERVER_URL. Set the HTTPS Cloud Run URL for this build.');
+assert.match(clientId, /^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/, 'VITE_GOOGLE_WEB_CLIENT_ID has an invalid format.');
+assert.match(serverUrl, /^https:\/\/[^\s/]+\.run\.app$/, 'VITE_GYMTRACKER_SERVER_URL must be an HTTPS Cloud Run URL.');
 
 const root = fileURLToPath(new URL('../android/app/src/main/assets/public/', import.meta.url));
 async function readTextFiles(directory) {
