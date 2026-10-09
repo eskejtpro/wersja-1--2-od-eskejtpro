@@ -16,6 +16,8 @@ test('widget Androida deklaruje skróty i przekazuje cel do aplikacji', () => {
   }
   assert.match(manifest, /GymTrackerWidgetProvider/);
   assert.match(activity, /gymtracker-widget-navigation/);
+  assert.match(activity, /postDelayed[\s\S]*600/);
+  assert.match(activity, /postDelayed[\s\S]*1600/);
   assert.match(app, /gymtracker-widget-navigation/);
   assert.match(app, /hydration: 'quick_access'/);
   assert.match(app, /calendar: 'cycles'/);
