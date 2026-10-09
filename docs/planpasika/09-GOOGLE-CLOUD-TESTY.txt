@@ -36,3 +36,11 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - Nie wykonano deployu ani zmian konfiguracji Cloud.
 
 2026-10-09 03:07 Europe/Warsaw — regression suite rerun: server 28/28 and cloud/sync/diagnostics 40/40 PASS, AI transport 6/6 PASS, Ops Agent 7/7 PASS; npm app tests 112/112 PASS. These are local tests (Firestore transport is simulated); they do not replace the authenticated production self-test. Cloud GET health/version remains available but durability stays UNVERIFIED.
+
+2026-10-09 03:15 Europe/Warsaw — live read-only Cloud Ops test:
+- Active Cloud Shell principal: `eskejtpro@gmail.com`; granted `roles/run.invoker` on `planpasika-cloud-ops` service only. No backend/project-wide IAM binding added.
+- Cloud Ops GET `/health`=200 (`status=ok`), GET `/version`=200 (`0.1.0`, `mode=read-only`).
+- Ops service env expected backend version aligned from 3.0.8 to 3.0.9; revision `planpasika-cloud-ops-00002-pjt` Ready/100% traffic.
+- POST `/api/diagnostics/run`=200, overall WARN. PASS: backend Cloud Run Ready, current revision `00022-xxt`/100% traffic, required env names, health 200/status ok, API version 3.0.9 matches expected, Google Auth configuration, Firestore database metadata, required APIs enabled, no recent warning/error logs, metrics 11 requests/0 5xx (reported interval).
+- UNKNOWN by design: authenticated user data persistence and two-device synchronization. No GymData read/write/delete, no Firestore self-test, no Gemini call.
+- Diagnostic duration 1.852 s. This report is an infrastructure observation, not a release verification.

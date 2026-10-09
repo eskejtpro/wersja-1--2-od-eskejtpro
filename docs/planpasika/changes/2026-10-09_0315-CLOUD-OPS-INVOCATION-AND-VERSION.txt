@@ -1,0 +1,24 @@
+DATA: 2026-10-09 03:15 Europe/Warsaw
+MODULE: Google Cloud Ops V1
+COMMIT: pending
+
+PRZED:
+- Private Ops service returned 403 to operator; service IAM policy did not grant the active account invoker access.
+- Ops expected backend version was 3.0.8 while production served 3.0.9, causing a false WARN.
+
+PO:
+- `eskejtpro@gmail.com` has `roles/run.invoker` only on `planpasika-cloud-ops`; no backend/project-level binding was added.
+- `OPS_EXPECTED_VERSION=3.0.9`; new Ops revision `planpasika-cloud-ops-00002-pjt` serves 100% traffic.
+- Authenticated read-only Cloud Ops diagnostic returns HTTP 200 and reports infrastructure PASS, with persistence and client sync UNKNOWN.
+
+DLACZEGO:
+Allow the project operator to invoke the documented private observer and align its expected version with the deployed application.
+
+TESTY:
+- Ops GET /health: PASS
+- Ops GET /version: PASS
+- Ops POST /api/diagnostics/run: HTTP 200, overall WARN (expected UNKNOWN gates remain)
+- No GymData or Firestore documents mutated.
+
+ROLLBACK:
+If needed, remove the `roles/run.invoker` binding from only this principal on only `planpasika-cloud-ops`, and restore the prior `OPS_EXPECTED_VERSION` value. Backend service and data are unaffected.

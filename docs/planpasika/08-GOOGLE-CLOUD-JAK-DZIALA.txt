@@ -30,3 +30,7 @@ Stan live 2026-10-08:
 Aktualny odczyt publicznych GET endpointów (2026-10-08 22:34 Europe/Warsaw, Windows worktree): `/api/health`, `/api/version`, `/api/server/google-info` zwróciły HTTP 200; backend zgłasza 3.0.9, status ok/online. `google-info` nadal zwraca `durableCloudStorage:false`. To dowodzi dostępności procesu i metadanych, nie Firestore write/read ani synchronizacji.
 
 Poprzednia kontrola przed rejestracją wpłaty/aktywacją wykazała `open=false`, `billingEnabled=false`, HTTP 503. Ten stan historyczny został zastąpiony powyższym odczytem live.
+
+Aktualizacja live 2026-10-09 03:15 Europe/Warsaw: backend revision `wersja-1--2-od-eskejtpro-git-00022-xxt` gotowa i obsługuje 100% ruchu. Cloud Ops raportuje `/api/health` HTTP 200/status `ok`, wersję API 3.0.9 i konfigurację Google Auth/Firestore. Metadane `(default)` = Firestore Native/europe-central2; API Run, Logging, Monitoring, Firestore i Service Usage ENABLED. Nie jest to dowód trwałości danych: `roundTripStatus=not_run`, `durableCloudStorage=false`; diagnostyka Ops celowo nie zapisuje ani nie odczytuje GymData.
+
+Cloud Ops prywatne, revision `planpasika-cloud-ops-00002-pjt` 100% traffic. `OPS_EXPECTED_VERSION=3.0.9`; `roles/run.invoker` nadane tylko użytkownikowi `eskejtpro@gmail.com` na usłudze Ops. Brak zmian IAM dla backendu i brak zmian Firestore.

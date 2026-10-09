@@ -3,3 +3,7 @@ Tryb: read-only. GoogleReader korzysta z metod odczytu; agent nie zapisuje GymDa
 Weryfikacja lokalna 2026-10-08: testy 7/7 PASS; `npm run build:ops-agent` PASS; GET `/health` i `/version` zwracają 200; GET `/api/diagnostics/run` zwraca 404 (diagnostyka jest POST-only).
 Aktualny `OPS_EXPECTED_VERSION` aplikacji: 3.0.9.
 Live deploy/agenta: UNVERIFIED. Nie wdrażano nowej usługi; oddzielny deploy wymaga prywatnego IAM i osobnej oceny kosztów.
+
+Aktualizacja live 2026-10-09 03:15 Europe/Warsaw (ta sekcja zastępuje powyższy wcześniejszy status wdrożenia): usługa `planpasika-cloud-ops` działa prywatnie w projekcie `gen-lang-client-0836043899`, region `europe-central2`. Aktywna tożsamość operatora w Cloud Shell: `eskejtpro@gmail.com`. Nadano jej `roles/run.invoker` wyłącznie na usłudze Cloud Ops; istniejące `ai.eskejtpro@gmail.com` zachowano. Nie zmieniano IAM backendu ani roli runtime.
+
+Live: GET `/health` i `/version` HTTP 200, wersja `0.1.0`, tryb `read-only`. Zaktualizowano wyłącznie `OPS_EXPECTED_VERSION` usługi Ops z `3.0.8` do `3.0.9`; nowa rewizja `planpasika-cloud-ops-00002-pjt` obsługuje 100% ruchu. POST `/api/diagnostics/run` HTTP 200, overall `WARN`: Cloud Run/revision/configuration/health/version/Auth/Firestore metadata/API usage/logging/metrics PASS. Wersja backendu i oczekiwana obie `3.0.9`; 11 żądań, 0 odpowiedzi 5xx w oknie raportu. Trwałość GymData i synchronizacja klientów pozostają `UNKNOWN` (żaden dokument użytkownika nie był czytany ani zapisywany). Diagnostyka działa w trybie read-only.

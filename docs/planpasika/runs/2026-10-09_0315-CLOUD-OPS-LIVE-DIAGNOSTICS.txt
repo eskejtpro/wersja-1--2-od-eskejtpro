@@ -1,0 +1,18 @@
+DATA: 2026-10-09 03:15 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 4a26dfebd5d1841c0e26b04fd70a906ff6533843 (przed aktualizacją dokumentacji)
+ENVIRONMENT: Google Cloud project gen-lang-client-0836043899, europe-central2
+TEST: Cloud Ops V1 authenticated live diagnostic, read-only
+CEL: potwierdzić prywatny endpoint Ops i status infrastruktury bez dostępu do treści GymData.
+KOMENDY: gcloud auth list; gcloud run services add-iam-policy-binding (Cloud Ops only); gcloud run services update (OPS_EXPECTED_VERSION only); authenticated GET /health, GET /version, POST /api/diagnostics/run.
+STATUS: WARN (infra checks pass; persistence and client sync intentionally UNKNOWN)
+WYNIKI:
+- Active operator: eskejtpro@gmail.com. Added roles/run.invoker on service planpasika-cloud-ops only; service IAM retains ai.eskejtpro@gmail.com. No backend or project-wide IAM change.
+- Ops GET health/version: HTTP 200; version 0.1.0; mode read-only.
+- Corrected Ops expected backend version 3.0.8 -> 3.0.9. Deployed Ops revision planpasika-cloud-ops-00002-pjt, 100% traffic.
+- Diagnostic endpoint HTTP 200, duration 1852 ms. Backend revision 00022-xxt Ready/100%, health 200/status ok, version 3.0.9 expected 3.0.9, required configuration names present, Google Auth configured, Firestore metadata present in europe-central2, required APIs enabled, no recent warning/error logs, 11 requests/0 5xx in reported window.
+- UNKNOWN: actual authenticated Firestore GymData round-trip and two-client synchronization.
+LOG SUMMARY: no secrets or user data inspected. Cloud Ops behavior verified read-only by source and live report.
+ARTIFACTS: Cloud Ops revision planpasika-cloud-ops-00002-pjt.
+PROBLEMS: overall WARN solely for untested persistence and client sync; no user session token available. Firestore deletion protection remains disabled per metadata.
+CLEANUP: no synthetic Firestore data created; no rollback required. IAM change is narrow and intentional for the active operator on Ops service only.
