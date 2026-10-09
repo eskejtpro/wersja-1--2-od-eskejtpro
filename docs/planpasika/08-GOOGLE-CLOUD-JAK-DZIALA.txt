@@ -34,3 +34,9 @@ Poprzednia kontrola przed rejestracją wpłaty/aktywacją wykazała `open=false`
 Aktualizacja live 2026-10-09 03:15 Europe/Warsaw: backend revision `wersja-1--2-od-eskejtpro-git-00022-xxt` gotowa i obsługuje 100% ruchu. Cloud Ops raportuje `/api/health` HTTP 200/status `ok`, wersję API 3.0.9 i konfigurację Google Auth/Firestore. Metadane `(default)` = Firestore Native/europe-central2; API Run, Logging, Monitoring, Firestore i Service Usage ENABLED. Nie jest to dowód trwałości danych: `roundTripStatus=not_run`, `durableCloudStorage=false`; diagnostyka Ops celowo nie zapisuje ani nie odczytuje GymData.
 
 Cloud Ops prywatne, revision `planpasika-cloud-ops-00002-pjt` 100% traffic. `OPS_EXPECTED_VERSION=3.0.9`; `roles/run.invoker` nadane tylko użytkownikowi `eskejtpro@gmail.com` na usłudze Ops. Brak zmian IAM dla backendu i brak zmian Firestore.
+
+KOPIE I OCHRONA BAZY — LIVE 2026-10-09
+- `gcloud firestore backups schedules list --database="(default)" --format=json` zwrócił `[]`: brak harmonogramów automatycznych kopii.
+- Metadane Firestore z read-only Cloud Ops wskazują `pointInTimeRecoveryEnablement=POINT_IN_TIME_RECOVERY_DISABLED` i `deleteProtectionState=DELETE_PROTECTION_DISABLED`.
+- Lista budżetów Cloud nie została odczytana: `billingbudgets.googleapis.com` jest wyłączone; polecenie zapytania nie włączyło go. Istnienie ani brak alertu budżetowego = UNKNOWN.
+- Nie włączono PITR, scheduled backups, Cloud Billing Budgets API ani ochrony usuwania w tej kontroli. Ustawienia kopii mogą generować koszty; przed zmianą wybierz harmonogram/retencję i zaakceptuj koszt.

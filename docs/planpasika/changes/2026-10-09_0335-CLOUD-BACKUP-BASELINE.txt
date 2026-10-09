@@ -1,0 +1,12 @@
+DATA: 2026-10-09 03:35 Europe/Warsaw
+MODULE: Cloud Firestore backup and billing safety
+COMMIT: pending
+
+WYNIK ODCZYTU:
+- Firestore scheduled backup list is empty.
+- PITR and delete protection are disabled.
+- Billing budget alert state cannot be read while `billingbudgets.googleapis.com` is disabled.
+
+ZMIANY: none. No billing API activation, paid backup/PITR setting, or database configuration was changed.
+
+NEXT: choose backup cadence/retention and acceptable cost; enable budget alerts once account/project policy is agreed; then enable backup and test restore in a safe target. Do not confuse backup schedule existence with a restore test.

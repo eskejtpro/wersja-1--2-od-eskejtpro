@@ -44,3 +44,9 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - POST `/api/diagnostics/run`=200, overall WARN. PASS: backend Cloud Run Ready, current revision `00022-xxt`/100% traffic, required env names, health 200/status ok, API version 3.0.9 matches expected, Google Auth configuration, Firestore database metadata, required APIs enabled, no recent warning/error logs, metrics 11 requests/0 5xx (reported interval).
 - UNKNOWN by design: authenticated user data persistence and two-device synchronization. No GymData read/write/delete, no Firestore self-test, no Gemini call.
 - Diagnostic duration 1.852 s. This report is an infrastructure observation, not a release verification.
+
+2026-10-09 03:35 Europe/Warsaw — backup/cost-control read-only review:
+- `gcloud firestore backups schedules list --database="(default)" --format=json` returned `[]` (no scheduled Firestore backup).
+- Latest Firestore metadata: PITR disabled; deletion protection disabled.
+- `gcloud billing budgets list` could not be read because `billingbudgets.googleapis.com` is disabled. The CLI offered activation; declined. No API or billing configuration changed. Budget alert state remains UNKNOWN.
+- No backup schedule, PITR, budget API, billing, or deletion-protection change performed. Scheduled backups/PITR incur additional storage charges; approval of cadence, retention, and cost limit is needed before enabling.

@@ -1,0 +1,16 @@
+DATA: 2026-10-09 03:35 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 6263ed1 (przed aktualizacją dokumentacji)
+ENVIRONMENT: Google Cloud project gen-lang-client-0836043899, Firestore `(default)`, europe-central2
+TEST: read-only check of Firestore backup schedules and Cloud Billing budget visibility
+CEL: ustalić, czy dane mają automatyczne kopie i czy alerty budżetowe są dostępne.
+KOMENDY: `gcloud --quiet firestore backups schedules list --database="(default)" --project=gen-lang-client-0836043899 --format=json`; `gcloud billing budgets list --billing-account=01C2B5-858010-1DCF54 ...` (API disabled).
+STATUS: PASS for schedule observation; UNKNOWN for budgets.
+WYNIKI:
+- Firestore backup schedule list is empty (`[]`).
+- Firestore metadata reports PITR disabled and delete protection disabled.
+- Cloud Billing Budgets API disabled. CLI offered enable-and-retry; declined. No API enablement or billing mutation.
+- No scheduled backup or PITR was enabled. Cost-sensitive change is deferred pending retention/cost limit.
+LOG SUMMARY: no document data read or written.
+PROBLEMS: recovery/backup absent; billing alert state unknown.
+CLEANUP: none.
