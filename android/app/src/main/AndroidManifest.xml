@@ -24,6 +24,19 @@
 
         </activity>
 
+        <receiver
+            android:name=".GymTrackerWidgetProvider"
+            android:exported="true"
+            android:label="GymTracker Pro">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.gymtracker.pro.OPEN_WIDGET_DESTINATION" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/gymtracker_widget_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
