@@ -27,11 +27,11 @@ DEVICE/CLOUD
 No Cloud Run or Firestore changes. No ADB device available for this run.
 
 EVIDENCE
-APK SHA-256: generated after navigation forwarding build; retrieve from the local APK when ADB is reconnected.
-Commit: pending.
+APK SHA-256: `00899BFC224C2267F7140B19E5A5FD210274AF26E323651436000BDC2241C0FE`.
+Commit: `b68f87d` (`origin/codex/planpasika-release`).
 
 ROLLBACK
-Revert commit `ccb75fc`; no user data or server state is modified by the widget.
+Revert commits `b68f87d` and `ccb75fc`; no user data or server state is modified by the widget.
 
 RESULT
 Implemented and locally verified; widget navigation is included in the APK build. Device verification remains blocked until ADB reconnects.
