@@ -19,7 +19,7 @@ DEVICE/CLOUD
 Bez ADB. Bez wdrożenia Cloud Run w tej sesji; live status po deploy pozostaje do odczytu.
 
 EVIDENCE
-Test używa kontrolowanego syntetycznego transportu Firestore i wymusza błąd sesji, następnie recovery.
+Test używa kontrolowanego syntetycznego transportu Firestore i wymusza błąd sesji, następnie recovery. Server test 28/28 i web/server build PASS.
 
 ROLLBACK
 Revert commit tego fixu; brak migracji danych.
