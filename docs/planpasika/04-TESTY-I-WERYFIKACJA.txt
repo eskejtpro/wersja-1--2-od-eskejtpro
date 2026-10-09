@@ -47,3 +47,10 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - Instrumentation APK built, but tests not run. ADB has no device; AVD fails without Android Emulator hypervisor driver/hardware acceleration. No driver/system setting changed.
 - Public GET: `/api/health`=200/ok, `/api/version`=200/3.0.9, `/api/server/google-info`=online, cloudStoreConfigured=true, durableCloudStorage=false, connectivity=unknown, roundTripStatus=not_run. No user token; no diagnostic write/read.
 - GitHub Actions run `37866837865` for this commit completed with conclusion `success` (Node and Android release gates).
+
+2026-10-09 continuation recheck on `codex/planpasika-release` HEAD `818bf4a4cacc6e677122ee4ac6bacef689c965bd`:
+- AI model registry 3/3, AI transport 6/6, server/auth/Firestore-store 28/28, Cloud sync/diagnostics 40/40, Android package security 3/3: PASS.
+- Cloud and Firestore test suites use fake/in-process transports; they do not prove production Firestore durability or Android runtime behavior.
+- Current local APK: 3.0.9/309, `com.gymtracker.pro`, minSdk 24, targetSdk 36, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`.
+- `adb devices -l` returned no devices. Physical device, login, UI, backup/restore and two-device sync are not tested.
+- Run report: `runs/2026-10-09_1100-RELEASE-AI-CLOUD-RECHECK.txt`.

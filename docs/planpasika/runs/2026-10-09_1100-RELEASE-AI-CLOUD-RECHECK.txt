@@ -1,0 +1,27 @@
+DATA: 2026-10-09
+BRANCH: codex/planpasika-release
+COMMIT: 818bf4a4cacc6e677122ee4ac6bacef689c965bd
+ENVIRONMENT: Windows PowerShell, local release worktree; production Cloud Run was not mutated.
+TEST: release continuation - AI/auth/Firestore/cloud regression recheck
+CEL: rerun safe local critical-path suites and verify release artifact/current device availability.
+KOMENDY:
+- npm run test:ai-model-registry
+- npm run test:ai-transport
+- npm run test:server
+- npm run test:cloud
+- node --test tests/android-package-security.test.mjs
+- adb devices -l (platform-tools absolute path)
+- aapt dump badging android/app/build/outputs/apk/debug/app-debug.apk
+- GitHub Actions API read for commit abc92bbdd0353bf0c9a0099f2b6b76dd155c4f3f
+STATUS: PASS for local suites/artifact metadata; UNKNOWN/BLOCKED for production and phone-dependent gates.
+WYNIKI:
+- Model registry 3/3; AI transport 6/6; server/auth/Firestore store 28/28; Cloud sync/diagnostics 40/40; APK security 3/3.
+- APK is `com.gymtracker.pro`, version 3.0.9/309, minSdk 24, targetSdk 36, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`.
+- GitHub Actions run 37866837865 for native OAuth bridge commit completed success.
+- ADB device list empty. No install, Google account flow, UI smoke, logcat, backup/restore, or two-device sync.
+- Local Firestore tests use simulated/in-process transport. No production diagnostic write/read/cleanup performed.
+- Live Secret Manager binding, active production revision/source, IAM minimality, Gemini model request and quotas were not rechecked in this run.
+LOG SUMMARY: no test failures; package scanner does not print credential values.
+ARTIFACTS: `android/app/build/outputs/apk/debug/app-debug.apk`.
+PROBLEMS: No current Android device; no app session token; ADB is not available on PATH (checked by absolute path).
+CLEANUP: test fixtures were isolated; no production records or settings changed.
