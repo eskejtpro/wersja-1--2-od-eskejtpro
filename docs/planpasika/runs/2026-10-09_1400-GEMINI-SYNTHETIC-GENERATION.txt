@@ -1,0 +1,24 @@
+DATA: 2026-10-09
+BRANCH: codex/planpasika-release
+COMMIT: pending documentation commit
+ENVIRONMENT: Google Cloud Shell, project gen-lang-client-0836043899
+TEST: minimal Gemini model generation and API auth guard
+CEL: verify that Secret Manager key can invoke the configured chat model, without user data
+KOMENDY:
+- Python urllib request to Gemini `v1beta/models/gemini-3.5-flash-lite:generateContent`, key retrieved at runtime from Secret Manager, prompt `Reply with exactly OK.`, maxOutputTokens=8, temperature=0.
+- Anonymous synthetic POST to production `/api/ai/coach/chat` (no bearer token).
+- Cloud Logging query for backend 5xx entries during previous 30 minutes.
+STATUS: PASS direct minimal Gemini generation, PASS expected auth rejection, PASS no recent 5xx; app AI E2E UNKNOWN/BLOCKED.
+WYNIKI:
+- Gemini HTTP 200; model `gemini-3.5-flash-lite`; response `OK`.
+- Usage: 5 prompt tokens + 1 candidate token = 6 total, standard service tier.
+- The secret value and response body from Secret Manager were not logged; synthetic prompt contained no personal/health data.
+- Unauthenticated backend POST returned HTTP 401 `unauthorized`, so no backend Gemini request was made.
+- Cloud Logging query returned zero backend 5xx entries for the 30-minute window.
+LOG SUMMARY: no backend error logs in queried window; no key material exposed.
+ARTIFACTS: production revision `00023-5z7` uses Secret Manager version `latest`; revision has 100% traffic.
+PROBLEMS:
+- No valid app Google session was available for protected AI endpoint.
+- Only chat model was tested directly. Other models/endpoints, app handling, latency, and quota behavior remain unknown.
+- No physical Android device connected over ADB.
+CLEANUP: No user data or Firestore data was accessed. One minimal synthetic model request was sent; 6 tokens reported by API. No configuration change in this test.

@@ -45,6 +45,13 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - UNKNOWN by design: authenticated user data persistence and two-device synchronization. No GymData read/write/delete, no Firestore self-test, no Gemini call.
 - Diagnostic duration 1.852 s. This report is an infrastructure observation, not a release verification.
 
+2026-10-09 live follow-up after secret correction:
+- Anonymous `POST /api/ai/coach/chat` with synthetic non-personal payload returned 401 `unauthorized` (expected protection; Gemini not invoked).
+- Cloud Logging query for backend HTTP 5xx over the last 30 minutes returned 0 entries.
+- Direct server-side metadata test previously confirmed Secret Manager key access: HTTP 200 to Gemini model catalog, old inline key HTTP 403.
+- Minimal direct `generateContent` against `gemini-3.5-flash-lite` with synthetic prompt “Reply with exactly OK.” returned HTTP 200, reply `OK`, usage 6 tokens; no personal data used. This checks Google Gemini access only, not our backend route/auth/session or other model IDs.
+- Do not label app AI end-to-end PASS until a valid app Google session exercises the protected backend endpoint. ADB currently shows no connected device.
+
 2026-10-09 03:35 Europe/Warsaw — backup/cost-control read-only review:
 - `gcloud firestore backups schedules list --database="(default)" --format=json` returned `[]` (no scheduled Firestore backup).
 - Latest Firestore metadata: PITR disabled; deletion protection disabled.
