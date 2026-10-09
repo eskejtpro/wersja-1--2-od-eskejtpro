@@ -1,0 +1,30 @@
+DATA: 2026-10-09 04:50 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT BAZOWY: bbda50e (dokumentacja lokalnego GIT bundle)
+
+URZĄDZENIE
+- Xiaomi 2406APNFAG, serial `755XZTPVNJNVX4OJ`, Android wykryty jako authorized `device` przez ADB.
+- Zainstalowane pakiety: `pl.pasik92.gymtrackerpro.android`, `com.planpasika.v2`, `com.gymtrackerpro.app`.
+- Pakiet celu `com.gymtracker.pro` wcześniej nieobecny. Pozostałe aplikacje i ich dane nie były modyfikowane.
+
+APK
+- Ścieżka: `android/app/build/outputs/apk/debug/app-debug.apk`.
+- Wersja: 3.0.9, versionCode 309; package `com.gymtracker.pro`.
+- SHA-256: `E3E064CAE4AFE33D3489069CFC0D973F8A0DA71AA8D5226248379F0B71A2340F`.
+- Debug signer SHA-256: `7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c`.
+- `aapt dump badging` i `apksigner verify --print-certs`: PASS.
+
+WYKONANIE
+- Dedykowany installer fail-closed zakończył się przed instalacją, bo `pm path` dla brakującego pakietu zwrócił kod 1 i skrypt sklasyfikował to jako błąd inspekcji. Nie wprowadzono zmian na urządzeniu.
+- `pm list packages` niezależnie potwierdził brak dokładnego package ID celu oraz obecność wyłącznie innych pakietów.
+- `adb install -r` świeżej aplikacji: `Success`.
+- `dumpsys package`: versionCode 309, versionName 3.0.9; firstInstallTime/lastUpdateTime 2026-10-09 04:49:59.
+- Resolver wskazał `com.gymtracker.pro/.MainActivity`; `am start` PASS; PID 20382.
+- Crash buffer po starcie: bez FATAL EXCEPTION dla pakietu.
+
+ZAKRES NIEPOTWIERDZONY
+- Nie wykonano interaktywnego logowania Google (wymaga wybrania konta przez użytkownika).
+- Nie wykonano autoryzowanego zapisu/odczytu Firestore z prawdziwej sesji, AI E2E, pełnego UI ani synchronizacji drugiego klienta.
+- Sam poprawny start aplikacji nie jest dowodem działania tych funkcji.
+
+Uwaga: ten raport dokumentuje instalację testową, nie produkcyjne wydanie Google Play. Dane wcześniejszych pakietów pozostawiono bez zmian.

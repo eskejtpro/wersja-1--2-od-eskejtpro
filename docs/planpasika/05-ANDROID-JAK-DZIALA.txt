@@ -1,7 +1,7 @@
 Technologie: Capacitor, Android Gradle Plugin, JDK 21, Gradle wrapper, ADB.
 Package: com.gymtracker.pro. Debug APK: android/app/build/outputs/apk/debug/app-debug.apk.
 Instalacja aktualizacyjna: adb install -r APK. Nie odinstalowywać przed testem migracji danych.
-Historycznie testowany Oppo CPH2269, Android 11. Bieżący `adb devices -l` (2026-10-09) nie wykrywa żadnego telefonu; świeża instalacja i E2E pozostają niezweryfikowane.
+Historycznie testowany Oppo CPH2269, Android 11. 2026-10-09 świeży APK został zainstalowany na Xiaomi 2406APNFAG (`755XZTPVNJNVX4OJ`); wersja i start MainActivity potwierdzone. Interaktywne logowanie, synchronizacja Firestore, drugi klient i pełne UI nadal wymagają E2E.
 2026-10-09 commit `abc92bb`: `MainActivity` implements `ModifiedMainActivityForSocialLoginPlugin` and routes Google AuthorizationClient results to Capgo Social Login 8.5.12. Instrumentation test asserts the interface; AndroidTest APK built, not executed.
 Fresh APK with this change: `com.gymtracker.pro` 3.0.9/309, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`, minSdk 24, targetSdk 36. Debug signer SHA-256 `7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c`.
 AVD `Medium_Phone_API_37.0` is BLOCKED: emulator reports missing Android Emulator hypervisor driver/hardware acceleration. No driver installed; physical device tests remain BLOCKED.

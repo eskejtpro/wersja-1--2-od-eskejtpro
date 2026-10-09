@@ -39,3 +39,9 @@ APK: `android/app/build/outputs/apk/debug/app-debug.apk`, 6,684,565 bytes, packa
 - Zdalna kopia: `backup/planpasika-release-2026-10-09` na tym samym commicie.
 - Lokalny Git bundle `A:\PlanPasikaBackups\2026-10-09\planpasika-release-8e0b411.bundle`, 1,213,749 B; SHA-256 `150630AB7829C34537859591FC80BC4D8886C5156C03A34A4578C47BF9C06BF5`; `git bundle verify` PASS.
 - To kopia kodu/historii Git, nie backup GymData/Firestore. Raport: `runs/2026-10-09_0445-GIT-BACKUP.txt`.
+
+2026-10-09 04:50 Europe/Warsaw — APK zainstalowany na Xiaomi:
+- `com.gymtracker.pro` 3.0.9/309, debug, SHA-256 `E3E064CAE4AFE33D3489069CFC0D973F8A0DA71AA8D5226248379F0B71A2340F`.
+- Instalacja PASS; uruchomienie MainActivity PASS; poprzednie pakiety pozostawione bez zmian.
+- Brak dowodu interaktywnego logowania Google / Firestore user-data / synchronizacji między urządzeniami; release pozostaje NOT READY.
+- Raport: `runs/2026-10-09_0450-XIAOMI-INSTALL.txt`.
