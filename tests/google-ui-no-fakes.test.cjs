@@ -44,4 +44,5 @@ test('server endpoint inventory includes every AI route exposed by the backend',
   const server = source('server.ts');
   assert.match(server, /app\.post\('\/api\/ai\/coach\/analyze'/);
   assert.match(panel, /path: "\/api\/ai\/coach\/analyze"/);
+  assert.match(panel, /alias: \/api\/ai\/chat/);
 });

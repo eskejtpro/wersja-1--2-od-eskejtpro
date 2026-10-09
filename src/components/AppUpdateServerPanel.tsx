@@ -39,7 +39,7 @@ const ENDPOINTS = [
   { method: "POST", path: "/api/data",                auth: true,  desc: "Atomowy zapis GymData z weryfikacją revision i contentHash." },
   { method: "GET",  path: "/api/sync/status",         auth: true,  desc: "Status synchronizacji: revision, hash, online/offline." },
   { method: "POST", path: "/api/agent/analyze",       auth: true,  desc: "Analiza heurystyczna: tonaż, e1RM, regularność sesji." },
-  { method: "POST", path: "/api/ai/coach/chat", auth: true, desc: "AI chat — loopback tylko lokalnie, Bearer przy nasłuchu sieciowym." },
+  { method: "POST", path: "/api/ai/coach/chat (alias: /api/ai/chat)", auth: true, desc: "AI chat — loopback tylko lokalnie, Bearer przy nasłuchu sieciowym." },
   { method: "POST", path: "/api/ai/coach/generate-plan", auth: true, desc: "Generowanie planu AI — uwierzytelnienie przy nasłuchu sieciowym." },
   { method: "POST", path: "/api/ai/coach/nutrition-plan", auth: true, desc: "Plan żywieniowy AI — uwierzytelnienie przy nasłuchu sieciowym." },
   { method: "POST", path: "/api/ai/coach/swap-exercise", auth: true, desc: "Zamiana ćwiczenia AI — uwierzytelnienie przy nasłuchu sieciowym." },

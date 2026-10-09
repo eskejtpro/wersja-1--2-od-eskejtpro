@@ -1,0 +1,32 @@
+PlanPasika / GymTracker Pro — uzupełnienie aliasu AI chat
+
+BEFORE
+- Backend obsługuje `/api/ai/coach/chat` oraz alias `/api/ai/chat`, ale panel pokazywał tylko główną trasę.
+
+ROOT CAUSE
+- Panelowa lista endpointów nie prezentowała aliasów tras.
+
+CHANGE
+- Dopisano alias `/api/ai/chat` przy wpisie chat w `AppUpdateServerPanel`.
+- Rozszerzono test inventory endpointów.
+
+FILES
+- `src/components/AppUpdateServerPanel.tsx`
+- `tests/google-ui-no-fakes.test.cjs`
+
+TESTS
+- Google UI: 4/4 PASS.
+- App regression: 115/115 PASS.
+- TypeScript lint: PASS.
+- Web/server build: PASS.
+- `git diff --check`: PASS.
+
+DEVICE/CLOUD
+- ADB: niewykonane.
+- Cloud: bez zmian.
+
+RESULT
+- Panel pokazuje oba rzeczywiste wejścia do funkcji chat; nie zmieniono zachowania API.
+
+FOLLOW-UP
+- Po ADB pozostaje test pozytywnego loginu i chat E2E na telefonie.
