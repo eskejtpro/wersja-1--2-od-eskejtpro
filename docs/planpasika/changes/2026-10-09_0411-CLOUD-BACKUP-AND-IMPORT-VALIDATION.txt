@@ -1,0 +1,20 @@
+DATA: 2026-10-09 04:11 Europe/Warsaw
+BRANCH: codex/planpasika-release
+BAZOWY COMMIT: ae0c53d4c3398684ee5410bce637ba85d076ca95
+
+ZMIANY KODU
+- Dodano współdzielony runtime validator GymData dla importu pliku JSON w Settings.
+- Import sprawdza wymagane ustawienia i zagnieżdżone struktury tygodni/dni/ćwiczeń/historii/pomiarów; starsze eksporty bez opcjonalnych tabel pozostają obsługiwane.
+- Błędny plik pokazuje bezpieczny komunikat i nie jest przekazywany do callbacku importu.
+- Dodano cztery testy walidacji i włączono je do `npm test`.
+
+ZMIANY GOOGLE CLOUD
+- Utworzono Firestore backup schedule: codziennie, retencja 7 dni.
+- Harmonogram odczytano zwrotnie; PITR pozostaje wyłączone.
+- Konfiguracja kopii nie potwierdza aplikacyjnego Firestore round-trip ani pierwszego gotowego snapshotu.
+
+WERYFIKACJA
+- Walidacja 4/4, testy aplikacji 112/112, serwer 28/28, cloud 40/40, AI transport 6/6, registry 3/3, Ops 7/7; lint/build/Capacitor sync/debug APK/app AndroidTest APK PASS.
+- Public Cloud health/version PASS; dane użytkownika/dwuurządzeniowy sync UNKNOWN.
+- APK 3.0.9/309, com.gymtracker.pro, SHA-256 0AD099991F20046AD1D2A6AECDEF21A6FE68C7C9E88272A474E52D5A9AF05DBA.
+- Nie wdrożono kodu do Cloud Run i nie wypchnięto lokalnych zmian do GitHub w tym etapie.

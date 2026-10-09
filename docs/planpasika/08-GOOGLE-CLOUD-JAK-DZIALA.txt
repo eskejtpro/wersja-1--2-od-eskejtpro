@@ -42,3 +42,8 @@ KOPIE I OCHRONA BAZY — LIVE 2026-10-09
 - Metadane Firestore z read-only Cloud Ops wskazują `pointInTimeRecoveryEnablement=POINT_IN_TIME_RECOVERY_DISABLED` i `deleteProtectionState=DELETE_PROTECTION_DISABLED`.
 - Lista budżetów Cloud nie została odczytana: `billingbudgets.googleapis.com` jest wyłączone; polecenie zapytania nie włączyło go. Istnienie ani brak alertu budżetowego = UNKNOWN.
 - Nie włączono PITR, scheduled backups, Cloud Billing Budgets API ani ochrony usuwania w tej kontroli. Ustawienia kopii mogą generować koszty; przed zmianą wybierz harmonogram/retencję i zaakceptuj koszt.
+
+AKTUALIZACJA 2026-10-09 04:11 Europe/Warsaw:
+- Po informacji użytkowniczki o przedpłacie i poleceniu kontynuacji utworzono harmonogram Firestore: daily, retention 7d (604800s), schedule ID `2cebefda-25aa-4f02-979a-a8e622c39215`; odczyt listy potwierdził konfigurację.
+- Pierwsza kopia nie jest jeszcze potwierdzona. Backup Storage w Firestore nie jest objęty bezpłatnym limitem; rozliczenie zależy od rozmiaru snapshotów i czasu retencji. Budżet/alert nie został skonfigurowany.
+- PITR nadal wyłączone. Publiczny `/api/server/google-info` zgłasza `durableCloudStorage=false`, `connectivity=unknown`, `roundTripStatus=not_run`; Google Auth jest dostępne, ale nie wykonano sesji aplikacji.

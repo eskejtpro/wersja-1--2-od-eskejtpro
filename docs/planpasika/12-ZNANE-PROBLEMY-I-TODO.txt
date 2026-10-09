@@ -85,3 +85,10 @@ AKTUALIZACJA LIVE 2026-10-09 03:50 Europe/Warsaw:
 - Porównanie gałęzi nie uzasadnia merge: starsza gałąź cofa Androida do 3.0.8 i usuwa część aktualnych zabezpieczeń; pozostawiono integracyjną gałąź wydaniową bez zmian źródeł.
 - `adb devices -l` puste; fizyczna instalacja, Google login i runtime E2E nie zostały wykonane.
 - AKTUALIZACJA 2026-10-09 03:57: włączono i odczytem potwierdzono `DELETE_PROTECTION_ENABLED` dla Firestore `(default)`. PITR i harmonogram kopii pozostają wyłączone/brak — nadal wymagają decyzji o retencji i akceptowanym koszcie.
+
+AKTUALIZACJA 2026-10-09 04:11 Europe/Warsaw:
+- Korekta kopii Firestore: utworzono daily backup schedule, retencja 7 dni, potwierdzona listą harmonogramów. Pierwszy snapshot i jego odtworzenie nie zostały jeszcze zweryfikowane.
+- Nadal P0 do końcowego wydania: trwały Firestore round-trip z prawdziwą sesją aplikacji oraz synchronizacja między klientami; aktualny publiczny status to `roundTripStatus=not_run`.
+- Nadal BLOCKED/UNKNOWN: fizyczny telefon nie jest wykrywany przez ADB, więc brak instalacji, startup, Google login, UI, AI i testu aktualizacji zachowującej dane.
+- Android app debug build PASS, app-specific instrumentation APK build PASS. Zadanie agregujące instrumented APK dla wszystkich bibliotek FAIL z duplikatem Kotlin stdlib w wygenerowanym module `capacitor-cordova-android-plugins`; nie blokuje budowy APK aplikacji.
+- Ostatni fresh APK lokalny: 3.0.9/309, `com.gymtracker.pro`, 6,684,565 B, SHA-256 `0AD099991F20046AD1D2A6AECDEF21A6FE68C7C9E88272A474E52D5A9AF05DBA`; debug signer, nie testowany na urządzeniu.

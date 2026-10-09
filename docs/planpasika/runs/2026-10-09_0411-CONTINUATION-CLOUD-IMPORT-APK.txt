@@ -1,0 +1,54 @@
+DATA
+2026-10-09 04:11 Europe/Warsaw
+
+BRANCH / COMMIT
+codex/planpasika-release / ae0c53d4c3398684ee5410bce637ba85d076ca95 (bazowy HEAD; zmiany z tego raportu niezacommitowane)
+
+ENVIRONMENT
+Windows worktree: C:\Users\Lucyna\.codex\worktrees\planpasika-release\wersja-1--2-od-eskejtpro
+Cloud project: gen-lang-client-0836043899; account verified in Cloud Shell: ai.eskejtpro@gmail.com
+Android SDK adb: C:\Users\Lucyna\AppData\Local\Android\Sdk\platform-tools\adb.exe
+
+TEST / GOAL
+Kontynuacja po aktywacji rozliczeń: poprawić ochronę importu kopii, sprawdzić produkcyjne endpointy, skonfigurować backup Firestore, uruchomić testy i świeży build Android.
+
+COMMANDS
+npm run test:gym-data-validation
+npm run lint
+npm test
+npm run test:server
+npm run test:cloud
+npm run test:ai-transport
+npm run test:ai-model-registry
+npm run test:ops-agent
+npm run build
+npx cap sync android
+android/gradlew.bat assembleDebug
+android/gradlew.bat :app:assembleDebugAndroidTest
+android/gradlew.bat assembleAndroidTest (aggregate task, noted failure below)
+PowerShell Invoke-RestMethod GET /api/health, /api/version, /api/server/google-info
+gcloud firestore backups schedules create --database=(default) --retention=7d --recurrence=daily
+gcloud firestore backups schedules list --database=(default)
+adb devices -l
+
+STATUS / RESULTS
+PASS: validator tests 4/4; app tests 112/112; lint; backend tests 28/28; cloud/sync tests 40/40; AI transport 6/6; model registry 3/3; Cloud Ops 7/7; web/server build; Capacitor sync; app debug APK build; app instrumentation APK build.
+WARN: Vite production build emits a large-chunk warning (largest main JS 1.66 MB minified).
+FAIL (non-app aggregate): assembleAndroidTest also builds the generated capacitor-cordova-android-plugins test APK, whose runtime classpath duplicates Kotlin stdlib 1.8.22 with jdk7/jdk8 1.6.21. The application module-specific :app:assembleDebugAndroidTest succeeds. No unrelated dependency override made.
+APK: android/app/build/outputs/apk/debug/app-debug.apk; 6,684,565 bytes; package com.gymtracker.pro; versionName 3.0.9; versionCode 309; minSdk 24; targetSdk 36; SHA-256 0AD099991F20046AD1D2A6AECDEF21A6FE68C7C9E88272A474E52D5A9AF05DBA.
+Security scan: no Google API key-like credential pattern in dist or Android web assets.
+ADB: no connected devices. No install, runtime, login, UI, signer update, or two-device tests.
+Cloud public GETs: /api/health=ok 3.0.9; /api/version=ok 3.0.9; /api/server/google-info=online, googleAuthAvailable=true, cloudStoreConfigured=true, durableCloudStorage=false, connectivity=unknown, roundTripStatus=not_run.
+Firestore backup schedule created and read back: dailyRecurrence; retention 604800 seconds (7 days); id 2cebefda-25aa-4f02-979a-a8e622c39215. First actual backup not yet verified. PITR remains disabled. Backups are a billable feature; actual cost depends on backup size and retained duration. No budget ceiling/alert is asserted.
+
+LOG SUMMARY
+No runtime secret values logged. User data was not read or modified. No authenticated Firestore GymData round-trip was possible without an active app session/device.
+
+ARTIFACTS
+Updated import validator and tests in working tree; APK at path above; Firestore schedule in project.
+
+PROBLEMS / NEXT ACTIONS
+Connect the physical phone before attempting installation/runtime tests. Use the app's authenticated Firestore diagnostic to verify write/read/update/conflict/cleanup, then perform real synthetic GymData round-trip. Confirm a first scheduled backup appears after its cadence. Resolve production round-trip status and authenticated AI E2E. Do not enable PITR without cost approval.
+
+CLEANUP
+No temporary user data or diagnostic Firestore documents created. No app data cleared. Local code edits remain uncommitted and unpushed.

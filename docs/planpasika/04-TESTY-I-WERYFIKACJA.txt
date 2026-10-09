@@ -69,3 +69,14 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - `npm run lint` PASS; `npm test` 112/112; `npm run test:server` 28/28; `npm run test:cloud` 40/40; `npm run test:ops-agent` 7/7 PASS.
 - Live Cloud Ops: infrastructure, health/version/Auth configuration, Firestore metadata, APIs, recent logs and metrics PASS; overall WARN because user-data persistence and two-device sync remain UNKNOWN.
 - Fresh ADB enumeration returned no devices; no install or device-runtime claim is made.
+
+2026-10-09 04:11 Europe/Warsaw — kontynuacja po przedpłacie Cloud:
+- Walidacja importu kopii JSON: 4/4 PASS; lint PASS; aplikacja 112/112 PASS.
+- Backend/Auth/Firestore testy: 28/28 PASS; Cloud/sync/diagnostics: 40/40 PASS; AI transport 6/6; registry 3/3; Cloud Ops 7/7 PASS.
+- `npm run build`: PASS (Vite warning o dużym chunku); `npx cap sync android`: PASS; `:app:assembleDebug` i `:app:assembleDebugAndroidTest`: PASS.
+- Zbiorcze `assembleAndroidTest` FAIL tylko na teście biblioteki `capacitor-cordova-android-plugins` z duplikatami Kotlin stdlib 1.8.22/1.6.21; testowy APK właściwego modułu aplikacji buduje się poprawnie.
+- Fresh debug APK: `com.gymtracker.pro` 3.0.9/309, 6,684,565 B, SHA-256 `0AD099991F20046AD1D2A6AECDEF21A6FE68C7C9E88272A474E52D5A9AF05DBA`, minSdk 24 / targetSdk 36.
+- Live Cloud GET: health/version 3.0.9 PASS; `google-info` online lecz `durableCloudStorage=false`, connectivity `unknown`, round-trip `not_run`.
+- Firestore schedule: daily, retention 604800s (7 dni), utworzenie i odczyt potwierdzone. To nie jest dowód wykonania pierwszej kopii ani danych aplikacji.
+- ADB nie wykrywa urządzeń; instalacja, runtime, logowanie, UI i multi-device E2E nadal UNKNOWN/BLOCKED.
+- Raport szczegółowy: `runs/2026-10-09_0411-CONTINUATION-CLOUD-IMPORT-APK.txt`.

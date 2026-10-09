@@ -22,3 +22,8 @@ Backend 3.0.9, rewizja `00022-xxt`, health=ok. Firestore Native `(default)` w `e
 
 TESTY I DOCELOWA BRAMKA
 Logika revision/hash, konfliktów i diagnostyki ma lokalne testy z fake transportem. Pełny PASS wymaga: zalogowana aplikacja → synthetic Firestore self-test z cleanup → zapis testowego GymData → restart aplikacji → odczyt w drugiej sesji/urządzeniu → zgodny revision/hash → offline/online i konflikt bez utraty danych.
+
+AKTUALIZACJA 2026-10-09 04:11 Europe/Warsaw:
+- Import JSON w Settings weryfikuje strukturę ustawień, tygodni, dni, ćwiczeń, historii i pomiarów przed przekazaniem do procedury importu. Uszkodzony plik nie powinien zastępować aktywnych danych; testy walidatora 4/4 PASS.
+- Firestore `(default)` ma harmonogram kopii dziennych z retencją 7 dni (604800 sekund), ID harmonogramu `2cebefda-25aa-4f02-979a-a8e622c39215`.
+- Harmonogram kopii chroni stan bazy, ale nie zastępuje weryfikacji write/read GymData; backend wciąż raportuje round-trip `not_run`, a cross-device sync = UNKNOWN.

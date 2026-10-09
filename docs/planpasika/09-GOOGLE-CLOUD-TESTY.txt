@@ -71,6 +71,12 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - UNKNOWN: authenticated GymData write/read/update/conflict/cleanup and two-device synchronization. Ops metadata does not read user data and cannot prove durability.
 - Overall WARN is expected while persistence and client synchronization remain UNKNOWN. No user GymData was accessed.
 
+2026-10-09 04:11 Europe/Warsaw — sprawdzenie po utworzeniu backup schedule:
+- Public GET /api/health i /api/version: HTTP 200, status ok, wersja 3.0.9.
+- /api/server/google-info: online, `cloudStoreConfigured=true`, `durableCloudStorage=false`, `connectivity=unknown`, `roundTripStatus=not_run`.
+- Firestore schedule read-after-create: daily, retencja 604800s (7 dni). Lista kopii zwróciła brak pozycji/nie pokazała gotowego snapshotu; pierwszy backup pozostaje niepotwierdzony.
+- Brak zalogowanej sesji użytkownika i brak telefonu ADB: nie uruchomiono chronionego Firestore self-test ani nie odczytano/pisano GymData.
+
 2026-10-09 03:57 Europe/Warsaw — Firestore delete protection:
 - On the user-authorized account `ai.eskejtpro@gmail.com`, enabled database-level delete protection for project `gen-lang-client-0836043899`, database `(default)`, region `europe-central2`.
 - Read-after-write `gcloud firestore databases describe` confirms `DELETE_PROTECTION_ENABLED`.

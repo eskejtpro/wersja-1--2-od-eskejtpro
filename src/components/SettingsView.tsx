@@ -49,6 +49,7 @@ import type { CloudTrainingSync } from '../utils/useCloudTrainingSync';
 import { AppKnowledgeGuide } from './AppKnowledgeGuide';
 import { TurboPowerSettingsPanel } from './TurboPowerSettingsPanel';
 import { GOOGLE_CLOUD_SHARED_URL } from '../utils/serverApi';
+import { isGymData } from '../utils/gymDataValidation';
 
 interface SettingsViewProps {
   data: GymData;
@@ -157,11 +158,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       try {
         const content = event.target?.result as string;
         const parsed = JSON.parse(content);
-        if (parsed && Array.isArray(parsed.weeks)) {
-          onImportJson(parsed as GymData);
+        if (isGymData(parsed)) {
+          onImportJson(parsed);
           setImportError('');
         } else {
-          setImportError('Nieprawidłowy format pliku. Brak sekcji "weeks".');
+          setImportError('Plik nie jest prawidłową kopią GymTracker. Dane nie zostały zmienione.');
         }
       } catch (err) {
         setImportError('Błąd parsowania pliku JSON.');
