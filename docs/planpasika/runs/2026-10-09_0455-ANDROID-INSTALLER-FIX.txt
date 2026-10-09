@@ -1,0 +1,29 @@
+DATA: 2026-10-09 04:55 Europe/Warsaw
+BRANCH: codex/planpasika-release
+ENVIRONMENT: Windows 10 / PowerShell / Android SDK 36
+
+TEST
+Bezpieczny instalator `scripts/install-android-candidate.ps1`.
+
+CEL
+Usunąć dwa błędy ujawnione podczas rzeczywistej instalacji Xiaomi:
+1. pusty `$PSScriptRoot` w wartości domyślnego parametru przy uruchomieniu jako plik;
+2. kod 1 z `pm path` dla nieistniejącego pakietu błędnie traktowany jako awaria urządzenia.
+
+ZMIANY
+- Domyślną ścieżkę APK wylicza się w ciele skryptu z `$MyInvocation.MyCommand.Path`.
+- Najpierw wykonywana jest dokładna lista pakietów użytkownika 0.
+- `pm path` i kontrola podpisu są wykonywane tylko dla rzeczywiście zainstalowanego `com.gymtracker.pro`.
+- Brak `base.apk` dla wykrytego pakietu nadal kończy skrypt fail-closed.
+
+WERYFIKACJA
+- PowerShell AST parser: PASS.
+- Domyślna ścieżka APK: PASS (skrypt dochodzi do kontroli urządzenia bez wcześniejszego Join-Path error).
+- Nieistniejący serial: PASS fail-closed, bez próby instalacji.
+- `git diff --check`: PASS.
+
+STATUS
+PASS dla parsera i ścieżki no-device. Pełny update istniejącej aplikacji z porównaniem podpisu wymaga ponownie dostępnego ADB.
+
+CLEANUP
+Brak zmian na telefonie podczas testu poprawki.

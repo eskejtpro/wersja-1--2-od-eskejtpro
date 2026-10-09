@@ -3,11 +3,15 @@ param(
     [ValidateNotNullOrEmpty()]
     [string]$Serial,
 
-    [string]$ApkPath = (Join-Path $PSScriptRoot '..\android\app\build\outputs\apk\debug\app-debug.apk')
+    [string]$ApkPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $packageName = 'com.gymtracker.pro'
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+if ([string]::IsNullOrWhiteSpace($ApkPath)) {
+    $ApkPath = Join-Path $scriptRoot '..\android\app\build\outputs\apk\debug\app-debug.apk'
+}
 $resolvedApk = (Resolve-Path -LiteralPath $ApkPath).Path
 
 $sdkRoot = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path $env:LOCALAPPDATA 'Android\Sdk' }
@@ -37,9 +41,16 @@ if ($LASTEXITCODE -ne 0 -or -not (($connected -join "`n") -match ('(?m)^' + [reg
 }
 
 $candidateSigner = Get-SignerSha256 $resolvedApk
-$installedPaths = & $adbPath -s $Serial shell pm path $packageName
-if ($LASTEXITCODE -ne 0) { throw "Could not inspect installed package $packageName" }
-$basePath = @($installedPaths | Where-Object { $_ -match '^package:.*/base\.apk\s*$' } | Select-Object -First 1)
+$installedPackages = & $adbPath -s $Serial shell pm list packages --user 0 $packageName
+if ($LASTEXITCODE -ne 0) { throw "Could not inspect installed packages on device $Serial" }
+$isInstalled = @($installedPackages | Where-Object { $_.Trim() -eq "package:$packageName" }).Count -gt 0
+$basePath = @()
+if ($isInstalled) {
+    $installedPaths = & $adbPath -s $Serial shell pm path $packageName
+    if ($LASTEXITCODE -ne 0) { throw "Could not inspect installed package $packageName" }
+    $basePath = @($installedPaths | Where-Object { $_ -match '^package:.*/base\.apk\s*$' } | Select-Object -First 1)
+    if ($basePath.Count -eq 0) { throw "Could not locate the installed base APK for $packageName" }
+}
 
 if ($basePath.Count -gt 0) {
     $installedApkPath = $basePath[0].Trim().Substring('package:'.Length)

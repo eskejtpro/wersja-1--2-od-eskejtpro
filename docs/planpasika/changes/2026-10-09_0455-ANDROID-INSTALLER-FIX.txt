@@ -1,0 +1,16 @@
+DATA: 2026-10-09 04:55 Europe/Warsaw
+MODUŁ: Android release tooling
+
+PRZED
+- Domyślna ścieżka APK mogła zakończyć się błędem pustego `$PSScriptRoot`.
+- Świeża instalacja kończyła się `Could not inspect installed package`.
+
+PO
+- Ścieżka jest rozwiązywana stabilnie w ciele skryptu.
+- Dokładne sprawdzenie listy pakietów rozróżnia fresh install i update.
+- Update nadal wymaga zgodnego certyfikatu; skrypt nie odinstalowuje i nie czyści danych.
+
+TESTY
+- Parser PASS.
+- No-device fail-closed PASS.
+- Diff check PASS.

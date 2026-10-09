@@ -112,3 +112,8 @@ AKTUALIZACJA 2026-10-09 04:50 Europe/Warsaw:
 - Xiaomi 2406APNFAG podłączony; APK 3.0.9/309 SHA-256 `E3E064CAE4AFE33D3489069CFC0D973F8A0DA71AA8D5226248379F0B71A2340F` świeżo zainstalowany i MainActivity uruchomiona bez crasha. Pakiety innych wydań pozostawiono.
 - Nadal P0: ręcznie przejść Google login i potwierdzić token/sesję, wykonać autoryzowany Firestore zapis/odczyt oraz test na drugim kliencie. Nie traktować samego startu aplikacji jako dowodu tych funkcji.
 - Szczegóły: `runs/2026-10-09_0450-XIAOMI-INSTALL.txt`.
+
+AKTUALIZACJA 2026-10-09 04:55 Europe/Warsaw:
+- Naprawiono błąd instalatora świeżego pakietu oraz domyślnej ścieżki APK. Parser i no-device fail-closed PASS.
+- Telefon pozostał widoczny w Windows jako Xiaomi 14T, ale po zrzucie UI zniknął z `adb devices`; interaktywne E2E pozostaje BLOCKED do ponownego autoryzowania debugowania USB.
+- Raport: `runs/2026-10-09_0455-ANDROID-INSTALLER-FIX.txt`.
