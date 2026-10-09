@@ -1,0 +1,7 @@
+DATA: 2026-10-09 03:09 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT BAZOWY: ba81755
+ZMIANA: Dopisano testy uzupełniające model registry/Google UI/update oraz ponowną weryfikację konfiguracji OAuth bundle, podpisu i wyrównania APK.
+WYNIKI: registry 3/3; Google UI 3/3; update 4/4; bundle verifier, apksigner, zipalign i skan APK PASS po podaniu publicznych wartości build.
+OGRANICZENIA: Brak telefonu ADB; logowanie Google, Firestore round-trip, sync i Gemini live pozostają UNKNOWN/BLOCKED.
+PLIKI: 03-ZMIANY-HISTORIA.txt, 04-TESTY-I-WERYFIKACJA.txt oraz nowe run/change reports.

@@ -63,3 +63,4 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - Existing configured APK re-verified: `com.gymtracker.pro`, 3.0.9/309, 7,228,723 bytes, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`; credential-pattern scan PASS. Artifact timestamp 2026-10-09 02:47 local; no claim of a new APK build.
 - ADB devices list empty: install, instrumentation, startup, login, UI and real-device E2E NOT RUN.
 - Production GET health/version PASS; `google-info` still has `durableCloudStorage=false`; authenticated Firestore and Gemini E2E UNKNOWN.
+- Additional current-run gates: AI model registry 3/3, Google UI 3/3, update service 4/4; OAuth bundle verifier PASS with the public CI build values supplied to this verification session; apksigner and zipalign PASS.

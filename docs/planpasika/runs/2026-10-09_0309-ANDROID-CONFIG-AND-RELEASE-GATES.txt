@@ -1,0 +1,24 @@
+DATA: 2026-10-09 03:09 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: ba81755 (before this report)
+ENVIRONMENT: Windows 10; Node/npm, Android SDK build-tools and current configured debug APK.
+TEST: AI registry, Google UI, update service, OAuth bundle configuration, APK signature/alignment/security.
+CEL: Complete remaining release checks omitted from the broader local test command.
+KOMENDY:
+- `npm run test:ai-model-registry`
+- `npm run test:google-ui`
+- `npm run test:update`
+- `node scripts/verify-android-oauth-bundle.mjs` with the same public CI Web Client ID and Cloud Run URL configured in the session
+- `apksigner verify --print-certs app-debug.apk`
+- `zipalign -c -v 4 app-debug.apk`
+- `node scripts/verify-android-package-security.mjs`
+STATUS: PASS for local package/configuration gates; device login remains UNKNOWN.
+WYNIKI:
+- AI model registry 3/3, Google UI 3/3, update service 4/4 PASS.
+- OAuth bundle verifier PASS after setting the public build values shown in the release workflow. The initial invocation without those session variables failed closed on missing expected input; the APK build configuration itself was subsequently verified.
+- APK signature verification PASS; signer fingerprint matches the documented local debug certificate. zipalign PASS. Credential-pattern APK scan PASS.
+- Existing artifact remains 3.0.9/309, `com.gymtracker.pro`, SHA-256 `A2F4884B051960CF8A6C9C5BE924D83BDF16AFB00FD191DC481AE4F125F761FC`.
+LOG SUMMARY: No sensitive value was printed or accessed. OAuth Web Client ID and service URL are public build configuration, not client secrets. These checks do not prove Google account picker behavior or backend authentication on a phone.
+ARTIFACTS: `android/app/build/outputs/apk/debug/app-debug.apk`; this report.
+PROBLEMS: ADB has no connected device, so install/login/runtime remain blocked. Production Firestore round-trip and live Gemini generation remain unverified.
+CLEANUP: No code, Cloud service, billing, Firestore, or IAM configuration was changed by these checks.
