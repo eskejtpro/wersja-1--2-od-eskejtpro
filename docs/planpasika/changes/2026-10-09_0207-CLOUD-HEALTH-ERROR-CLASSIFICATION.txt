@@ -1,0 +1,7 @@
+DATA: 2026-10-09 02:07 Europe/Warsaw
+MODUL: backend / Cloud Run Firestore health state
+PRZED: all CloudStoreError results marked Firestore unavailable, even client-side 413/422. Session-store outage did not invalidate a historical successful round-trip.
+PO: CloudStoreError 4xx is returned without changing Firestore health; session-store 503 invalidates roundTripStatus and marks connectivity unavailable. Recovery of a single read does not revalidate durable storage.
+DLACZEGO: health and durableCloudStorage must reflect observed database behavior, not client payload errors or stale historical success.
+TESTY: targeted Firestore tests 9/9 PASS; server 28/28 PASS; cloud 40/40 PASS; lint PASS; web/server build PASS. Production test UNKNOWN until deployment and authenticated live diagnostic.
+ROLLBACK: 685db3f

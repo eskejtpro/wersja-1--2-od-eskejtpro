@@ -107,6 +107,59 @@ test('Firestore preconditions prevent two concurrent stale writes from overwriti
   assert.ok(['writer-one', 'writer-two'].includes(current.data.settings.owner));
 });
 
+test('client-side CloudStoreError does not mark Firestore unavailable', async () => {
+  const fake = fakeFirestore();
+  const store = makeStore(fake);
+  store.saveData = async () => { throw new CloudStoreError('body_too_large', 413); };
+  const { app } = createApp({
+    config: { isCloudRun: true, bindHost: '127.0.0.1', googleClientIds: ['test-client'] },
+    firestoreStore: store,
+    verifyGoogleIdToken: async () => ({ sub: 'test-subject', email: 'test@example.invalid', displayName: 'Test' }),
+  });
+  const listener = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => listener.once('listening', resolve));
+  const base = `http://127.0.0.1:${listener.address().port}`;
+  try {
+    const login = await fetch(`${base}/api/auth/google/login`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ idToken: 'signed-id-token' }),
+    });
+    assert.equal(login.status, 200);
+    const { token } = await login.json();
+    const diagnostic = await fetch(`${base}/api/diagnostics/firestore`, {
+      method: 'POST', headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(diagnostic.status, 200);
+    const response = await fetch(`${base}/api/data`, {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ schemaVersion: 1, data: data('synthetic') }),
+    });
+    assert.equal(response.status, 413);
+    assert.equal((await response.json()).error, 'body_too_large');
+    const info = await (await fetch(`${base}/api/server/google-info`)).json();
+    assert.equal(info.cloudStorage.connectivity, 'available');
+    assert.equal(info.cloudStorage.roundTripStatus, 'pass');
+    assert.equal(info.durableCloudStorage, true);
+    assert.equal(info.cloudStorage.lastError, null);
+    assert.equal((await (await fetch(`${base}/api/health`)).json()).status, 'ok');
+    fake.failRequests = true;
+    const outage = await fetch(`${base}/api/data`, { headers: { authorization: `Bearer ${token}` } });
+    assert.equal(outage.status, 503);
+    assert.equal((await outage.json()).error, 'session_store_unavailable');
+    const outageInfo = await (await fetch(`${base}/api/server/google-info`)).json();
+    assert.equal(outageInfo.cloudStorage.connectivity, 'unavailable');
+    assert.equal(outageInfo.cloudStorage.roundTripStatus, 'fail');
+    assert.equal(outageInfo.durableCloudStorage, false);
+    assert.equal((await (await fetch(`${base}/api/health`)).json()).status, 'degraded');
+    fake.failRequests = false;
+    assert.equal((await fetch(`${base}/api/data`, { headers: { authorization: `Bearer ${token}` } })).status, 404);
+    const recoveredInfo = await (await fetch(`${base}/api/server/google-info`)).json();
+    assert.equal(recoveredInfo.cloudStorage.connectivity, 'available');
+    assert.equal(recoveredInfo.durableCloudStorage, false);
+  } finally {
+    await new Promise((resolve) => listener.close(resolve));
+  }
+});
+
 test('Firestore sessions survive restart, expire, and logout deletes only the selected session', async () => {
   const fake = fakeFirestore();
   const now = Date.UTC(2026, 9, 2);

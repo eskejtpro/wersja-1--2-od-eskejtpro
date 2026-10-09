@@ -420,6 +420,9 @@ export function createApp(options: AppOptions = {}) {
       if (config.isCloudRun) recordCloudStoreSuccess();
       return res.status(409).json({ error: 'conflict', reason: error.reason, revision: error.revision, contentHash: error.contentHash });
     }
+    if (error instanceof CloudStoreError && error.status >= 400 && error.status < 500) {
+      return res.status(error.status).json({ error: error.code });
+    }
     if (config.isCloudRun) {
       cloudStorageState.connectivity = 'unavailable';
       cloudStorageState.roundTripStatus = 'fail';
@@ -480,6 +483,7 @@ export function createApp(options: AppOptions = {}) {
     } catch {
       if (config.isCloudRun) {
         cloudStorageState.connectivity = 'unavailable';
+        cloudStorageState.roundTripStatus = 'fail';
         cloudStorageState.lastError = 'session_store_unavailable';
       }
       return res.status(503).json({ error: 'session_store_unavailable' });

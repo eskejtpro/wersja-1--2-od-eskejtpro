@@ -2,6 +2,7 @@ Projekt: gen-lang-client-0836043899. Numer projektu: 761415655121. Region: europ
 Cloud Run: wersja-1--2-od-eskejtpro-git.
 Firestore: baza (default), typ Firestore Native, lokalizacja europe-central2.
 Runtime service account ma roles/datastore.user według wcześniejszego audytu.
+Lokalna poprawka 2026-10-09: błąd CloudStoreError z kodem HTTP 4xx (np. 413 `body_too_large`) oznacza błąd żądania i nie cofa stanu dostępności Firestore. Awaria odczytu magazynu sesji (503) oznacza connectivity=unavailable i unieważnia wcześniejszy roundTripStatus=pass; po powrocie samego odczytu trwałość pozostaje niepotwierdzona aż do nowego pełnego testu diagnostycznego. Ta poprawka istnieje tylko na `codex/planpasika-release`, nie w aktywnej rewizji Cloud Run.
 
 Stan live 2026-10-08:
 - Konsola rozliczeń potwierdza, że projekt `gen-lang-client-0836043899` jest powiązany z kontem rozliczeniowym `01C2B5-858010-1DCF54`; konto jest typu płatności po użyciu. Nie zapisujemy kwot, danych karty ani historii transakcji w repozytorium.

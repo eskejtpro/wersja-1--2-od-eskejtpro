@@ -2,6 +2,7 @@ Lokalne testy diagnostyczne Firestore: 40/40 PASS, w tym write/read/update/hash/
 Nie jest to dowód live Cloud Run. Live procedura znajduje się w runs/2026-10-06_0215-CLOUD-LIVE-RUNBOOK.txt.
 Nie wykonywać ręcznego kasowania kolekcji użytkowników.
 Live status: UNVERIFIED.
+2026-10-09 local regression: client HTTP 413 after successful synthetic diagnostic leaves connectivity=available, durableCloudStorage=true and /api/health=ok; a subsequent simulated session-store 503 sets connectivity=unavailable, roundTripStatus=fail, durableCloudStorage=false and /api/health=degraded. After simulated recovery, successful read restores connectivity but not durableCloudStorage. Server tests 28/28, Cloud tests 40/40, lint and web/server build PASS. This is fake-transport evidence, not live Firestore proof.
 2026-10-08 22:34 Europe/Warsaw: read-only GET `/api/health`, `/api/version`, `/api/server/google-info` returned HTTP 200; deployed version 3.0.9. `durableCloudStorage:false`; no authenticated Firestore round-trip was performed in this check. Persistent storage and client sync remain UNVERIFIED.
 
 2026-10-08 22:35 Europe/Warsaw: Google Cloud Console showed project `gen-lang-client-0836043899` linked to billing account `01C2B5-858010-1DCF54`. Cloud Run usage billing and Gemini AI Studio prepayment are separate. No billing, IAM, service, or payment settings were changed. Do not store transaction amounts or payment instrument details in repository documentation.
