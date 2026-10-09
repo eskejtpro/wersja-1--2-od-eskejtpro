@@ -16,6 +16,7 @@ STATUS:
 - health/version: PASS (HTTP 200, status ok, version 3.0.9)
 - server google-info: PASS jako status procesu; trwałość UNKNOWN (`roundTripStatus=not_run`, `durableCloudStorage=false`)
 - telefon ADB: BLOCKED (brak urządzeń)
+- GitHub Actions release gates: PASS (run `37926486642`; `node-quality` success, `android-debug` success; commit `0048b636d8938eb966dd852c98e71e3fe307607e`)
 
 WYNIKI:
 Serwer działa prawidłowo i nie raportuje już `degraded`. Konfiguracja Firestore istnieje, lecz pełny syntetyczny write/read/update/conflict/cleanup nie został uruchomiony bez aktywnej sesji aplikacji. Harmonogram kopii jest skonfigurowany, ale nie ma jeszcze widocznego snapshotu. Brak urządzenia uniemożliwia rzetelny login, Firestore, AI, UI i sync E2E.
