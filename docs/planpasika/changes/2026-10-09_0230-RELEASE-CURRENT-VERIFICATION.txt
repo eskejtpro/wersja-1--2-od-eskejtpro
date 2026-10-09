@@ -1,0 +1,21 @@
+DATA: 2026-10-09 02:30 Europe/Warsaw
+MODUL: release verification / dokumentacja
+BRANCH: codex/planpasika-release
+COMMIT BAZOWY: 70e4451
+
+PRZED:
+Raporty bieżące nie odzwierciedlały świeżego przebiegu testów i nowego hasha APK po kontynuacji.
+
+PO:
+- Odświeżono wyniki testów lokalnych, builda i publicznych GET Cloud Run.
+- Zapisano ograniczenia: brak ADB device, brak gcloud/ADC; live Firestore round-trip nadal not_run.
+- Dodano run report i aktualizację changelog; nie zmieniano kodu produkcyjnego ani konfiguracji Cloud.
+
+TESTY:
+app 112/112; server 28/28; cloud/sync 40/40; AI transport 6/6; Google UI 3/3; model registry 3/3; update 4/4; Cloud Ops 7/7.
+Lint, web/server build, Ops build, Gradle testDebugUnitTest/assembleDebug/assembleDebugAndroidTest: PASS.
+Cloud GET health/version/google-info: HTTP 200; Firestore round-trip: NOT RUN.
+APK: com.gymtracker.pro 3.0.9/309, SHA-256 B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1.
+
+ROLLBACK:
+Dokumentacja-only commit; revert tego commitu usuwa wyłącznie ten wpis.
