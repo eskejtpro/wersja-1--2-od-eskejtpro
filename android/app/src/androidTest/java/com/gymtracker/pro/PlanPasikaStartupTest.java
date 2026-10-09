@@ -8,8 +8,10 @@ import android.content.Context;
 import android.content.Intent;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import ee.forgr.capacitor.social.login.ModifiedMainActivityForSocialLoginPlugin;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.junit.Assert.assertTrue;
 
 /** Smoke test for the actual package and Android launcher activity. */
 @RunWith(AndroidJUnit4.class)
@@ -19,6 +21,8 @@ public class PlanPasikaStartupTest {
     public void launchesTheRealApplicationActivity() throws Exception {
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertEquals("com.gymtracker.pro", appContext.getPackageName());
+        assertTrue("Google sign-in activity must implement the plugin callback contract",
+                ModifiedMainActivityForSocialLoginPlugin.class.isAssignableFrom(MainActivity.class));
 
         Intent launchIntent = appContext.getPackageManager()
                 .getLaunchIntentForPackage(appContext.getPackageName());
