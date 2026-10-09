@@ -80,3 +80,9 @@ Fresh local debug APK: 3.0.9/309, 6,723,501 bytes, SHA-256 307874295CDF95441FC98
 - Firestore schedule: daily, retention 604800s (7 dni), utworzenie i odczyt potwierdzone. To nie jest dowód wykonania pierwszej kopii ani danych aplikacji.
 - ADB nie wykrywa urządzeń; instalacja, runtime, logowanie, UI i multi-device E2E nadal UNKNOWN/BLOCKED.
 - Raport szczegółowy: `runs/2026-10-09_0411-CONTINUATION-CLOUD-IMPORT-APK.txt`.
+- 2026-10-09 04:35 Europe/Warsaw recheck: lint PASS; app 112/112; server 28/28; cloud/sync 40/40; AI transport 6/6; model registry 3/3; Cloud Ops 7/7.
+- Web/server build, Capacitor sync, Gradle `testDebugUnitTest`, `assembleDebug`, `assembleDebugAndroidTest` PASS; unit-test task UP-TO-DATE, urządzeniowy test nie został uruchomiony.
+- APK 3.0.9/309, 6,680,461 B, SHA-256 `E3E064CAE4AFE33D3489069CFC0D973F8A0DA71AA8D5226248379F0B71A2340F`; podpis debug sprawdzony; skan APK 3/3.
+- Cloud Run `/api/health`, `/api/version`, `/api/server/google-info`: HTTP 200; wersja 3.0.9, health `ok`.
+- ADB puste. Instalacja, runtime, Google OAuth, UI/AI E2E i sync dwóch klientów BLOCKED/UNKNOWN.
+- Raport: `runs/2026-10-09_0435-ANDROID-AND-CLOUD-RECHECK.txt`.

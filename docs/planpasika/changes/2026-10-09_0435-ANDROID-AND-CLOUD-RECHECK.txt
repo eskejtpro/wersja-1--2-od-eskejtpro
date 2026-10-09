@@ -1,0 +1,15 @@
+DATA: 2026-10-09 04:35 Europe/Warsaw
+BRANCH: codex/planpasika-release
+
+ZAKRES
+Build i kontrola release; bez zmian w kodzie produkcyjnym.
+
+ZMIANY
+- Dodano run report `runs/2026-10-09_0435-ANDROID-AND-CLOUD-RECHECK.txt`.
+- Dodano wpis rechecku do 04-TESTY-I-WERYFIKACJA.txt.
+- Nie zmieniano Cloud Run, IAM, sekretów, Firestore ani rozliczeń.
+
+WERYFIKACJA
+- Testy app/server/cloud/AI/Ops oraz lint: PASS (szczegóły w run report).
+- Android debug i app-specific AndroidTest APK: BUILD SUCCESSFUL.
+- ADB bez urządzeń; instalacja i runtime nieuruchomione.

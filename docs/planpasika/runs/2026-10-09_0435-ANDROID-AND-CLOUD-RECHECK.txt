@@ -1,0 +1,41 @@
+DATA: 2026-10-09 04:35 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 8e8295afbdf6863368571b2190c442a6e0591732 (przed raportem)
+ENVIRONMENT: Windows, Node/npm, Android SDK/Gradle; Cloud Run public GET
+
+CEL
+Ponowna weryfikacja release, build aktualnego debug APK i dostępności urządzenia.
+
+KOMENDY / TESTY
+- npm run lint: PASS.
+- npm test: PASS, 112/112.
+- npm run test:server: PASS, 28/28.
+- npm run test:cloud: PASS, 40/40.
+- npm run test:ai-transport: PASS, 6/6.
+- npm run test:ai-model-registry: PASS, 3/3.
+- npm run test:ops-agent: PASS, 7/7.
+- npm run build: PASS; Vite ostrzega o dużym chunku (~1.66 MB).
+- npx cap sync android: PASS.
+- Gradle :app:testDebugUnitTest: BUILD SUCCESSFUL (UP-TO-DATE; test runtime nie uruchomiono).
+- Gradle :app:assembleDebug :app:assembleDebugAndroidTest: BUILD SUCCESSFUL.
+- node --test tests/android-package-security.test.mjs: PASS, 3/3.
+- apksigner verify --print-certs: PASS.
+- git diff --check: PASS.
+
+WYNIKI / ARTIFACTS
+- APK debug: android/app/build/outputs/apk/debug/app-debug.apk.
+- 6,680,461 bajtów; SHA-256 E3E064CAE4AFE33D3489069CFC0D973F8A0DA71AA8D5226248379F0B71A2340F.
+- aapt: com.gymtracker.pro, 3.0.9/309, minSdk 24, targetSdk 36.
+- Podpis debug; cert SHA-256 7de75a064e921cbca68df2febab4251514ad4365084a10c1af0bbd0166e01f1c.
+- Cloud Run GET /api/health, /api/version, /api/server/google-info: HTTP 200; backend 3.0.9, health `ok`.
+- ADB devices -l: lista pusta. APK nie instalowano i nie usuwano danych.
+
+STATUS / PROBLEMS
+- Lokalne testy i build: PASS.
+- Cloud API dostępność: PASS; nie jest to dowód GymData Firestore write/read.
+- Urządzeniowy startup, OAuth, UI, AI i Android→Cloud→Android sync: BLOCKED/UNKNOWN (brak telefonu w ADB i zalogowanej sesji testowej).
+- Pierwszy backup snapshot i restore: UNKNOWN; stan harmonogramu w raporcie `2026-10-09_1600-CLOUD-PREPAYMENT-FOLLOWUP.txt`.
+- Nie zmieniano billing/IAM/secrets ani nie wdrażano backendu.
+
+CLEANUP
+- Bez zmian źródeł; artefakt pozostaje lokalnym debug APK.
