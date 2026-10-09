@@ -1,0 +1,32 @@
+PlanPasika / GymTracker Pro — ograniczenie mirroru Preferences do native Capacitor
+
+BEFORE
+- Testy Node wypisywały `window is not defined` z `@capacitor/preferences` podczas zapisu partycji Room.
+
+ROOT CAUSE
+- `RoomStorageDriver` uruchamiał best-effort mirror Preferences wszędzie, gdy tylko istniał `window.localStorage`; testowy WebView nie był natywną platformą Capacitor.
+
+CHANGE
+- Mirror `Preferences.set/remove` działa teraz wyłącznie, gdy `window.Capacitor.isNativePlatform()` zwraca true.
+- `localStorage` pozostaje źródłem autorytatywnym i zachowanie Androida nie zmienia się.
+
+FILES
+- `src/data/db/storage/RoomStorageDriver.ts`
+
+TESTS
+- TypeScript lint: PASS.
+- Room database tests: PASS, 5/5.
+- App regression: PASS, 115/115.
+- Web/server build: PASS.
+- `git diff --check`: PASS.
+- `QuotaExceededError` widoczny w teście jest celowym scenariuszem testującym fail-closed przy pełnym localStorage.
+
+DEVICE/CLOUD
+- ADB: niewykonane.
+- Cloud: bez zmian.
+
+RESULT
+- Testy nie próbują już wywoływać natywnego pluginu w środowisku Node/web; mirror pozostaje aktywny wyłącznie na native Capacitor.
+
+FOLLOW-UP
+- Po ADB potwierdzić, że Android nadal zapisuje mirror Preferences podczas normalnego zapisu.

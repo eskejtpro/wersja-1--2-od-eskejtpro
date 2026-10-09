@@ -15,6 +15,9 @@ function createMockLocalStorage() {
   };
 }
 
+// The Node harness is not a native Capacitor runtime; Preferences must not be
+// invoked just because localStorage is available.
+
 const mockLocalStorage = createMockLocalStorage();
 
 function loadTsModule(filePath, customContext = {}) {

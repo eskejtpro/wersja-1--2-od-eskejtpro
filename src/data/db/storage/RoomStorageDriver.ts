@@ -35,6 +35,14 @@ export class RoomStorageDriver {
   private inMemoryCache: Map<string, unknown> = new Map();
   private isLoaded = false;
 
+  private shouldMirrorPreferences(): boolean {
+    if (typeof window === 'undefined') return false;
+    const capacitor = (window as Window & {
+      Capacitor?: { isNativePlatform?: () => boolean };
+    }).Capacitor;
+    return capacitor?.isNativePlatform?.() === true;
+  }
+
   private getTableKey(table: RoomTableName): string {
     return `${ROOM_TABLE_PREFIX}${table}`;
   }
@@ -88,12 +96,14 @@ export class RoomStorageDriver {
       this.inMemoryCache.set(key, data);
 
       // Android Preferences is an asynchronous mirror only, not the authoritative store.
-      try {
-        void Preferences.set({ key, value: serialized }).catch((error) => {
+      if (this.shouldMirrorPreferences()) {
+        try {
+          void Preferences.set({ key, value: serialized }).catch((error) => {
+            console.warn(`[RoomStorageDriver] Błąd kopii Preferences dla ${table}:`, error);
+          });
+        } catch (error) {
           console.warn(`[RoomStorageDriver] Błąd kopii Preferences dla ${table}:`, error);
-        });
-      } catch (error) {
-        console.warn(`[RoomStorageDriver] Błąd kopii Preferences dla ${table}:`, error);
+        }
       }
       return;
     }
@@ -149,7 +159,7 @@ export class RoomStorageDriver {
       try {
         if (typeof window !== 'undefined' && window.localStorage) {
           window.localStorage.removeItem(key);
-          Preferences.remove({ key }).catch(() => {});
+          if (this.shouldMirrorPreferences()) Preferences.remove({ key }).catch(() => {});
         }
       } catch {}
     });
