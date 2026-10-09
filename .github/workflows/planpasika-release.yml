@@ -59,12 +59,13 @@ jobs:
       - run: npm run build
       - run: npx cap sync android
       - run: node scripts/verify-android-oauth-bundle.mjs
+      - run: node --test tests/android-home-widget.test.cjs
       - uses: gradle/actions/setup-gradle@v4
       - run: bash android/gradlew -p android :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
       - run: node scripts/verify-android-package-security.mjs
       - uses: actions/upload-artifact@v4
         with:
-          name: ci-test-only-android-debug-ephemeral-signature-${{ github.sha }}
+          name: gymtracker-pro-android-debug-${{ github.sha }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
