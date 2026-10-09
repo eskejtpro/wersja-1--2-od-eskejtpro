@@ -11,3 +11,12 @@ Live status: UNVERIFIED.
 
 CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f6123e36b7` completed successfully; `node-quality` and `android-debug` both passed. This is build/test evidence, not production deployment or physical-device E2E.
 2026-10-08 22:49 Europe/Warsaw: follow-up run `37841574567` for commit `9aa5e21edd24bf1bb00c304892565dc2312905f7`: `node-quality` and `android-debug` both completed successfully. Latest local gates: TypeScript lint PASS; AI model registry 2/2; cloud/Firestore 40/40; AI transport 6/6. Production Firestore round-trip remains unverified.
+
+2026-10-09 02:30 Europe/Warsaw — aktualny odczyt po informacji użytkownika o wykonanej przedpłacie:
+- Produkcyjne GET `/api/health` i `/api/server/google-info`: HTTP 200; backend 3.0.9/status ok/online, `cloudStoreConfigured:true`, `durableCloudStorage:false`, `roundTripStatus:not_run`, `activeUser:null`.
+- To potwierdza proces i konfigurację, nie rzeczywisty Firestore write/read. Nie wykonano żadnej mutacji w chmurze.
+- `adb devices -l`: pusta lista; brak aktualnej instalacji i E2E telefonu.
+- Checkout wydaniowy: `codex/planpasika-release`, bazowy commit 70e4451. Świeże testy aplikacji 112/112, serwera 28/28, cloud/sync 40/40, AI transport 6/6, Google UI 3/3, rejestru modeli 3/3, update 4/4, Ops 7/7; lint, web/server i Ops build PASS.
+- Gradle `testDebugUnitTest`, `assembleDebug`, `assembleDebugAndroidTest`: BUILD SUCCESSFUL (42 s; zadania w większości UP-TO-DATE). APK 3.0.9/309, `com.gymtracker.pro`, SHA-256 `B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1`.
+- Brak `gcloud` i ADC w tej sesji Windows; przedpłata/saldo/billing nie odczytywane ponownie.
+- Wniosek: nadal NOT READY do potwierdzenia trwałości. Wymagane zalogowanie w aplikacji i pełny test Firestore write/read/update/conflict/cleanup.

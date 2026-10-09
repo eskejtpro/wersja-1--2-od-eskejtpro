@@ -1,0 +1,35 @@
+DATA: 2026-10-09 02:30 Europe/Warsaw
+CHECKOUT: C:\Users\Lucyna\.codex\worktrees\planpasika-release\wersja-1--2-od-eskejtpro
+BRANCH/BASE: codex/planpasika-release @ 70e4451
+
+CEL
+Kontynuacja weryfikacji po informacji użytkownika o Google Cloud przedpłacie. Nie wykonywano zmian billingowych ani produkcyjnych.
+
+LIVE CLOUD (GET ONLY)
+- `/api/health`: HTTP 200, `status=ok`, app GymTracker Pro, version 3.0.9.
+- `/api/server/google-info`: HTTP 200, `status=online`, `cloudStoreConfigured=true`, `durableCloudStorage=false`, `cloudStorage.roundTripStatus=not_run`, `activeUser=null`.
+- Wniosek: proces i konfiguracja odpowiadają. Firestore nie przeszedł w tej sesji uwierzytelnionego round-trip; wynik nie jest dowodem awarii ani sukcesu zapisu.
+- `gcloud` oraz Google Cloud ADC nie są dostępne w tej sesji Windows. Otwarcie strony billing nie udostępniało automatyzacji przeglądarki do odczytu statusu konta. Nie zmieniano rozliczeń, IAM, sekretów, Cloud Run ani bazy.
+
+LOKALNE TESTY
+- `npm test`: 112/112 PASS.
+- TypeScript lint: PASS.
+- `npm run test:server`: 28/28 PASS.
+- `npm run test:cloud`: 40/40 PASS (transport symulowany; nie jest to test live).
+- `npm run test:ai-transport`: 6/6 PASS.
+- `npm run test:google-ui`: 3/3 PASS.
+- `npm run test:ai-model-registry`: 3/3 PASS.
+- `npm run test:update`: 4/4 PASS.
+- `npm run test:ops-agent`: 7/7 PASS; `npm run build:ops-agent`: PASS.
+- `npm run build`: PASS; znane ostrzeżenie Vite o dużym chunku (~1.66 MB).
+- Gradle `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`: BUILD SUCCESSFUL.
+- Debug APK: `com.gymtracker.pro`, 3.0.9 / 309, SHA-256 `B040859DC4ECC5762CC3219E7A0F52B0D333A22D1DBF4AFE511B5EB4F5FA1CF1`.
+
+URZADZENIE
+- `adb devices -l`: brak urządzeń. Nie wykonano instalacji, Google login, UI, Firestore live diagnostic, sync ani AI E2E.
+
+VERDICT
+Lokalne testy/build PASS. Produkcyjna dostępność GET PASS. Uwierzytelniony Firestore, synchronizacja danych i fizyczne E2E UNKNOWN/BLOCKED; cel końcowy pozostaje NOT READY.
+
+NASTĘPNY KROK
+Podłączyć telefon, autoryzować debugowanie USB, uruchomić aplikację, zalogować konto Google i wybrać Ustawienia -> Serwer Google & Logowanie -> Treningi w chmurze -> Diagnostyka trwałego zapisu Firestore -> Uruchom test Firestore. Odczytać wszystkie fazy i potwierdzić cleanup. Następnie zweryfikować zachowanie po restarcie oraz synchronizację na drugim kliencie.
