@@ -43,8 +43,13 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
 
         String script = "window.dispatchEvent(new CustomEvent('gymtracker-widget-navigation', {detail: {destination: '"
                 + destination + "'}}));";
+        // A cold WebView may finish loading React after the first lifecycle callback.
+        // Repeating the idempotent navigation event makes widget launches reliable
+        // without storing a second navigation state or touching user data.
         getBridge().getWebView().postDelayed(() ->
                 getBridge().getWebView().evaluateJavascript(script, null), 600);
+        getBridge().getWebView().postDelayed(() ->
+                getBridge().getWebView().evaluateJavascript(script, null), 1600);
     }
 
     @Override
