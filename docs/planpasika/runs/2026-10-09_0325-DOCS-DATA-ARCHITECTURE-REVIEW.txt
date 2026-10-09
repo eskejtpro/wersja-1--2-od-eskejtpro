@@ -1,0 +1,16 @@
+DATA: 2026-10-09 03:25 Europe/Warsaw
+BRANCH: codex/planpasika-release
+COMMIT: 6088f9d (przed aktualizacją dokumentacji)
+ENVIRONMENT: lokalny release worktree
+TEST: weryfikacja dokumentacji danych, architektury, backupu i odtworzenia
+CEL: opisać faktyczną ścieżkę danych i ograniczenia tak, by nie mylić adaptera TS z natywną bazą Android Room.
+ŹRÓDŁA: `src/data/db/RoomDatabase.ts`, `src/data/db/storage/RoomStorageDriver.ts`, `src/data/db/AppDatabase.ts`, `src/App.tsx`, `server/data/firestoreStore.ts`, `src/components/CloudTrainingSyncPanel.tsx`.
+WYNIKI:
+- RoomDatabase.ts nazywa się TypeScript local-data adapter i stwierdza, że Kotlin Room sources nie są wired into Capacitor module.
+- RoomStorageDriver potwierdza partycje JSON w WebView localStorage oraz asynchroniczny, best-effort Capacitor Preferences mirror.
+- Cloud Firestore, revision/hash i chroniona diagnostyka są oddzielone od lokalnego magazynu; prawdziwy produkcyjny round-trip nadal UNKNOWN.
+- Rozbudowano pliki 01, 02, 06 i 14. Architektura zawiera wymagane siedem Mermaid diagrams.
+- `git diff --check`: PASS. Kod i dane aplikacji niezmienione; brak testów kodu, bo to zmiana dokumentacyjna.
+STATUS: PASS (documentation/source consistency review)
+PROBLEMS: device E2E, authenticated Firestore round-trip, backup/restore runtime i multi-device sync nadal UNKNOWN/BLOCKED.
+CLEANUP: brak.

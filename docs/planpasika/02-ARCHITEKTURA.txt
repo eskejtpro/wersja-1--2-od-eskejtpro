@@ -1,13 +1,110 @@
-SYSTEM:
+ARCHITEKTURA SYSTEMU
+
+Stan faktyczny: klient Capacitor/React. Aktywnym magazynem urządzenia jest localStorage WebView z partycjami JSON; Capacitor Preferences jest asynchronicznym mirror best-effort. Kotlinowe źródła Android Room istnieją, ale nie są podłączone do tej ścieżki. Backend Express/TypeScript na Cloud Run; Firestore Native jest magazynem serwerowym.
+
+1. CAŁY SYSTEM
 ```mermaid
 flowchart LR
-  A[Android Capacitor] --> B[ApiClient/Auth/Sync]
-  B --> C[Cloud Run API]
-  C --> D[Google OIDC]
-  C --> E[Firestore]
-  C --> F[Gemini server-side]
-  G[Cloud Ops read-only] --> C
+  UI[React UI] --> Repo[Repository / DAO-shaped TS]
+  Repo --> Local[WebView localStorage JSON partitions]
+  Local -. best-effort mirror .-> Pref[Capacitor Preferences]
+  UI --> Auth[Capacitor Google Sign-In]
+  UI --> Sync[ApiClient / SyncEngine]
+  Auth -->|Google ID token| API[Cloud Run Express API]
+  Sync -->|Bearer session| API
+  API --> FS[(Firestore Native)]
+  API --> Secret[Secret Manager]
+  Secret --> Gemini[Gemini API]
+  Ops[Private Cloud Ops read-only] -->|metadata / logs / metrics| API
+  Ops -. never reads GymData .-> FS
 ```
-Lokalna ścieżka: UI -> Repository/adapter -> lokalne dane -> SyncEngine.
-Chmurowa ścieżka: Android -> Google ID token -> sesja Bearer -> Cloud Run -> Firestore.
-Cloud Ops nie zapisuje GymData i nie wykonuje auto-fix.
+
+2. ANDROID → BACKEND → FIRESTORE
+```mermaid
+sequenceDiagram
+  participant A as Android UI
+  participant C as ApiClient/Sync
+  participant R as Cloud Run
+  participant F as Firestore
+  A->>C: GymData + expected revision/hash
+  C->>R: HTTPS + Bearer session
+  R->>F: user-scoped read/conditional write
+  F-->>R: document/revision/updateTime
+  R-->>C: state or 409 conflict
+  C-->>A: success/conflict result
+```
+
+3. ANDROID → GOOGLE AUTH → BACKEND
+```mermaid
+sequenceDiagram
+  participant A as Android
+  participant G as Google Authorization
+  participant R as Cloud Run
+  A->>G: native sign-in request
+  G-->>A: signed Google ID token
+  A->>R: POST /api/auth/google/login
+  R->>R: verify signature, issuer, audience, expiry
+  R-->>A: application Bearer session
+  A->>R: protected request with session
+```
+
+4. ANDROID → AI → GEMINI
+```mermaid
+sequenceDiagram
+  participant A as Android UI
+  participant R as Cloud Run
+  participant S as Secret Manager
+  participant G as Gemini API
+  A->>R: authenticated AI endpoint + synthetic prompt
+  R->>S: runtime reads server secret
+  S-->>R: API key (never sent to client)
+  R->>G: model request from server registry
+  G-->>R: generated response
+  R-->>A: response/error without secret
+```
+
+5. CLOUD OPS — ODDZIELNY ODCZYT
+```mermaid
+flowchart LR
+  Operator -->|IAM invoker| Ops[Private Cloud Ops]
+  Ops --> RunMeta[Cloud Run metadata]
+  Ops --> Logs[Cloud Logging summaries]
+  Ops --> Metrics[Cloud Monitoring]
+  Ops --> FsMeta[Firestore metadata only]
+  Ops -. no entity read/write .-> GymData[(GymData documents)]
+```
+
+6. SYNC I KONFLIKT
+```mermaid
+sequenceDiagram
+  participant A as Client A
+  participant R as API
+  participant F as Firestore
+  participant B as Client B
+  A->>R: save(data, expectedRevision, expectedHash)
+  R->>F: conditional commit
+  F-->>R: new revision + contentHash
+  R-->>A: 201 saved state
+  B->>R: fetch current state
+  R->>F: read B's verified principal document
+  F-->>B: current revision/hash/data
+  Note over A,B: stale writer gets 409; refetch before retry
+```
+
+7. BACKUP / RESTORE (CLIENT)
+```mermaid
+flowchart LR
+  AppState --> Export[JSON export / auto-backup]
+  Export --> File[User-controlled downloaded file]
+  File --> Validate[Validate/preview import]
+  Validate --> LocalStore[localStorage partitions]
+  LocalStore --> Verify[Reload and compare data]
+  Cloud[Authenticated Cloud copy] -. separate, not proven by local export .-> Firestore[(Firestore)]
+```
+
+ZASADY:
+- Google ID token służy tylko do uwierzytelnienia; chronione API używa sesji Bearer backendu.
+- Dane Firestore muszą być przypisane do principalId po weryfikacji podpisu tokenu; email przesłany przez klienta nie jest tożsamością.
+- `revision` i `contentHash` chronią przed cichym nadpisaniem; HTTP 409 to konflikt, nie dowód awarii ani trwałości.
+- Cloud Ops ma oddzielną usługę, prywatny dostęp IAM i tylko metadane/logi/metryki. Nie czyta dokumentów GymData, nie zapisuje, nie wdraża i nie naprawia backendu.
+- Diagramy opisują zaprojektowany przepływ. Każdy etap oznaczony jako nieweryfikowany wymaga runtime E2E; same diagramy/testy mocków nie są dowodem działania produkcyjnego.

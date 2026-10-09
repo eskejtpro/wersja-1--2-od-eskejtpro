@@ -1,0 +1,13 @@
+DATA: 2026-10-09 03:25 Europe/Warsaw
+MODULE: dokumentacja architektury i danych
+COMMIT: pending
+
+PRZED: pliki 01, 02, 06 i 14 były skrótowe; nie przedstawiały dostatecznie jasno aktywnego magazynu WebView i limitów testów.
+
+PO:
+- Udokumentowano, że aktywny klient zapisuje JSON partitions przez TypeScript adapter do localStorage; Capacitor Preferences jest tylko best-effort mirror.
+- Wprost zapisano, że Kotlin Room/SQLite nie jest podłączony do aktywnego modułu Capacitor.
+- Rozbudowano dokument przepływów o system, Firestore, Google Auth, AI, read-only Cloud Ops, sync/conflict i backup/restore (7 Mermaid diagrams).
+- Uzupełniono ograniczenia backupu lokalnego, procedurę odtworzenia i warunki prawdziwego PASS dla produkcyjnej synchronizacji.
+
+WERYFIKACJA: zgodność z kodem źródłowym i `git diff --check` PASS. Brak zmian runtime.

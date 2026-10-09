@@ -1,4 +1,24 @@
-Lokalna aplikacja używa adapterów danych i warstwy DAO-shaped; testy nie dowodzą natywnego Room SQLite dla całej ścieżki.
-Backend przechowuje sesje i GymData w Firestore, izolując dane przez zweryfikowany principal.
-Testy lokalne potwierdzają revision/contentHash, konflikty, backup/restore i process-death journal.
-Live phone -> Cloud Run -> Firestore -> phone: UNVERIFIED.
+FAKTYCZNY MAGAZYN KLIENTA
+- `src/data/db/RoomDatabase.ts` jawnie opisuje się jako TypeScript adapter; to nie jest Android Room/SQLite.
+- DAO używają `RoomStorageDriver`, który dzieli obiekty na logiczne partycje JSON pod prefiksem `room_tbl_` w WebView `localStorage`.
+- Android `@capacitor/preferences` otrzymuje asynchroniczną kopię best-effort. Odczyt źródłowy pozostaje z localStorage; nie ma gwarancji transakcyjnego rollbacku między partycjami.
+- `src/data/db/android/AppDatabase.kt` i Kotlinowe encje/DAO istnieją, lecz nie są podłączone do aktywnego modułu Capacitor. Nie przedstawiać ich jako używanej bazy runtime.
+- Przy migracji istnieje legacy full-JSON oraz klucz kopii przed migracją. Nie czyścić tych kluczy bez eksportu i testu odtworzenia.
+
+BACKUP I OGRANICZENIA
+- Aplikacja tworzy JSON backupy lokalne i udostępnia pobranie/import w ustawieniach. Są zależne od dostępności danych WebView i urządzenia; odinstalowanie/wyczyszczenie danych aplikacji może je usunąć.
+- Capacitor Preferences mirror nie jest osobnym, zweryfikowanym mechanizmem recovery.
+- Testy repozytorium sprawdzają logikę i symulowane adaptery; nie dowodzą natywnego SQLite, procesu Androida ani importu na urządzeniu.
+- Nie uznawać lokalnego backupu za kopię chmurową. Przed migracją/aktualizacją danych testować export → hash → kontrolowana zmiana → import → restart → porównanie.
+
+FIRESTORE I SYNC
+- Backend zapisuje dokumenty danych i sesje w Firestore Native `(default)`, projekt-scoped i przypisane do `principalId` po weryfikacji Google ID tokenu.
+- Magazyn danych przenosi `schemaVersion`, `revision`, `contentHash`, `updatedAt`, `data`; atomowa precondition chroni przed overwrite stale state. Konflikt to HTTP 409.
+- Chronione `POST /api/diagnostics/firestore` uruchamia dedykowany syntetyczny self-test: write, read, update, revision/hash, oczekiwany stale conflict, ponowny read, cleanup. Test nie powinien dotykać dokumentów treningowych.
+- Cloud Ops odczytuje wyłącznie metadane Firestore i nigdy nie dowodzi trwałości GymData.
+
+STATUS LIVE 2026-10-09
+Backend 3.0.9, rewizja `00022-xxt`, health=ok. Firestore Native `(default)` w `europe-central2`. Nie wykonano authenticated write/read/update/conflict/cleanup z prawdziwej sesji aplikacji; nie potwierdzono pobrania na drugim urządzeniu. Zapis chmurowy i multi-device sync = UNKNOWN, nie PASS.
+
+TESTY I DOCELOWA BRAMKA
+Logika revision/hash, konfliktów i diagnostyki ma lokalne testy z fake transportem. Pełny PASS wymaga: zalogowana aplikacja → synthetic Firestore self-test z cleanup → zapis testowego GymData → restart aplikacji → odczyt w drugiej sesji/urządzeniu → zgodny revision/hash → offline/online i konflikt bez utraty danych.

@@ -1,5 +1,22 @@
-PlanPasika / GymTracker Pro to aplikacja Android oparta o Capacitor i frontend webowy.
-Klient przechowuje dane lokalnie, może uwierzytelnić użytkownika Google i komunikuje się z backendem Cloud Run.
-Backend obsługuje sesję, GymData, synchronizację, diagnostykę Firestore i funkcje AI.
-Wersja robocza zweryfikowanego APK: 3.0.9, versionCode 309.
-Stan: lokalne testy PASS; live Cloud Run i pełne E2E pozostają do potwierdzenia.
+PLANPASIKA / GYMTRACKER PRO — OPIS PROJEKTU
+
+Produkt: aplikacja treningowa na Androida i web, rozwijana w istniejącym repozytorium. Wydanie integracyjne: 3.0.9, Android versionCode 309, package `com.gymtracker.pro`. Główny klient to TypeScript/React/Vite opakowany przez Capacitor; backend to Node.js/Express/TypeScript na Google Cloud Run.
+
+FUNKCJE I MODUŁY
+- Trening: plany, tygodnie, dni, ćwiczenia, serie, aktywna sesja i historia.
+- Postęp: masa ciała, obwody, pomiary, statystyki i kalendarz.
+- Dane lokalne: adapter repozytoriów/DAO zapisuje partycje JSON w WebView localStorage; Capacitor Preferences jest tylko kopią best-effort. Kotlinowe pliki Room istnieją, ale nie są podłączonym magazynem aktywnego klienta. Nie nazywać obecnej ścieżki natywnym Room/SQLite ani transakcyjnym backupem.
+- Konto i chmura: Google Sign-In po stronie Androida, wymiana Google ID tokenu na sesję Bearer backendu, dane przypisane do zweryfikowanego identyfikatora użytkownika.
+- Sync: revision + contentHash ograniczają nadpisania nieaktualnym stanem; konflikty wymagają jawnego odświeżenia/rozstrzygnięcia.
+- Kopie: lokalny JSON/export/import i kopie automatyczne aplikacji. To nie jest samo w sobie niezależna kopia poza telefonem ani dowód synchronizacji.
+- AI: klient komunikuje się z backendem; klucz Gemini pozostaje serwerowy. Rejestr modeli: `server/ai/models.ts`.
+- Cloud Ops: oddzielny, prywatny obserwator tylko do odczytu metadanych, logów i metryk; nie modyfikuje GymData.
+
+AKTUALNY STAN WERYFIKACJI (2026-10-09)
+- Backend Cloud Run: rewizja `00022-xxt`, 100% ruchu, health=ok, wersja 3.0.9. Cloud Ops read-only potwierdza infrastrukturę.
+- Firestore Native `(default)` istnieje w `europe-central2`; metadane nie dowodzą zapisu danych użytkownika. Produkcyjny authenticated write/read/update/conflict/cleanup oraz odczyt na drugim kliencie nie zostały potwierdzone.
+- Android build/test gates przechodzą lokalnie; brak urządzenia w aktualnym `adb devices -l` blokuje świeżą instalację, logowanie i testy runtime.
+- Werdykt: NOT READY jako zweryfikowane wydanie E2E. Nie deklarować trwałości/synchronizacji/AI na podstawie samego health, APK build lub istnienia bazy.
+
+PUNKT STARTOWY
+Główna dokumentacja operacyjna znajduje się w tym katalogu (`01`–`14`); aktualne przebiegi w `runs/`, a zmiany w `changes/`. Najpierw czytać kod, świeży run report i bieżący stan Cloud/Git; starsze wpisy są historią, nie zawsze stanem obecnym.
