@@ -52,6 +52,9 @@ CI: GitHub Actions run `37839864285` for commit `363d128db0eb11c04ec90275d89995f
 - The sole WARNING log was the intentional anonymous `/api/ai/coach/chat` probe: revision `00023-5z7`, HTTP 401. This is expected auth rejection, not a backend failure; 5xx count remained zero.
 - Direct server-side metadata test previously confirmed Secret Manager key access: HTTP 200 to Gemini model catalog, old inline key HTTP 403.
 - Minimal direct `generateContent` against `gemini-3.5-flash-lite` with synthetic prompt “Reply with exactly OK.” returned HTTP 200, reply `OK`, usage 6 tokens; no personal data used. This checks Google Gemini access only, not our backend route/auth/session or other model IDs.
+- Direct minimal synthetic `generateContent` against `gemini-3.8-flash` returned HTTP 200/STOP, reply `OK`, 71 total tokens. First attempt with maxOutputTokens=8 returned no user-visible text; retry with 64 was successful.
+- Metadata GET for `gemini-3.8-flash`, `gemini-3.8-flash-lite-tts` and `gemini-3.5-flash-lite` returned HTTP 200; all declare `generateContent`. TTS audio was not generated. Per-model live endpoint E2E remains incomplete.
+- Official pricing lists Free and Paid tiers; this check did not establish which billing tier the project uses or whether any generated tokens were billed. Do not equate Cloud Billing prepayment with Gemini API credit. Source: https://ai.google.dev/gemini-api/docs/pricing.
 - Do not label app AI end-to-end PASS until a valid app Google session exercises the protected backend endpoint. ADB currently shows no connected device.
 
 2026-10-09 03:35 Europe/Warsaw — backup/cost-control read-only review:

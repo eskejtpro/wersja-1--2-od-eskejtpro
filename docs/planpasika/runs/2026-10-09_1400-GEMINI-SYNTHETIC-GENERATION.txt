@@ -16,6 +16,9 @@ WYNIKI:
 - Unauthenticated backend POST returned HTTP 401 `unauthorized`, so no backend Gemini request was made.
 - Cloud Logging query returned zero backend 5xx entries for the 30-minute window.
 - Authenticated read-only Cloud Ops diagnostics returned HTTP 200. Infrastructure/revision/config/health/version/Auth/Firestore metadata/APIs/metrics checks PASS; overall WARN because the sole warning log was the deliberate anonymous HTTP 401 probe, while persistence and cross-device sync remain UNKNOWN.
+- Follow-up direct synthetic `gemini-3.8-flash:generateContent`: HTTP 200, finish STOP, reply `OK`, 71 tokens. Initial maxOutputTokens=8 attempt had no user-visible text and was retried with cap 64.
+- Metadata-only model GET for `gemini-3.8-flash`, `gemini-3.8-flash-lite-tts`, and `gemini-3.5-flash-lite` returned 200; each lists `generateContent`. No audio/TTS generation.
+- Google pricing publishes both Free and Paid tiers; this run did not establish the account's tier or actual charge status. Cloud Billing funds are not assumed to be Gemini API credits.
 LOG SUMMARY: no backend error logs in queried window; no key material exposed.
 ARTIFACTS: production revision `00023-5z7` uses Secret Manager version `latest`; revision has 100% traffic.
 PROBLEMS:
