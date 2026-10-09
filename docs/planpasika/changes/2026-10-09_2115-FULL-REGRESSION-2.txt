@@ -1,0 +1,36 @@
+PlanPasika / GymTracker Pro — druga pełna regresja aktualnego HEAD
+
+BEFORE
+- Po poprawce Android Kotlin dependencies potrzebne było ponowne potwierdzenie, że zmiana nie naruszyła aplikacji.
+
+ROOT CAUSE
+- Nie dotyczy; jest to weryfikacja regresyjna.
+
+CHANGE
+- Brak zmian w kodzie.
+
+FILES
+- Brak zmian produkcyjnych.
+
+TESTS
+- `npm test`: PASS, 114/114.
+- `git diff --check`: PASS.
+- skan źródeł poza fixture'ami testowymi: PASS, brak API key/private key/Bearer token.
+- Jedyny trafiony wzorzec w pełnym skanie znajduje się w `tests/android-package-security.test.mjs` i jest celowym fikcyjnym fixture'em do testu redakcji; nie jest sekretem.
+
+DEVICE/CLOUD
+- ADB: niewykonane zgodnie z zakresem tej sesji.
+- Live Cloud E2E: bez zmian.
+
+EVIDENCE
+- HEAD przed dokumentacją: `cc9e2f0`.
+- Wynik testów: 114 pass, 0 fail, 0 skipped.
+
+ROLLBACK
+- Nie dotyczy; dokumentacja nie zmienia działania.
+
+RESULT
+- Druga pełna regresja lokalna PASS. Projekt nadal NOT READY bez dowodów urządzenia i bieżącego E2E Cloud.
+
+FOLLOW-UP
+- Przy późniejszym podłączeniu telefonu wykonać test instalacji zachowującej dane, Google Auth, AI i synchronizacji.
