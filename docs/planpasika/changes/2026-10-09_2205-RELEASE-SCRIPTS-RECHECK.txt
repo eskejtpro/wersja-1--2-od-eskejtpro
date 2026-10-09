@@ -1,0 +1,36 @@
+PlanPasika / GymTracker Pro — recheck skryptów release bez ADB
+
+BEFORE
+- Po drugiej pełnej regresji pozostawały osobne skrypty release do potwierdzenia.
+
+ROOT CAUSE
+- Nie dotyczy; jest to weryfikacja bieżącego artefaktu i konfiguracji.
+
+CHANGE
+- Brak zmian produkcyjnych.
+
+FILES
+- Brak zmian kodu.
+
+TESTS
+- `npm run test:android-widget`: PASS, 1/1.
+- `npm run test:google-ui`: PASS, 3/3.
+- `verify-android-oauth-bundle.mjs`: PASS.
+- `verify-android-package-security.mjs`: PASS.
+
+DEVICE/CLOUD
+- ADB: niewykonane zgodnie z zakresem.
+- Cloud: bez zmian.
+
+EVIDENCE
+- Weryfikacja używa publicznego Web Client ID oraz publicznego URL Cloud Run; nie odczytuje ani nie ujawnia sekretów.
+
+ROLLBACK
+- Nie dotyczy.
+
+RESULT
+- Widget, UI Google, konfiguracja OAuth w bundle i skan credential-pattern są lokalnie PASS.
+- Runtime Google login, backend session i Firestore nadal wymagają testu live na urządzeniu.
+
+FOLLOW-UP
+- Przy ADB wykonać account picker, token audience, sesję backendu i protected endpoint.
