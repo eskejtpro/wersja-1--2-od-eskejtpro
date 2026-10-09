@@ -1,0 +1,49 @@
+DATE/TIME
+2026-10-09 / Europe-Warsaw
+
+COMMIT
+200c07008ad3a7bf0e6102669b0cff9d04c640fc
+
+BRANCH / REMOTE
+codex/planpasika-release
+https://github.com/eskejtpro/wersja-1--2-od-eskejtpro
+
+SCOPE
+Read-only repository audit and local regression verification. ADB was intentionally not used.
+
+REPOSITORY
+- origin/codex/planpasika-release matches HEAD 200c070.
+- origin/main, origin/work/v3.0.9-cloud-store and origin/codex/planpasika-cloud-ops were fetched and inventoried.
+- Cloud Ops remains a separate branch/worktree.
+- Working tree was clean before this report.
+
+COMMANDS / RESULTS
+- npm test: PASS, 115/115.
+- npm run lint: PASS.
+- npm run build: PASS (web and bundled server).
+- npm run test:server: PASS, 28/28.
+- npm run test:cloud: PASS, 40/40.
+- npm run test:ai-model-registry: PASS, 3/3.
+- npm run test:ai-transport: PASS, 6/6.
+- npm run test:ops-agent: PASS, 7/7.
+- npm run test:update: PASS, 4/4.
+- npm run test:android-widget: PASS, 1/1.
+- node --test tests/android-package-security.test.mjs: PASS, 3/3.
+- node scripts/verify-android-package-security.mjs: PASS.
+- node scripts/verify-android-oauth-bundle.mjs: PASS with the public OAuth Client ID and Cloud Run URL supplied by the release workflow as session-scoped environment variables.
+
+NOTES
+- Running the OAuth verifier without its required environment variables fails closed with an empty configuration value; this is a configuration precondition, not evidence that the APK is missing OAuth data.
+- The QuotaExceededError printed during npm test is an intentional fail-closed test fixture.
+
+NOT VERIFIED IN THIS RUN
+- Physical-device installation, UI, Google account picker and native bridge: UNKNOWN because ADB was not used.
+- Authenticated Firestore write/read/update/delete round-trip: UNKNOWN.
+- Authenticated Gemini live calls and phone AI E2E: UNKNOWN.
+- Current Cloud Run revision/traffic/source and CI check conclusion: not changed by this local audit.
+
+VERDICT
+Local code, test, build, Android bundle configuration and security gates are PASS. Product release remains NOT READY until device and authenticated cloud E2E evidence exists.
+
+FOLLOW-UP
+Run the device/cloud acceptance sequence when ADB and authorized live credentials are intentionally in scope; do not infer those results from this report.
