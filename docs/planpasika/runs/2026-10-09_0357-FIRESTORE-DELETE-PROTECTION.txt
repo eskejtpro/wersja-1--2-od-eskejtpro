@@ -1,0 +1,24 @@
+TEST_ID: FIRESTORE-DELETE-PROTECTION-20261009-0357
+DATA: 2026-10-09 03:57 Europe/Warsaw
+BRANCH: codex/planpasika-release
+CHECKOUT_HEAD_BEFORE_DOCS: d9c634492f5b604b3e38006c48974c7f95fa20a6
+PROJECT: gen-lang-client-0836043899
+DATABASE: (default)
+REGION: europe-central2
+ACCOUNT: ai.eskejtpro@gmail.com
+
+ACTION:
+- Enabled Firestore database delete protection using `gcloud firestore databases update --database="(default)" --delete-protection --project=gen-lang-client-0836043899`.
+- Re-read database metadata using `gcloud firestore databases describe`.
+
+RESULT:
+- Update operation: done.
+- Read-after-write: `deleteProtectionState: DELETE_PROTECTION_ENABLED`.
+- `pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED`.
+- No backup schedule was created; retention/cost choice is still pending.
+
+SCOPE / SAFETY:
+- Protects the entire Firestore database from accidental database deletion only; does not prevent deletion of individual documents and is not a backup.
+- No user documents were read or changed.
+- No billing, IAM, Cloud Run, app, secrets, or PITR settings were changed.
+- Operator account was confirmed as the account the user authorized for Cloud Shell operations.

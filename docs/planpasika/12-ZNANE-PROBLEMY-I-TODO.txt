@@ -84,3 +84,4 @@ AKTUALIZACJA LIVE 2026-10-09 03:50 Europe/Warsaw:
 - Kopie Firestore: brak harmonogramu; PITR i delete protection są wyłączone. Nie zmieniano ustawień ani kosztów.
 - Porównanie gałęzi nie uzasadnia merge: starsza gałąź cofa Androida do 3.0.8 i usuwa część aktualnych zabezpieczeń; pozostawiono integracyjną gałąź wydaniową bez zmian źródeł.
 - `adb devices -l` puste; fizyczna instalacja, Google login i runtime E2E nie zostały wykonane.
+- AKTUALIZACJA 2026-10-09 03:57: włączono i odczytem potwierdzono `DELETE_PROTECTION_ENABLED` dla Firestore `(default)`. PITR i harmonogram kopii pozostają wyłączone/brak — nadal wymagają decyzji o retencji i akceptowanym koszcie.
